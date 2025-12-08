@@ -2,7 +2,7 @@
 
 ## 1. Project Objective
 
-Produce a daily call list of at least 25 unique Australian companies—each with the prospect's name, title, contact details (mobile and/or email), and business location. Data is for sales lead-generation and prospecting. **Company names must always be unique** across days using historical company data.
+Produce a daily call list of at least 25 unique Australian companies—each record to include the prospect’s name, position, contact details (mobile and/or email), and business location. This data is for sales lead generation and business development. **Company names must always be unique** across days, using company history for deduplication.
 
 ---
 
@@ -11,58 +11,57 @@ Produce a daily call list of at least 25 unique Australian companies—each with
 **Required data fields:**
 - Company Name (must be unique, case-insensitive)
 - Lead/Prospect Name
-- Title
-- Location
-- Mobile phone (normalised digits only, e.g., 0412345678)
+- Position/Title
+- Location (state/region preferred)
+- Mobile phone (normalised, digits only, e.g. 0412345678)
 - Email (any domain)
-- *Note*: If contact details are missing, the record is excluded.
+- *Note*: Skip records if all contact details are missing.
 
 ---
 
 ## 3. Data Sources
 
-- **Primary:** [Seek Australia](https://www.seek.com.au/) — job postings for employer/company field
-- **Supplementary:** [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) (Google-Dorking queries)
-- **Supplementary:** [Google](https://www.google.com/) (Google-Dorking, .com.au domains)
-- Scrape only from public web pages; do **not** scrape private profiles (LinkedIn, personal social media) or any site disallowing scraping per robots.txt or terms of service
+- **Primary:** [Seek Australia](https://www.seek.com.au/) — job ads for company/employer field
+- **Supplementary:** [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) (manual Google-dork queries)
+- **Supplementary:** [Google](https://www.google.com/) (manual Google-dork queries, .com.au only)
+- Only scrape public web pages; **never** scrape private profiles (LinkedIn, Facebook etc.) or any site that disallows scraping under robots.txt or terms of service.
 
 ---
 
 ## 4. Geographic, Language & Domain Limitation
 
-- Only Australian businesses (.com.au domains)
-- All content must be in English (preferably en_AU.UTF-8)
-- Seed job searches target major Australian capitals and regions (see Appendix)
+- Australian businesses only (.com.au websites/domains)
+- All content in English (preferably en_AU.UTF-8)
+- Seed job searches to cover all major Australian capitals and regions (see Appendix)
 
 ---
 
 ## 5. Success Criteria, KPIs & Acceptance
 
-- **Daily success:** At least 25 unique companies (case-insensitive, no repeats vs history)
-- Each row with at least one contact detail (phone or email)
-- Missing/incomplete company names are excluded
-- No duplicates from previous lists (historical exclusion)
-- If <25 leads found, write partial CSV and log warning
-- Project is successful if daily lists contain valid contacts and no duplicate companies from previous runs
+- **Daily target:** At least 25 unique companies (company names case-insensitive, no repeats checked against company history)
+- Each row must have at least one valid contact detail (phone or email)
+- Missing/incomplete company names: skip
+- No duplicate companies across different days (per historical exclusion)
+- If fewer than 25 leads are found, save the CSV regardless and record a warning in the logs
+- Project “passes” if daily lists have valid contacts and no duplicate companies from the past
 
 ---
 
 ## 6. Volume, Frequency & Retention
 
 - Minimum 25 leads per run
-- Data updated daily
-- Daily call list overwrites previous day's file (except history)
-- Historical list retained indefinitely (`companies_history.txt` under manual RCS)
+- Data refreshed daily
+- Each new call list overwrites the previous day’s file (‘calllist_YYYY-MM-DD.csv’), history file is permanent (`companies_history.txt`)
 
 ---
 
 ## 7. Storage, Output Format & Encoding
 
-- Exported as UTF-8, single-line record CSV
-- `calllist_YYYY-MM-DD.csv` (overwritten daily)
-- Historical file: `companies_history.txt` (one company per line, appended manually)
-- No source URLs, scrape timestamps, or lineage in the CSV
-- **Example CSV:**
+- Output: UTF-8, CSV — one line per company/lead
+- Filename: `calllist_YYYY-MM-DD.csv` (overwrites daily)
+- History file: `companies_history.txt` (one company per line, maintained manually)
+- Do not include source URLs, timestamps, or data lineage in the CSV
+- **CSV Example:**
   ```
   company_name,prospect_name,title,phone,email,location
   XYZ Pty Ltd,John Smith,Managing Director,0412345678,email@xyz.com.au,Perth, WA
@@ -74,158 +73,150 @@ Produce a daily call list of at least 25 unique Australian companies—each with
 ## 8. Tools & Tech Stack
 
 **Essential:**
-- surf (WebKit2, headless browser for JS pages)
+- surf (WebKit2; headless browser for JS-heavy sites)
 - ANSI C (tcc, libcurl, libxml, dietlibc)
-- Bourne Shell (`/bin/sh`) for orchestration
-- busybox (`grep`, `sed`, `awk`), wak (POSIX awk)
-- csvquote (CSV-safe UNIX tooling)
+- Bourne Shell (`/bin/sh`) for scripting
+- busybox (`grep`, `sed`, `awk`…), wak (POSIX awk)
+- csvquote (safe UNIX CSV tools)
 - RCS (manual version control)
-- OpenBSD httpd (optional for static serving)
-- mandoc (UNIX documentation/manpages)
-- smenu (`smenu`—interactive CLI selector for Google-Dorking/manual workflow)
+- OpenBSD httpd (optional for serving files locally)
+- mandoc (UNIX docs/manpages)
+- smenu (`smenu` — CLI picker for Google-dork/manual search)
 
 **Optional:**
 - Nuklear (TUI/GUI)
 - termbox (terminal UI)
-- pv (pipe viewing)
+- pv (pipe viewer/progress)
 
-**Cross-platform:** Linux, BSD, macOS, Windows (WSL2).
+**Cross-platform**: Linux, BSD, macOS, and Windows/WSL2.
 
 ---
 
 ## 9. Scraping Method & Strategy
 
-- Use libcurl/libxml for non-JS content
-- Use surf/WebKit2 for JS content
-- Shell scripts to orchestrate fetch, parse, validate, deduplicate, and report
-- Helper binaries allowed
-- **Google-Dorking (manual):** Queries to DuckDuckGo Lite/Google generated by script and launched in browser or CLI (`smenu`), never scraped
-  - Limit to .com.au domains
-  - Use job title, company, person name, location dorks
+- Use libcurl/libxml for static (non-JS) HTML
+- Use surf/WebKit2 for dynamic (JavaScript) pages
+- Bourne shell scripts to control fetch/parse/validate/deduplicate/report
+- Helper binaries are allowed
+- **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo queries, which are opened in browser or CLI (`smenu`), never automatically scraped
+  - Limit domains to .com.au
+  - Use flexible dorks (e.g. name/company/job/location/contact) for best results
   - Example dork: `"Jane Smith" "email" OR "phone" OR "mobile" site:.com.au`
-- See Appendix for dork/seed templates
+- Appendix includes dork and seed templates
 
 ---
 
 ## 10. Data Validation, Deduplication & Cleaning
 
-- Company name uniqueness: case-insensitive string match
-- Company name + different location = duplicate
-- No normalization for suffixes, whitespace, punctuation
-- Exclude records with missing company name
-- Accept phone or email (not mandatory for both)
+- Company name deduplication: case-insensitive matching only (no normalisation)
+- Company + different location = considered duplicate for exclusion
+- Do not normalise suffixes/whitespace/punctuation
+- Skip rows missing company name
+- Require at least one valid contact (phone or email)
 - Email validation: `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`
-- Phone validation: digits only, +61 converted to 0-prefix
+- Phone validation: digits only, convert +61 to 0-prefix
 
 ---
 
 ## 11. Anti-Bot/Evasion & Reliability
 
-- No proxies or external scraping APIs
-- Conservative approach:
-    - Slow, random pacing and strict rate limit
+- Do not use proxies or offshore scraping APIs
+- Be conservative:
+    - Slow, randomised delays and hard rate limiting
     - Rotate UA strings
-    - DuckDuckGo Lite use avoids heavy JS/captcha
-    - Manual intervention for CAPTCHA (log/skip)
-- Retry: up to 3 attempts URL; exponential backoff (5s, 20s, 60s); skip as needed
+    - DuckDuckGo Lite is preferred for minimal JS/CAPTCHA
+    - Log and skip if CAPTCHA appears (manual intervention only)
+- Retrying: max of 3 times per URL; exponential backoff (5s, 20s, 60s); skip after that
 
 ---
 
 ## 12. Error Handling, Logging & Monitoring
 
-- All runs log to `log.txt`
-    - Timestamp
-    - URLs, search terms
-    - Unique records found, errors/warnings (CAPTCHA, timeout)
-    - Per-record debugging if verbose enabled
+- Script logs all runs to `log.txt`
+    - Include: timestamp, queried URLs, search terms
+    - Number of unique records found
+    - Errors/warnings (CAPTCHA, timeout etc.)
+    - Add record-level debugging if ‘verbose’ enabled
     - Retain/rotate logs weekly (policy TBC)
-- No external monitoring/alerting
+- No external monitoring or alerting required
 
 ---
 
 ## 13. Security, Privacy & Compliance
 
-- Only public info collected—no private/restricted data
-- Explicitly avoid scraping sites/disallowed pages per robots.txt, ToS
-- Respect Australian privacy/ethics
-- Upon request, admin manually removes personal/company details from history
+- Only collect public information — no restricted/private data
+- Do not scrape any site or page excluded by robots.txt or ToS
+- Strictly observe Australian privacy law/ethical norms
+- Admin can manually remove any person/company details from history if requested
 
 ---
 
 ## 14. Retention & Admin Control
 
-- Daily call list overwritten each run
-- `companies_history.txt` retained and appended manually (admin only)
-- RCS commit for history handled manually
+- Daily call list is always overwritten
+- Company history file (`companies_history.txt`) always retained and added via admin/manual only
+- Manual RCS commit for company list/historic file
 
 ---
 
 ## 15. Scheduling & Automation
 
-- Scraper runs manually at start
-- Cronjob set up (Unix/BSD/macOS/WSL2) after MVP validation/approval
+- Scraper script is triggered manually for now
+- Cron scheduling (Unix/BSD/macOS/WSL2) after MVP is accepted
 
 ---
 
 ## 16. Project Acceptance Criteria
 
-- Minimum 25 unique companies per daily CSV (case-insensitive, not in history)
-- At least one valid contact (phone/email) per prospect
-- No duplicates across days
-- Partial (<25) result allowed, with warning log
-- Output format, scripts, logs match this plan
+- At least 25 unique companies per CSV file per day (case-insensitive, not in history)
+- Each row contains at least one valid contact (phone/email)
+- No duplicates across daily runs
+- Less than 25 allowed as partial, write a warning to logs
+- Output format, scripts, logs match this project scope and description
 
 ---
 
 ## 17. MVP / First Steps
 
-- Prepare scripts (shell, minimal C helpers)
-- Prepare `seeds.txt` (Seek URLs + dork templates)
-- Prepare `companies_history.txt` (admin starts/maintains)
-- Prepare docs and log structure for auditing
+- Write initial shell scripts and C helpers
+- Create `seeds.txt` (Seek listing URLs + dork templates)
+- Create and manage `companies_history.txt` (admin initiates)
+- Document everything, structure logs for future audit
 
 ---
 
-## Seek.com.au Pagination
+## Seek.com.au Selector Mapping (as at 8 December 2025)
 
-Seek paginated job listings use a "Next" button with an HTML `<span>` selector:
-
-```html
-<span class="_1yd5ljl0 _1e5i6x2ek">Next</span>
-```
-
-### Notes & Usage
-
-- **HTML Selector**: The "Next" button is identified by the class `_1yd5ljl0 _1e5i6x2ek`.
-- **Headless Browser (JS Automation)**: When using `surf` or similar tools, scripts must:
-  - Detect the presence of the "Next" span.
-  - Simulate a click on this element (using WebKit2 API or browser automation scripting) to load subsequent pages.
-  - Iterate until the "Next" button is not present (last page reached).
-
-- **Shell/C Workflow**: Seek paginates via URL query parameters (e.g. `start=22` for page 2, 22 results per page):
-  - Example:  
+- **Pagination:**
+  - Use the `data-automation="page-next"` value to locate the “Next” button:
+    ```html
+    <span data-automation="page-next">Next</span>
     ```
-    https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA&start=22
-    ```
-  - Script must increment `start` by the page size (`22` by default) until no results or "Next" button absent.
+  - Fallback: detect text "Next" in any span if the above fails (prone to breakage).
+- **Shell/C Workflow:** Seek paginates search with the URL parameter `start`, e.g. `start=22` for page 2 (22 results per page):
+  ```
+  https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA&start=22
+  ```
+  Keep incrementing `start` by ‘22’ until the "Next" span is missing.
 
-- **Tip**: Always re-check for "Next" span after each page fetch when using cursors on JS-enabled pages (WebKit2/surf).
-- **Compliance**: Do not scrape job detail pages or profiles—listings only.
+- **Job listing/card structure:**
+  - Each job is: `<article data-automation="normalJob">...</article>`
+    - **Title:** `<a data-automation="jobTitle">`
+    - **Company:** `<a data-automation="jobCompany">`
+    - **Location:** `<a data-automation="jobLocation">`
+    - **Short description:** `<span data-automation="jobShortDescription">`
+    - **Job ID:** `data-job-id` attribute
+  - Only fields visible here can be automatically gathered.
 
-#### Parser Example (HTML/JS):
+- **Contact info (phone/email):**
+  - **Not present** in Seek job cards — must be found by operator using dorks, company sites and public resources.
 
-In your shell or C helper logic, to decide if another page exists, look for:
+- **Selectors advice:**
+  - Always use `data-automation` attributes for scrapers/parsers (e.g. `[data-automation="jobCompany"]`). Avoid using class names (change frequently).
 
-```xml
-<span class="_1yd5ljl0 _1e5i6x2ek">Next</span>
-```
-
-If present, issue request or browser automation for the next page.
-
-#### Common Issues
-
-- Referrer policies, JS dependency shims, and tracking scripts may trigger warnings in developer consoles—ignore unless scraping is blocked.
-- Seek's robots.txt still applies: confirm listings are allowed programmatically before automated crawling.
+- **Search fields:**
+  - **Keywords**: `<input id="keywords-input" name="keywords" type="text" ...>`
+  - **Location**: `<input id="SearchBar__Where" name="where" type="search" ...>`
 
 ---
 
@@ -242,7 +233,7 @@ If present, issue request or browser automation for the next page.
 | Darwin, NT                 | https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT                         |
 | ...                        | ... (See seeds.txt for full list)                                          |
 
-### Google/DuckDuckGo Dork Examples
+### Example Google/DuckDuckGo dorks
 
 ```
 "{Name}" "{Company}" (email OR "mobile number" OR contact OR phone OR mobile OR "email address" OR "contact information") site:.com.au
@@ -264,19 +255,19 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 
 ## Risk Management Summary
 
-- *Rate-limiting/CAPTCHA*: Conservative pacing, UA rotation, manual skip on CAPTCHAs
-- *Data quality*: Strict validation & rules, manual spot-checks
-- *Cross-platform*: If surf/WebKit2 unavailable, fallback to libcurl only & adapt scripts
+- *Rate limiting & CAPTCHA*: Always pace requests conservatively, rotate UAs, and manually skip/record if CAPTCHA is hit
+- *Data quality*: Strict rules and validation, with manual spot checks
+- *Portability*: If surf/WebKit2 not available, use libcurl-only approach with fallback scripts
 
 ---
 
 ## Deliverables
 
-1. Full requirements plan (this document)
-2. Seed URL and dork template file
-3. Companies history file (admin curated)
-4. Scripts for CSV extraction and error logging
-5. Documentation for usage/auditing/manual append steps
+1. Full requirements document (this file)
+2. Seed URLs and dork template file
+3. Companies history file (admin-managed)
+4. Scripts for CSV extraction, validation and error logging
+5. Documentation/manuals for auditing and admin steps
 
 ---
 
@@ -289,15 +280,15 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 - **Location Field**:  
   `<input id="SearchBar__Where" name="where" type="search" ...>`
 - **Search Button**:  
-  `<span class="_1yd5ljl0 ... xg30qa4"><span>SEEK</span></span>`
-  - JS browser automation required for search submission
+  `<span ...><span>SEEK</span></span>`
+  - JS automation required to trigger searches
 
-#### Shell request:
+#### Shell example:
 
 ```sh
 curl 'https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA'
 ```
-#### C (libcurl):
+#### C example (libcurl):
 
 ```c
 snprintf(request_url, sizeof(request_url),
@@ -310,44 +301,44 @@ curl_easy_setopt(curl, CURLOPT_URL, request_url);
 
 ### DuckDuckGo Lite Field Mapping
 
-- **Query Field**: `<input class="query" name="q" ...>`
-- **Search Button**: `<input class="submit" type="submit" ...>`  
-- `curl 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
-- Interactive/manual only—never parsed or scraped
+- **Query Field:** `<input class="query" name="q" ...>`
+- **Search Button:** `<input class="submit" type="submit" ...>`  
+- Example: `curl 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
+- Interactive/manual only—never scraped or parsed automatically
 
 ---
 
 ### Google.com.au Field Mapping
 
-- **Query Field**:  
+- **Query Field:**  
   `<textarea class="gLFyf" id="APjFqb" name="q" ...>`
-- **Search Button**:  
+- **Search Button:**  
   `<input class="gNO89b" name="btnK" ...>`
-- `curl 'https://www.google.com.au/search?q=company+email+site:.com.au'`
-- Interactive/manual only—never parsed or scraped
+- Example: `curl 'https://www.google.com.au/search?q=company+email+site:.com.au'`
+- Interactive/manual only—never scraped or parsed automatically
 
 ---
 
 **Important:**  
-- *Always* check robots.txt before scraping any site  
+- Always check robots.txt before scraping any site  
   - [Seek robots.txt](https://www.seek.com.au/robots.txt)
   - [DuckDuckGo robots.txt](https://duckduckgo.com/robots.txt)
   - [Google robots.txt](https://www.google.com.au/robots.txt)
-- Seek: Only scrape _search listing_ pages, not `/job/` or `/profiles/`
-- DuckDuckGo/Google: No result scraping; used only for interactive queries (manual copy of leads allowed)
+- Only scrape Seek’s *search listing* pages (never job or profile detail pages)
+- Google and DuckDuckGo: results used only to find contacts manually—not to be scraped
 
 ---
 
 ## Interactive Google-Dorking Workflow
 
-Use CLI scripts (optionally with `smenu`) to select dork templates, spawn browser queries, and manually enrich leads.
+Use CLI scripts (optionally with `smenu`) to pick dorks, launch manual browser queries, and add enriched leads by hand.
 
-**Example smenu workflow:**
+**Example with smenu:**
 
 ```sh
 smenu < dork_templates.txt | xargs -r xdg-open
 ```
-**Without smenu (basic shell):**
+**Basic shell:**
 
 ```sh
 select DORK_QUERY in $(cat dork_templates.txt); do
@@ -356,14 +347,14 @@ select DORK_QUERY in $(cat dork_templates.txt); do
 done
 ```
 
-Manually inspect results and copy contacts/leads to your CSV.
+Results are reviewed manually and copied to the daily CSV.
 
 ---
 
 ## Changelog
 
-- 2025-12-08: Full compliance rewrite, pagination details and selector mapping integrated; workflow and field mappings documented.
+- 8 December 2025: All sections rewritten for selector stability and modern Seek.com.au markup, plus attention to Australian spelling, idiom and norms.
 
 ---
 
-**This project strictly follows robots.txt, ToS, and manual/interactive protocols for non-Seek sources. Do not add automation for any endpoint not explicitly allowed above.**
+**This project strictly observes robots.txt, ToS, and only uses automation where clearly permitted. Manual/interactive protocols for dorking and enrichment are integral. Do not attempt to automate any part not explicitly allowed above.**
