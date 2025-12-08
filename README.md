@@ -88,7 +88,6 @@ Produce a daily call list of at least 25 unique Australian companies—each with
 - Nuklear (TUI/GUI)
 - termbox (terminal UI)
 - pv (pipe viewing)
-- menu (CLI selection scripting)
 
 **Cross-platform:** Linux, BSD, macOS, Windows (WSL2).
 
@@ -184,6 +183,49 @@ Produce a daily call list of at least 25 unique Australian companies—each with
 - Prepare `seeds.txt` (Seek URLs + dork templates)
 - Prepare `companies_history.txt` (admin starts/maintains)
 - Prepare docs and log structure for auditing
+
+---
+
+## Seek.com.au Pagination
+
+Seek paginated job listings use a "Next" button with an HTML `<span>` selector:
+
+```html
+<span class="_1yd5ljl0 _1e5i6x2ek">Next</span>
+```
+
+### Notes & Usage
+
+- **HTML Selector**: The "Next" button is identified by the class `_1yd5ljl0 _1e5i6x2ek`.
+- **Headless Browser (JS Automation)**: When using `surf` or similar tools, scripts must:
+  - Detect the presence of the "Next" span.
+  - Simulate a click on this element (using WebKit2 API or browser automation scripting) to load subsequent pages.
+  - Iterate until the "Next" button is not present (last page reached).
+
+- **Shell/C Workflow**: Seek paginates via URL query parameters (e.g. `start=22` for page 2, 22 results per page):
+  - Example:  
+    ```
+    https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA&start=22
+    ```
+  - Script must increment `start` by the page size (`22` by default) until no results or "Next" button absent.
+
+- **Tip**: Always re-check for "Next" span after each page fetch when using cursors on JS-enabled pages (WebKit2/surf).
+- **Compliance**: Do not scrape job detail pages or profiles—listings only.
+
+#### Parser Example (HTML/JS):
+
+In your shell or C helper logic, to decide if another page exists, look for:
+
+```xml
+<span class="_1yd5ljl0 _1e5i6x2ek">Next</span>
+```
+
+If present, issue request or browser automation for the next page.
+
+#### Common Issues
+
+- Referrer policies, JS dependency shims, and tracking scripts may trigger warnings in developer consoles—ignore unless scraping is blocked.
+- Seek's robots.txt still applies: confirm listings are allowed programmatically before automated crawling.
 
 ---
 
@@ -320,7 +362,7 @@ Manually inspect results and copy contacts/leads to your CSV.
 
 ## Changelog
 
-- 2025-12-08: Full compliance rewrite, all original sections preserved; interactive dorking workflow and field mappings documented.
+- 2025-12-08: Full compliance rewrite, pagination details and selector mapping integrated; workflow and field mappings documented.
 
 ---
 
