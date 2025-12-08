@@ -407,3 +407,75 @@ curl_easy_setopt(curl, CURLOPT_URL, request_url);
 ---
 
 **DuckDuckGo Lite is designed for minimalism and speed, making it well suited for scripting and automated collection of search results.**  
+
+## Google.com.au Search Bar Field Mapping for Scraping
+
+Google's search page (`google.com.au`) uses a form with a text area for query input and a button for submitting searches.
+
+### 1. Query Field
+
+- **HTML Example:**
+  ```html
+  <textarea
+    jsname="yZiJbe"
+    class="gLFyf"
+    id="APjFqb"
+    name="q"
+    title="Search"
+    role="combobox"
+    maxlength="2048"
+    aria-label="Search"
+    autocomplete="off"
+    autocapitalize="none"
+    autocorrect="off"
+    spellcheck="false"
+    rows="1"></textarea>
+  ```
+- **Use:** Enter the search query (keywords, dorks, company, site:.com.au, etc.) in this field.
+
+### 2. Search Button
+
+- **HTML Example:**
+  ```html
+  <input
+    class="gNO89b"
+    value="Google Search"
+    aria-label="Google Search"
+    name="btnK"
+    role="button"
+    tabindex="0"
+    type="submit">
+  ```
+- **Use:** Submits the search form with the provided query.
+
+### How to Target in Scripts
+
+- For direct HTTP requests (curl, etc.), submit with `q=SEARCH_TERM` as a URL parameter to the Google search endpoint:
+  ```
+  https://www.google.com.au/search?q=company+email+site:.com.au
+  ```
+- For browser automation, fill the query field by `id="APjFqb"` or `name="q"`, then trigger the Search button (`name="btnK"`, `class="gNO89b"`, or by value).
+
+#### Example (Shell)
+```sh
+curl 'https://www.google.com.au/search?q=company+email+site:.com.au'
+```
+
+#### Example (C, using libcurl)
+```c
+snprintf(request_url, sizeof(request_url),
+         "https://www.google.com.au/search?q=%s",
+         "company email site:.com.au");
+curl_easy_setopt(curl, CURLOPT_URL, request_url);
+```
+
+- For browser-automation/code, simulate a submit event for the form or click the "Google Search" button.
+
+---
+
+**Note:** Only `name="q"` for the query input and `name="btnK"` for the search button are required; other attributes are for frontend, accessibility, or JavaScript control.
+
+---
+
+**Automated Google scraping may trigger anti-bot detection. Use slow, cautious pacing and always comply with Google's robots.txt and Terms of Service.**
+
