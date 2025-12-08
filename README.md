@@ -346,3 +346,64 @@ For advanced or scriptable scraping, Seek's frontend uses an internal API, calle
 ---
 
 **Always follow Seek.com.au's robots.txt and Terms of Service. Avoid excess or unwanted traffic.**
+
+## DuckDuckGo Lite Search Bar Field Mapping for Scraping
+
+DuckDuckGo Lite (`lite.duckduckgo.com/lite`) provides a simple search form, ideal for lightweight automated scraping with shell, C (libcurl), or browser automation.
+
+### 1. Query Field
+
+- **HTML Example:**
+  ```html
+  <input
+    class="query"
+    type="text"
+    size="40"
+    name="q"
+    autocomplete="off"
+    value=""
+    autofocus="">
+  ```
+- **Use:** Enter the search query (keywords, dorks, company, etc.) in this field.
+
+### 2. Search Button
+
+- **HTML Example:**
+  ```html
+  <input
+    class="submit"
+    type="submit"
+    value="Search">
+  ```
+- **Use:** Submits the search form.
+
+### How to Target in Scripts
+
+- For direct HTTP requests (curl, etc.), submit with `q=SEARCH_TERM` to the appropriate DuckDuckGo Lite search endpoint:
+  ```
+  https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au
+  ```
+- For browser automation, fill the query field by `name="q"` or `class="query"`, then click the submit button by `class="submit"` or simply submit the form.
+
+#### Example (Shell)
+```sh
+curl 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'
+```
+
+#### Example (C, using libcurl)
+```c
+snprintf(request_url, sizeof(request_url),
+         "https://lite.duckduckgo.com/lite/?q=%s",
+         "company email site:.com.au");
+curl_easy_setopt(curl, CURLOPT_URL, request_url);
+```
+
+- For browser-driven approaches, simulate filling the text field and clicking the "Search" button.
+
+---
+
+**Note:** Only `name="q"` and `class="submit"` are required for targeting; other attributes are for UI/UX.
+
+---
+
+**DuckDuckGo Lite is designed for minimalism and speed, making it well suited for scripting and automated collection of search results.**  
