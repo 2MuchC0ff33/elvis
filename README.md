@@ -223,3 +223,126 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 3. Companies history file (admin curated)
 4. Scripts for CSV extraction and error logging (once approved)
 5. Documentation of usage and manual run/append steps
+
+## Seek.com.au Search Bar and Search Button Automation Guide
+
+For automated data collection and scraping from Seek.com.au job search, the following mapping and techniques apply:
+
+### 1. Keywords Field
+
+- **HTML Example:**
+  ```html
+  <input
+    id="keywords-input"
+    name="keywords"
+    type="text"
+    placeholder="Enter keywords"
+    value="">
+  ```
+- **Use:** Set job titles, company names, and other relevant keywords here.
+
+### 2. Location Field
+
+- **HTML Example:**
+  ```html
+  <input
+    id="SearchBar__Where"
+    name="where"
+    type="search"
+    placeholder="Enter suburb, city, or region"
+    value="">
+  ```
+- **Use:** Set the target city/region here (e.g., Perth, WA).
+
+### 3. Search Button
+
+The Seek job search page submits either via the form or a search button, which is a `<span>` element, not a `<button>`, and generally controlled by JavaScript.
+
+#### Example HTML (truncated):
+
+```html
+<span class="_1yd5ljl0 ... xg30qa4">
+  <span>SEEK</span>
+</span>
+```
+
+- There may be no easily-guessable selector (`id`), so select by **class** or by text ("SEEK") in browser automation tools (surf/WebKit2, Selenium, Playwright, etc.).
+- This triggers JavaScript to submit the form with populated inputs.
+
+#### Automation Usage
+
+- **Populate** `#keywords-input` and `#SearchBar__Where` as above.
+- **Trigger Search:** Simulate user click on the search button, or send an Enter key event to either input.
+- **Example** (browser automation pseudo-code):
+
+  ```js
+  document.querySelector('span.xg30qa4').click();
+  // Or, find the nearest <span> with innerText "SEEK"
+  ```
+
+- **Alternative:** For direct HTTP/curl scripting, just construct the jobs URL with query parameters (see below).
+
+### How to Target in Scripts
+
+- For direct HTTP requests (libcurl, shell, etc.), supply as query parameters:
+  ```
+  https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA
+  ```
+- For browser automation, fill the inputs by their `id` or `name`, then trigger the search as above.
+
+#### Example (Shell)
+```sh
+curl 'https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA'
+```
+
+#### Example (C, using libcurl)
+```c
+snprintf(request_url, sizeof(request_url),
+         "https://www.seek.com.au/jobs?keywords=%s&where=%s",
+         "administrator", "Perth, WA");
+curl_easy_setopt(curl, CURLOPT_URL, request_url);
+```
+
+> For JS-heavy navigation/results, use browser automation to manipulate these fields and trigger searches as described.
+
+---
+
+**Note:** Only `name` and `id` attributes are required for targeting; other attributes are for frontend and accessibility.
+
+---
+
+### Advanced: Seek Internal Job Search API
+
+For advanced or scriptable scraping, Seek's frontend uses an internal API, called with parameters for job search and filtering:
+
+- **API Endpoint Example**
+  ```
+  GET https://jobsearch-api.cloud.seek.com.au/v5/counts?siteKey=AU-Main&...
+  ```
+
+- **Parameters:**  
+  - `keywords=fifo`
+  - `where=Northern Territory NT`
+  - Additional: `include=seodata,gptTargeting,relatedsearches`, session IDs, and more.
+
+- **Sample Request (Shell):**
+  ```sh
+  curl 'https://jobsearch-api.cloud.seek.com.au/v5/counts?siteKey=AU-Main&keywords=fifo&where=Northern%20Territory%20NT&include=seodata,gptTargeting,relatedsearches&locale=en-AU'
+  ```
+
+**Notes:**
+- Returns JSON with counts and metadata.
+- Requires headers/cookies (`__cf_bm`, `_cfuvid`) for subsequent requests.
+- Listings/job details are loaded from further API calls after search.
+
+---
+
+### Summary
+
+- **Browser automation:** Fill inputs, click the search button (by class `xg30qa4` or text "SEEK").
+- **Direct HTTP:** GET requests to `/jobs` or API endpoints with parameters.
+- **API scraping:** Replicate session headers/cookies for JSON results.
+
+---
+
+**Always follow Seek.com.au's robots.txt and Terms of Service. Avoid excess or unwanted traffic.**
