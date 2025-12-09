@@ -16,7 +16,7 @@ flowchart TD
     I --> K[Log Run Details]
 
     style G fill:#ffe5b4,stroke:#b19400,stroke-width:2px
-    %% Note: You can highlight "Manual" step (G) in yellow!
+    %% Note: You can highlight "Manual" step (G) in yellow
 ```
 
 Produce a daily call list of at least 25 unique Australian companies—each record to include the prospect’s name, position, contact details (mobile and/or email), and business location. This data is for sales lead generation and business development. **Company names must always be unique** across days, using company history for deduplication.
@@ -58,7 +58,7 @@ flowchart TD
     D -- No --> E[Manual Contact Enrichment]
     E --> F{At least one contact present?}
     F -- No --> X
-    F -- Yes --> G[Save to CSV, Append to History]**
+    F -- Yes --> G[Save to CSV, Append to History]
 ```
 
 - **Company required:** Skip any row missing `company_name`.
@@ -405,9 +405,9 @@ Overview
 
 ```mermaid
 flowchart TD
-    A[Seed URL] --> B{Does URL match<br>/jobs? or /jobs&?}
+    A[Seed URL] --> B{Does URL match /jobs? or /jobs&?}
     B -- Yes --> C[PAG_START (offset)]
-    B -- No --> D{Does URL contain<br>-jobs/in-?}
+    B -- No --> D{Does URL contain -jobs/in-?}
     D -- Yes --> E[PAG_PAGE (page number)]
     D -- No --> C
 ```
