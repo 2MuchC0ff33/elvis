@@ -72,33 +72,23 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 
 ## 8. Tools & Tech Stack
 
-**Essential:**
-- surf (WebKit2; headless browser for JS-heavy sites)
-- ANSI C (tcc, libcurl, libxml, dietlibc)
-- Bourne Shell (`/bin/sh`) for scripting
-- busybox (`grep`, `sed`, `awk`…), wak (POSIX awk)
-- csvquote (safe UNIX CSV tools)
-- RCS (manual version control)
-- OpenBSD httpd (optional for serving files locally)
+- Bourne Shell for scripting
+- Toybox for command line utilities
+- RCS for manual version control
 - mandoc (UNIX docs/manpages)
-- smenu (`smenu` — CLI picker for Google-dork/manual search)
+- edbrowse an ed-alike webbrowser
+- scron is a simple crond
 
-**Optional:**
-- Nuklear (TUI/GUI)
-- termbox (terminal UI)
-- pv (pipe viewer/progress)
-
-**Cross-platform**: Linux, BSD, macOS, and Windows/WSL2.
+**Cross-platform**: Linux, BSD, macOS, and Windows.
 
 ---
 
 ## 9. Scraping Method & Strategy
 
-- Use libcurl/libxml for static (non-JS) HTML
-- Use surf/WebKit2 for dynamic (JavaScript) pages
-- Bourne shell scripts to control fetch/parse/validate/deduplicate/report
+- Use `grep`, `sed`, `awk`, `http` from Toybox for HTML
+- Shell scripts to control fetch/parse/validate/deduplicate/report
 - Helper binaries are allowed
-- **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo queries, which are opened in browser or CLI (`smenu`), never automatically scraped
+- **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo queries, which are opened in lynx), never automatically scraped
   - Limit domains to .com.au
   - Use flexible dorks (e.g. name/company/job/location/contact) for best results
   - Example dork: `"Jane Smith" "email" OR "phone" OR "mobile" site:.com.au`
@@ -162,7 +152,7 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 ## 15. Scheduling & Automation
 
 - Scraper script is triggered manually for now
-- Cron scheduling (Unix/BSD/macOS/WSL2) after MVP is accepted
+- Scron scheduling (Unix/BSD/macOS/Windows) after MVP is accepted
 
 ---
 
@@ -178,7 +168,7 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 
 ## 17. MVP / First Steps
 
-- Write initial shell scripts and C helpers
+- Write initial Shell scripts and helpers
 - Create `seeds.txt` (Seek listing URLs + dork templates)
 - Create and manage `companies_history.txt` (admin initiates)
 - Document everything, structure logs for future audit
@@ -257,7 +247,6 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 
 - *Rate limiting & CAPTCHA*: Always pace requests conservatively, rotate UAs, and manually skip/record if CAPTCHA is hit
 - *Data quality*: Strict rules and validation, with manual spot checks
-- *Portability*: If surf/WebKit2 not available, use libcurl-only approach with fallback scripts
 
 ---
 
@@ -286,15 +275,13 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 #### Shell example:
 
 ```sh
-curl 'https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA'
-```
-#### C example (libcurl):
+#!/bin/sh
 
-```c
-snprintf(request_url, sizeof(request_url),
-         "https://www.seek.com.au/jobs?keywords=%s&where=%s",
-         "administrator", "Perth, WA");
-curl_easy_setopt(curl, CURLOPT_URL, request_url);
+# URL to fetch
+URL='https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA'
+
+# Execute the Toybox http command and print the output
+http GET "$URL"
 ```
 
 ---
@@ -303,7 +290,7 @@ curl_easy_setopt(curl, CURLOPT_URL, request_url);
 
 - **Query Field:** `<input class="query" name="q" ...>`
 - **Search Button:** `<input class="submit" type="submit" ...>`  
-- Example: `curl 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
+- Example: `http GET 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
 - Interactive/manual only—never scraped or parsed automatically
 
 ---
@@ -314,7 +301,7 @@ curl_easy_setopt(curl, CURLOPT_URL, request_url);
   `<textarea class="gLFyf" id="APjFqb" name="q" ...>`
 - **Search Button:**  
   `<input class="gNO89b" name="btnK" ...>`
-- Example: `curl 'https://www.google.com.au/search?q=company+email+site:.com.au'`
+- Example: `http GET 'https://www.google.com.au/search?q=company+email+site:.com.au'`
 - Interactive/manual only—never scraped or parsed automatically
 
 ---
@@ -331,13 +318,8 @@ curl_easy_setopt(curl, CURLOPT_URL, request_url);
 
 ## Interactive Google-Dorking Workflow
 
-Use CLI scripts (optionally with `smenu`) to pick dorks, launch manual browser queries, and add enriched leads by hand.
+Use CLI scripts to pick dorks, launch manual browser queries, and add enriched leads by hand.
 
-**Example with smenu:**
-
-```sh
-smenu < dork_templates.txt | xargs -r xdg-open
-```
 **Basic shell:**
 
 ```sh
