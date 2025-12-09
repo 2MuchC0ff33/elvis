@@ -132,6 +132,7 @@ When building your scraping run, start with a diverse collection of filtered lis
     - Include: timestamp, queried URLs, search terms
     - Number of unique records found
     - Errors/warnings (CAPTCHA, timeout etc.)
+    - Warn if fallback (textual) “Next” detection was triggered or if duplicate pages were detected during pagination.
     - Add record-level debugging if ‘verbose’ enabled
     - Retain/rotate logs weekly (policy TBC)
 - No external monitoring or alerting required
@@ -181,30 +182,37 @@ When building your scraping run, start with a diverse collection of filtered lis
 
 ---
 
-### Seek.com.au Pagination (Route-aware, as of December 2025)
+# Seek.com.au — Route-aware pagination (concise)
 
-Seek’s listing pages use **two independent pagination models**, depending on the URL route. Your scraper _must_ detect the URL pattern and select the correct pagination strategy.
+Overview
+- Seek uses two distinct pagination models depending on the URL route. Detect the model for each seed URL and apply the corresponding pagination logic.
+- Always stop when the page’s “Next” control disappears from the returned HTML; never assume a fixed page count.
 
-**Model A — Generic Search (`/jobs?` or `/jobs&`):**
-- Pagination uses `start=OFFSET` (increments by 22).
-    - Page 1 → `start=0`
-    - Page 2 → `start=22`
-    - Page k → `start=22*(k-1)`
-- **Stop condition:** The "Next" control (`<span data-automation="page-next">Next</span>`) is absent from returned HTML.
-- **Why?**: This aligns with server-side pagination for generic, flexible searches.
+## Pagination models
 
-**Model B — Category/Region Routes (`-jobs/in-`):**
-- Pagination uses `?page=N`, where N is a **1-based** page number.
-    - Page 1 → no `?page` parameter
-    - Page 2 → `?page=2`
-    - Page k → `?page=k`
-- **Stop condition:** The "Next" link vanishes from pagination component.
-- **Why?**: These routes are optimized for page-number UX and bookmarkable segmenting.
+### Model A — Generic search (URLs containing `/jobs?` or `/jobs&`)
+- Mechanism: `start=OFFSET` query parameter, OFFSET increases by 22:
+  - Page 1 → `start=0`
+  - Page 2 → `start=22`
+  - Page k → `start=22*(k-1)`
+- Stop condition: the Next control (e.g., `<span data-automation="page-next">Next</span>`) is absent from the returned HTML.
+- Rationale: server-side offset pagination for generic searches.
 
-#### **Implementation: Route Model Detection**
+### Model B — Category / region routes (paths containing `-jobs/in-`)
+- Mechanism: `?page=N` (1-based). Page 1 usually has no `?page` parameter:
+  - Page 1 → (no `?page`)
+  - Page 2 → `?page=2`
+  - Page k → `?page=k`
+- Stop condition: the Next link is absent from the pagination component.
+- Rationale: page-numbered UX and bookmarkable segments.
 
+## Route model detection (POSIX shell)
+- Detect Model A if URL contains `/jobs?` or `/jobs&`.
+- Detect Model B if URL path matches `-jobs/in-`.
+- Default to Model A when unsure.
+
+Shell function (returns `PAG_START` or `PAG_PAGE`)
 ```sh
-# Returns: 'PAG_START' (Model A) or 'PAG_PAGE' (Model B)
 pick_pagination() {
     url="$1"
     if echo "$url" | grep -q '/jobs[?&]'; then
@@ -217,54 +225,56 @@ pick_pagination() {
 }
 ```
 
-> For **all models**, always stop paginating when the “Next” button disappears in HTML.
-> _Never assume a fixed page count._
+## Combined POSIX shell example (toybox http)
+- Uses toybox’s `http` utility (`http -f -s`) for fetches.
+- Uses presence/absence of `data-automation="page-next"` in HTML as the stop check.
+- Replace `parse_listings` with your stable-selector parsing (prefer `article` roots, `data-*` attributes, anchor text).
 
-#### **Combined Pagination Example in Shell**  
-_Handles both models:_
 ```sh
 #!/bin/sh
-# Set initial URL, e.g.,
 initial_url="https://www.seek.com.au/jobs?keywords=admin&where=Perth%2C+WA"
-
 model=$(pick_pagination "$initial_url")
 
 case "$model" in
-    "PAG_START")
-        offset=0
-        while :; do
-            url="${initial_url}&start=$offset"
-            html=$(http -f -s "$url") || break
-            # parse_listings "$html" # implement as needed
-            if ! echo "$html" | grep -q 'Next'; then break; fi
-            offset=$((offset + 22))
-            sleep 1
-        done
-        ;;
-    "PAG_PAGE")
-        page=1
-        base_url="$initial_url"
-        while :; do
-            if [ "$page" -gt 1 ]; then
-                url="${base_url}?page=$page"
-            else
-                url="$base_url"
-            fi
-            html=$(http -f -s "$url") || break
-            # parse_listings "$html" # implement as needed
-            if ! echo "$html" | grep -q 'Next'; then break; fi
-            page=$((page + 1))
-            sleep 1
-        done
-        ;;
+  PAG_START)
+    offset=0
+    while :; do
+      url="${initial_url}&start=$offset"
+      html=$(http -f -s "$url") || break
+      # parse_listings "$html"   # implement stable-selector parsing separately
+      if ! echo "$html" | grep -q 'data-automation="page-next"'; then
+        break
+      fi
+      offset=$((offset + 22))
+      sleep 1
+    done
+    ;;
+  PAG_PAGE)
+    page=1
+    base_url="$initial_url"
+    while :; do
+      if [ "$page" -gt 1 ]; then
+        url="${base_url}?page=$page"
+      else
+        url="$base_url"
+      fi
+      html=$(http -f -s "$url") || break
+      # parse_listings "$html"   # implement stable-selector parsing separately
+      if ! echo "$html" | grep -q 'data-automation="page-next"'; then
+        break
+      fi
+      page=$((page + 1))
+      sleep 1
+    done
+    ;;
 esac
 ```
 
-> **Summary:**  
-> - Always check and use the correct model for each seed/search URL.  
-> - Stopping early or looping infinitely are both possible if model is misdetected.  
-> - Generic search: `start=OFFSET` (+22).  
-> - Category/region: `?page=N` (N++).
+## Notes & best practices
+- Detect the model per seed URL — misdetection can skip pages or cause infinite loops.
+- Use the presence/absence of the “Next” control in the returned HTML as the authoritative stop condition.
+- Prefer stable selectors and automation attributes when parsing listing content (`<article>` roots, `data-automation` attributes, `data-*` ids, and anchor text). Avoid brittle CSS class names.
+- Throttle requests and randomize small sleeps to reduce load and avoid triggering rate limits.
 
 - **Job listing/card structure:**
 ### Selector Discipline (stable attributes vs brittle CSS)
