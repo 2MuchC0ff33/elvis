@@ -201,6 +201,36 @@ fetch_with_backoff() {
     - Retain/rotate logs weekly (policy TBC)
 - No external monitoring or alerting required
 
+### Logging & Change Resilience
+
+Record enough context to investigate issues and site changes:
+
+#### Per run
+- Timestamp (start/end)
+- Seed URL (and derived pagination scheme)
+- Total pages fetched for the seed
+- Total listings parsed for the seed
+
+- Number of valid output rows emitted
+- Warnings and errors (timeouts, retries, fallback “Next” detection)
+
+#### Weekly rotation
+- Rotate logs weekly (policy TBD).
+- Keep a summary index mapping date → seed → (pages, listings, status).
+
+#### Change detection
+- If automation attributes change or “Next” detection falls back to text:
+  - Emit a `WARN` entry including the exact snippet around pagination.
+  - Tag the seed with `ATTR_CHANGE=true` so audits can find it later.
+
+> **Goal:** Fast root‑cause analysis when Seek adjusts markup or pagination behavior.
+
+**Log line example:**
+
+```
+2025-12-09T09:31:07Z seed=/jobs?keywords=admin&where=Perth%2C+WA model=offset pages=6 listings=132 ok=true warn=fallback_next=false errors=0
+```
+
 ---
 
 ## 13. Security, Privacy & Compliance
@@ -209,6 +239,14 @@ fetch_with_backoff() {
 - Do not scrape any site or page excluded by robots.txt or ToS
 - Strictly observe Australian privacy law/ethical norms
 - Admin can manually remove any person/company details from history if requested
+
+### Compliance & Ethics
+
+- **Robots.txt & ToS:** Always review site policies. Operate only on listing pages and public endpoints intended for automated access.
+- **CAPTCHA & anti-bot:** If encountered, log and skip; do not bypass.
+- **Privacy:** Collect only public information. Respect removal requests for persons or companies in history or outputs.
+- **Minimal footprint:** Avoid concurrent flood; prefer serialized or lightly parallelized requests with conservative pacing.
+- **Auditability:** Keep logs structured and retained for accountability.
 
 ---
 
