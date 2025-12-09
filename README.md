@@ -2,6 +2,23 @@
 
 ## 1. Project Objective
 
+```mermaid
+flowchart TD
+    A[Load Seeds] --> B[Detect Route & Pagination]
+    B --> C[Fetch Pages with Backoff]
+    C --> D[Parse Job Listings]
+    D --> E[Aggregate Raw Records]
+    E --> F[Dedupe by Company Name]
+    F --> G[Enrich with Contacts (Manual)]
+    G --> H[Validate Records]
+    H --> I[Produce Daily CSV Output]
+    H --> J[Append Names to History]
+    I --> K[Log Run Details]
+
+    style G fill:#ffe5b4,stroke:#b19400,stroke-width:2px
+    %% Note: You can highlight "Manual" step (G) in yellow!
+```
+
 Produce a daily call list of at least 25 unique Australian companies—each record to include the prospect’s name, position, contact details (mobile and/or email), and business location. This data is for sales lead generation and business development. **Company names must always be unique** across days, using company history for deduplication.
 
 ---
@@ -29,6 +46,21 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 > Note: Contact info (phone/email) is not expected on listing cards. Contacts are added **later** via manual enrichment from public sources.
 
 #### Validation rules
+
+```mermaid
+flowchart TD
+    A[Record found in listing] --> B{Company Name Present?}
+    B -- No --> X[Skip Record]
+    B -- Yes --> C{Already in Today’s List?}
+    C -- Yes --> X
+    C -- No --> D{Exists in companies_history.txt?}
+    D -- Yes --> X
+    D -- No --> E[Manual Contact Enrichment]
+    E --> F{At least one contact present?}
+    F -- No --> X
+    F -- Yes --> G[Save to CSV, Append to History]**
+```
+
 - **Company required:** Skip any row missing `company_name`.
 - **Company dedupe:** Case-insensitive deduplication of `company_name` only (no normalization of whitespace/punctuation/suffixes).
 - **Location does not break dedupe:** Same `company_name` with different locations is considered a duplicate for exclusion.
@@ -108,6 +140,15 @@ is_dup_company() {
 ---
 
 ## 8. Tools & Tech Stack
+
+```mermaid
+graph LR
+    Shell[POSIX Shell Scripts] -- controls --> Toybox
+    Shell -- uses --> RCS
+    Shell -- can trigger --> Scron
+    Shell -- for docs/review --> Mandoc
+    Operator -- reviews via --> Edbrowse
+```
 
 **Essential**
 - Bourne Shell for scripting
@@ -203,6 +244,17 @@ fetch_with_backoff() {
 
 ### Logging & Change Resilience
 
+```mermaid
+flowchart TD
+    A[Run Starts] --> B[Write Log: Start Details]
+    B --> C[Log Seed Processing]
+    C --> D[Log Valid/Skipped Records]
+    D --> E{Weekly Rotation?}
+    E -- Yes --> F[Rotate Logs]
+    E -- No --> G[Continue Logging]
+    F --> G
+```
+
 Record enough context to investigate issues and site changes:
 
 #### Per run
@@ -234,6 +286,26 @@ Record enough context to investigate issues and site changes:
 ---
 
 ## 13. Security, Privacy & Compliance
+
+```mermaid
+mindmap
+  root((Risk & Compliance))
+    Rate Limiting
+        Respect Delay
+        No proxies
+        Backoff on Error
+    Privacy
+        Only public info
+        Honor removal requests
+    Robots.txt
+        Only allowed routes
+        Never profiles/details
+    CAPTCHA
+        Log, skip, never bypass
+    Audit
+        Structured logs
+        Weekly rotation
+```
 
 - Only collect public information — no restricted/private data
 - Do not scrape any site or page excluded by robots.txt or ToS
@@ -284,6 +356,23 @@ Record enough context to investigate issues and site changes:
 
 ## Orchestration Flow (from Seeds to Final CSV)
 
+```mermaid
+sequenceDiagram
+    participant Script
+    participant Operator as Manual Operator
+    Operator->>Script: Initiate Run
+    Script->>Script: Load seeds.txt
+    Script->>Script: For each seed, detect pagination model
+    Script->>Script: Fetch & parse each page/listing
+    Script->>Script: Aggregate and dedupe by company
+    Script->>Script: Validate rows (company, contact)
+    Script->>Operator: Await manual enrichment (add contact info)
+    Operator->>Script: Add contacts, approve rows
+    Script->>Script: Append company to history
+    Script->>Script: Emit calllist_YYYY-MM-DD.csv
+    Script->>Script: Log summary, rotate logs
+```
+
 1. **Load seeds:** Read `seeds.txt` (one URL per line).
 2. **Route detection:** For each seed, pick pagination model (`start` vs `page`).
 3. **Paginate:**
@@ -313,6 +402,15 @@ Overview
 - Always stop when the page’s “Next” control disappears from the returned HTML; never assume a fixed page count.
 
 ## Pagination models
+
+```mermaid
+flowchart TD
+    A[Seed URL] --> B{Does URL match<br>/jobs? or /jobs&?}
+    B -- Yes --> C[PAG_START (offset)]
+    B -- No --> D{Does URL contain<br>-jobs/in-?}
+    D -- Yes --> E[PAG_PAGE (page number)]
+    D -- No --> C
+```
 
 ### Model A — Generic search (URLs containing `/jobs?` or `/jobs&`)
 - Mechanism: `start=OFFSET` query parameter, OFFSET increases by 22:
@@ -441,6 +539,19 @@ while :; do
   page=$((page+1))
   sleep_random
 done
+```
+
+```mermaid
+flowchart TD
+    A[Attempt Fetch] --> B{Success?}
+    B -- Yes --> C[Continue]
+    B -- No --> D[Retry: Sleep 5s]
+    D --> E{Attempt 2 Success?}
+    E -- Yes --> C
+    E -- No --> F[Retry: Sleep 20s]
+    F --> G{Attempt 3 Success?}
+    G -- Yes --> C
+    G -- No --> H[Log Error, Skip]
 ```
 
 ## Notes & best practices
@@ -716,6 +827,16 @@ http GET "$URL"
 ---
 
 ## Interactive Google-Dorking Workflow
+
+```mermaid
+flowchart TD
+    A[Raw Listing to Enrich] --> B[Operator Reviews Listing]
+    B --> C[Manually Google/DuckDuckGo for Contact Info]
+    C --> D{Contact Info Found?}
+    D -- Yes --> E[Add Phone/Email]
+    E --> F[Output to CSV]
+    D -- No --> G[Skip Row]
+```
 
 Use CLI scripts to pick dorks, launch manual browser queries, and add enriched leads by hand.
 
