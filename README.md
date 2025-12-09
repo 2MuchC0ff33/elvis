@@ -91,6 +91,9 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 - Use `grep`, `sed`, `awk`, `http` from Toybox for HTML
 - Shell scripts to control fetch/parse/validate/deduplicate/report
 - Helper binaries are allowed
+
+When building your scraping run, start with a diverse collection of filtered listing URLs (see Filtered Seeds below) to cover job types, regions, work styles, and more—with no headless browser or form simulation required.
+
 - **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo queries, which are opened in lynx), never automatically scraped
   - Limit domains to .com.au
   - Use flexible dorks (e.g. name/company/job/location/contact) for best results
@@ -294,6 +297,7 @@ Although Seek.com.au’s search UI uses dynamic JavaScript features (type-ahead 
   Listing markup and pagination controls use stable `data-automation` attributes suitable for parsing and extraction.
 - No official API or browser automation is necessary, as long as Seek continues to render results on the server-side.
 - **If Seek ever transitions to client-only rendering (e.g. React hydration without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable alternative for interactive/manual extraction.
+- **Best practice:** Construct breadth-first collections of filtered seed listing URLs to avoid simulating the JavaScript search form.
 
 __Bottom line:__  
 For this project, **headless browser automation is not required** and static shell scripting is fully sufficient for daily scraping—future browser automation is optional and only needed if Seek changes its technical approach.
@@ -312,6 +316,40 @@ For this project, **headless browser automation is not required** and static she
 | Perth, WA (Travel)         | https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel          |
 | Darwin, NT                 | https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT                         |
 | ...                        | ... (See seeds.txt for full list)                                          |
+
+See 'Filtered Seeds' below for a breadth-first coverage strategy using server-rendered URLs with pre-set filters.
+
+### Filtered Seeds (breadth-first coverage without JS simulation)
+
+The search bar UX (type-ahead suggestions, toggles) is JavaScript-driven, but **listing pages themselves** are addressable with **pre-composed URLs**. Originating your crawl from filtered listing URLs avoids headless-browser automation for the search form while still covering the same search space.
+
+#### Recommended seed types
+- **Work type:** `/jobs/full-time`, `/jobs/part-time`, `/jobs/contract-temp`, `/jobs/casual-vacation`
+- **Remote options:** `/jobs/on-site`, `/jobs/hybrid`, `/jobs/remote`
+- **Salary filters (type and range):**
+  - `salarytype=annual|monthly|hourly`
+  - `salaryrange=min-max` (e.g., `salaryrange=30000-100000`)
+- **Date listed:** `daterange=1|3|7|14|31` (today → monthly)
+- **Cities/regions:** `/jobs/in-All-Perth-WA`, `/jobs/in-All-Sydney-NSW`, etc.
+- **Category+region:** e.g., `/fifo-jobs/in-Western-Australia-WA`, `/engineering-jobs/in-All-Melbourne-VIC`
+
+#### Workflow for seeds
+1. Maintain `seeds.txt` with 1 URL per line, each representing a filtered slice.
+2. For each seed:
+   - Detect route (Batch 1) → choose pagination strategy.
+   - Crawl until "Next" vanishes (Batch 4).
+3. Merge parsed listings; dedupe by company (see Batch 9, Validation).
+4. Log coverage (seed → pages visited → number of listings).
+
+> **Why this works:** These links are server-rendered listing views that present enough HTML markers to parse without simulating client-side JS (type-ahead, form submissions).
+
+```sh
+#!/bin/sh
+
+while IFS= read -r seed; do
+  paginate "$seed"  # internally selects offset vs. page-number model
+done < seeds.txt
+```
 
 ### Example Google/DuckDuckGo dorks
 
