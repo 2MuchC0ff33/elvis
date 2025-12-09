@@ -734,6 +734,7 @@ Results are reviewed manually and copied to the daily CSV.
 
 ## Changelog
 
+- 9 December 2025: Added new "Orchestration Flow" section detailing the full stepwise scraping, validation, enrichment, and output process from seeds to CSV, based on improved analysis of Seek.com.au behaviour.
 - 8 December 2025: All sections rewritten for selector stability and modern Seek.com.au markup, plus attention to Australian spelling, idiom and norms.
 
 ---
