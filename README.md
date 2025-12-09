@@ -282,6 +282,28 @@ Record enough context to investigate issues and site changes:
 - Create and manage `companies_history.txt` (admin initiates)
 - Document everything, structure logs for future audit
 
+## Orchestration Flow (from Seeds to Final CSV)
+
+1. **Load seeds:** Read `seeds.txt` (one URL per line).
+2. **Route detection:** For each seed, pick pagination model (`start` vs `page`).
+3. **Paginate:**
+   - Fetch each page with backoff/timeouts.
+   - Parse listings using stable selectors.
+   - Stop when "Next" is absent (primary) or text fallback says so.
+4. **Aggregate:** Append parsed rows to an in-memory or temporary store.
+5. **Validate & dedupe:**
+   - Drop rows missing `company_name`.
+   - Case-insensitive dedupe `company_name` against today’s set and `companies_history.txt`.
+6. **Enrich contacts (manual):**
+   - Add `phone` and/or `email` from public sources.
+   - Validate with regex; skip if both missing.
+7. **Emit CSV:**
+   - `calllist_YYYY-MM-DD.csv` (UTF-8).
+   - Overwrite daily; keep the history file permanent.
+8. **Log & rotate:**
+   - Write run summaries; note any fallback detection.
+   - Rotate logs weekly (policy TBD).
+
 ---
 
 # Seek.com.au — Route-aware pagination (concise)
