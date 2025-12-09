@@ -297,6 +297,46 @@ case "$model" in
 esac
 ```
 
+### Route-aware Examples (End-to-end crawl flow)
+
+#### Generic search (`/jobs`) — offset loop
+1. Start at `start=0`.
+2. Fetch and parse listings.
+3. If "Next" exists, add `22` to `start` and repeat.
+4. Stop when "Next" vanishes.
+
+```sh
+offset=0
+while :; do
+  url="https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA&start=$offset"
+  html="$(fetch_with_backoff "$url")" || { log "error" "fetch failed" "$url"; break; }
+  parse_listings "$html" || { log "warn" "no listings" "$url"; break; }
+  if ! has_next_generic <<<"$html"; then log "info" "no next" "$url"; break; fi
+  offset=$((offset+22))
+  sleep_random
+done
+```
+
+#### Category/region (`/<category>-jobs/in-<region>`) — page loop
+
+1.  Start at page 1 (no `page` param).
+2.  Fetch and parse listings.
+3.  If "Next" exists, increment `page` and repeat.
+4.  Stop when "Next" vanishes.
+
+```sh
+page=1
+base="https://www.seek.com.au/fifo-jobs/in-Western-Australia-WA"
+while :; do
+  url="$base$( [ "$page" -gt 1 ] && printf '?page=%d' "$page" )"
+  html="$(fetch_with_backoff "$url")" || { log "error" "fetch failed" "$url"; break; }
+  parse_listings "$html" || { log "warn" "no listings" "$url"; break; }
+  if ! has_next_category <<<"$html"; then log "info" "no next" "$url"; break; fi
+  page=$((page+1))
+  sleep_random
+done
+```
+
 ## Notes & best practices
 - Detect the model per seed URL — misdetection can skip pages or cause infinite loops.
 - Use the presence/absence of the “Next” control in the returned HTML as the authoritative stop condition.
