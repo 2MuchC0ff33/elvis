@@ -478,6 +478,21 @@ For this project, **headless browser automation is not required** and static she
 
 See 'Filtered Seeds' below for a breadth-first coverage strategy using server-rendered URLs with pre-set filters.
 
+### Seeds & Coverage Checklist
+
+Use this checklist to ensure breadth and correctness:
+
+- [ ] Add generic `/jobs` seeds for core keyword+location pairs.
+- [ ] Add work type seeds (full-time, part-time, contract, casual).
+- [ ] Add remote option seeds (on-site, hybrid, remote).
+- [ ] Add salary type and range seeds (annual/monthly/hourly + min/max).
+- [ ] Add date listed seeds (1, 3, 7, 14, 31).
+- [ ] Add major city/region seeds (capitals + key regions).
+- [ ] Add category+region seeds (e.g., FIFO, Engineering, ICT, Healthcare).
+- [ ] Ensure each seed is routed to the correct paginator (`start` vs `page`).
+- [ ] Verify “Next” detection on the first and last pages; log any changes.
+- [ ] Record run totals (seeds visited, pages fetched, listings parsed).
+
 ### Filtered Seeds (breadth-first coverage without JS simulation)
 
 The search bar UX (type-ahead suggestions, toggles) is JavaScript-driven, but **listing pages themselves** are addressable with **pre-composed URLs**. Originating your crawl from filtered listing URLs avoids headless-browser automation for the search form while still covering the same search space.
