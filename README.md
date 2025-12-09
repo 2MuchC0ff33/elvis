@@ -17,6 +17,43 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 - Email (any domain)
 - *Note*: Skip records if all contact details are missing.
 
+### Data Model & Validation (rules to guarantee consistency)
+
+#### Fields to extract from listing pages
+- `company_name` (string)
+- `title` (string)
+- `location` (string)
+- `summary` (string; optional)
+- `job_id` (string; internal use)
+
+> Note: Contact info (phone/email) is not expected on listing cards. Contacts are added **later** via manual enrichment from public sources.
+
+#### Validation rules
+- **Company required:** Skip any row missing `company_name`.
+- **Company dedupe:** Case-insensitive deduplication of `company_name` only (no normalization of whitespace/punctuation/suffixes).
+- **Location does not break dedupe:** Same `company_name` with different locations is considered a duplicate for exclusion.
+- **Contact presence (final call list):** Each final CSV row must include at least one valid contact (phone or email) after enrichment.
+
+#### Regex validation
+- **Email:** `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`
+- **Phone:** digits only; convert `+61` mobiles to `0`-prefixed local (e.g., `+61412…` → `0412…`)
+
+#### Historical exclusion
+- Maintain `companies_history.txt` (one name per line).
+- Before adding a row to today’s CSV, check case-insensitive membership against history; if present → skip.
+- On acceptance, append new company names to history (manual or scripted).
+
+```sh
+#!/bin/sh
+
+is_dup_company() {
+  company="$1"
+  # normalize to lower for comparison only (do not alter stored value)
+  lc="$(printf '%s' "$company" | tr '[:upper:]' '[:lower:]')"
+  grep -iFxq "$company" companies_history.txt || grep -Fxq "$lc" companies_history_lower.txt
+}
+```
+
 ---
 
 ## 3. Data Sources
