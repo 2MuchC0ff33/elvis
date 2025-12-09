@@ -178,19 +178,90 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 
 ---
 
-## Seek.com.au Selector Mapping (as at 8 December 2025)
+### Seek.com.au Pagination (Route-aware, as of December 2025)
 
-- **Pagination:**
-  - Use the `data-automation="page-next"` value to locate the “Next” button:
-    ```html
-    <span data-automation="page-next">Next</span>
-    ```
-  - Fallback: detect text "Next" in any span if the above fails (prone to breakage).
-- **Shell/C Workflow:** Seek paginates search with the URL parameter `start`, e.g. `start=22` for page 2 (22 results per page):
-  ```
-  https://www.seek.com.au/jobs?keywords=administrator&where=Perth%2C+WA&start=22
-  ```
-  Keep incrementing `start` by ‘22’ until the "Next" span is missing.
+Seek’s listing pages use **two independent pagination models**, depending on the URL route. Your scraper _must_ detect the URL pattern and select the correct pagination strategy.
+
+**Model A — Generic Search (`/jobs?` or `/jobs&`):**
+- Pagination uses `start=OFFSET` (increments by 22).
+    - Page 1 → `start=0`
+    - Page 2 → `start=22`
+    - Page k → `start=22*(k-1)`
+- **Stop condition:** The "Next" control (`<span data-automation="page-next">Next</span>`) is absent from returned HTML.
+- **Why?**: This aligns with server-side pagination for generic, flexible searches.
+
+**Model B — Category/Region Routes (`-jobs/in-`):**
+- Pagination uses `?page=N`, where N is a **1-based** page number.
+    - Page 1 → no `?page` parameter
+    - Page 2 → `?page=2`
+    - Page k → `?page=k`
+- **Stop condition:** The "Next" link vanishes from pagination component.
+- **Why?**: These routes are optimized for page-number UX and bookmarkable segmenting.
+
+#### **Implementation: Route Model Detection**
+
+```sh
+# Returns: 'PAG_START' (Model A) or 'PAG_PAGE' (Model B)
+pick_pagination() {
+    url="$1"
+    if echo "$url" | grep -q '/jobs[?&]'; then
+        echo "PAG_START"
+    elif echo "$url" | grep -q '-jobs/in-'; then
+        echo "PAG_PAGE"
+    else
+        echo "PAG_START"
+    fi
+}
+```
+
+> For **all models**, always stop paginating when the “Next” button disappears in HTML.
+> _Never assume a fixed page count._
+
+#### **Combined Pagination Example in Shell**  
+_Handles both models:_
+```sh
+#!/bin/sh
+# Set initial URL, e.g.,
+initial_url="https://www.seek.com.au/jobs?keywords=admin&where=Perth%2C+WA"
+
+model=$(pick_pagination "$initial_url")
+
+case "$model" in
+    "PAG_START")
+        offset=0
+        while :; do
+            url="${initial_url}&start=$offset"
+            html=$(http -f -s "$url") || break
+            # parse_listings "$html" # implement as needed
+            if ! echo "$html" | grep -q 'Next'; then break; fi
+            offset=$((offset + 22))
+            sleep 1
+        done
+        ;;
+    "PAG_PAGE")
+        page=1
+        base_url="$initial_url"
+        while :; do
+            if [ "$page" -gt 1 ]; then
+                url="${base_url}?page=$page"
+            else
+                url="$base_url"
+            fi
+            html=$(http -f -s "$url") || break
+            # parse_listings "$html" # implement as needed
+            if ! echo "$html" | grep -q 'Next'; then break; fi
+            page=$((page + 1))
+            sleep 1
+        done
+        ;;
+esac
+```
+
+> **Summary:**  
+> - Always check and use the correct model for each seed/search URL.  
+> - Stopping early or looping infinitely are both possible if model is misdetected.  
+> - Generic search: `start=OFFSET` (+22).  
+> - Category/region: `?page=N` (N++).
 
 - **Job listing/card structure:**
   - Each job is: `<article data-automation="normalJob">...</article>`
