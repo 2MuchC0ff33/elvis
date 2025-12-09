@@ -114,15 +114,42 @@ When building your scraping run, start with a diverse collection of filtered lis
 
 ---
 
-## 11. Anti-Bot/Evasion & Reliability
+## 11. Pacing, Anti-Bot & Reliability Policy
 
+To minimize disruptions and respect rate-limit expectations:
+
+- **Randomized delays:** Sleep a random amount between requests (e.g., 1.2–4.8 seconds) to avoid a machine-like cadence.
+- **Exponential backoff & retries:**
+  - Up to 3 retries per URL
+  - Backoff schedule: 5s → 20s → 60s
+  - Stop after the 3rd failure; log the error and move on.
+- **User-Agent rotation:** Cycle a vetted pool of UA strings; avoid suspicious or outdated UAs.
 - Do not use proxies or offshore scraping APIs
-- Be conservative:
-    - Slow, randomised delays and hard rate limiting
-    - Rotate UA strings
-    - DuckDuckGo Lite is preferred for minimal JS/CAPTCHA
-    - Log and skip if CAPTCHA appears (manual intervention only)
-- Retrying: max of 3 times per URL; exponential backoff (5s, 20s, 60s); skip after that
+- **CAPTCHA detection:** If CAPTCHA text or known markers appear, log the event, skip this route, and **do not** attempt automated solving.
+- **Timeouts:** Set connection and read timeouts (e.g., 10–15 seconds) to avoid hanging.
+- **Respect robots.txt and ToS:** Only operate on listing pages and public endpoints suitable for automated access.
+
+> **Outcome:** A conservative, respectful scraper that avoids throttling and reduces maintenance due to anti-bot defenses.
+
+**Shell backoff snippet (example):**
+
+```sh
+fetch_with_backoff() {
+  url="$1"
+  for attempt in 1 2 3; do
+    if html="$(curl -fsSL --max-time 15 "$url")"; then
+      printf '%s' "$html"
+      return 0
+    fi
+    case "$attempt" in
+      1) sleep 5  ;;
+      2) sleep 20 ;;
+      3) sleep 60 ;;
+    esac
+  done
+  return 1
+}
+```
 
 ---
 
