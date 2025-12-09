@@ -267,6 +267,26 @@ esac
 > - Category/region: `?page=N` (N++).
 
 - **Job listing/card structure:**
+### Selector Discipline (stable attributes vs brittle CSS)
+
+Seek’s listing markup provides automation-friendly signals. Prefer these over CSS class names:
+
+- **Job card root**: the `<article>` representing a “normal” job result.
+- **Job title**: the anchor text for the title.
+- **Company name**: the anchor text for employer.
+- **Location**: the anchor text for location.
+- **Short description**: the inline summary text.
+- **Job identifier**: a `data-*` attribute unique to the listing.
+
+#### Why avoid CSS class names?
+Class names on modern sites change frequently in A/B tests and refactors. Automation-oriented attributes and structural tags are more stable and intentionally readable by scripts.
+
+#### Parsing guidelines
+- Anchor your extraction to automation markers first; if absent, fall back to surrounding semantic tags and textual anchors.
+- Never rely on inner CSS names like `.style__Card__1a2b` (those are brittle).
+- Handle minor whitespace/HTML entity variations safely (normalize text).
+
+**Outcome:** More resilient scrapers that survive minor refactors without constant maintenance.
   - Each job is: `<article data-automation="normalJob">...</article>`
     - **Title:** `<a data-automation="jobTitle">`
     - **Company:** `<a data-automation="jobCompany">`
@@ -278,12 +298,65 @@ esac
 - **Contact info (phone/email):**
   - **Not present** in Seek job cards — must be found by operator using dorks, company sites and public resources.
 
-- **Selectors advice:**
-  - Always use `data-automation` attributes for scrapers/parsers (e.g. `[data-automation="jobCompany"]`). Avoid using class names (change frequently).
-
 - **Search fields:**
   - **Keywords**: `<input id="keywords-input" name="keywords" type="text" ...>`
   - **Location**: `<input id="SearchBar__Where" name="where" type="search" ...>`
+ 
+**Shell extraction outline:**
+
+```sh
+#!/bin/sh
+
+# Function to parse job listings from HTML using stable data-automation attributes
+# Extracts title, company, location, summary, and job_id from each job card
+parse_listings() {
+    html="$1"
+    echo "$html" | awk -v RS='</article>' '
+    /<article[^>]*data-automation="normalJob"/ {
+        title = ""
+        company = ""
+        location = ""
+        summary = ""
+        job_id = ""
+        
+        # Extract title
+        if (match($0, /data-automation="jobTitle"[^>]*>([^<]*)</, arr)) {
+            title = arr[1]
+        }
+        
+        # Extract company
+        if (match($0, /data-automation="jobCompany"[^>]*>([^<]*)</, arr)) {
+            company = arr[1]
+        }
+        
+        # Extract location
+        if (match($0, /data-automation="jobLocation"[^>]*>([^<]*)</, arr)) {
+            location = arr[1]
+        }
+        
+        # Extract summary
+        if (match($0, /data-automation="jobShortDescription"[^>]*>([^<]*)</, arr)) {
+            summary = arr[1]
+        }
+        
+        # Extract job_id
+        if (match($0, /data-job-id="([^"]*)"/, arr)) {
+            job_id = arr[1]
+        }
+        
+        # Print extracted data if at least title is present
+        if (title != "") {
+            print "Title: " title
+            print "Company: " company
+            print "Location: " location
+            print "Summary: " summary
+            print "Job ID: " job_id
+            print "---"
+        }
+    }
+    '
+}
+```
 
 ### Seek.com.au JavaScript Behaviour & Scraping Approach (Update as of December 2025)
 
