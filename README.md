@@ -72,9 +72,12 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 
 ## 8. Tools & Tech Stack
 
+**Essential**
 - Bourne Shell for scripting
 - Toybox for command line utilities
 - RCS for manual version control
+
+**Non-Essential**
 - mandoc (UNIX docs/manpages)
 - edbrowse an ed-alike webbrowser
 - scron is a simple crond
@@ -207,6 +210,22 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 - **Search fields:**
   - **Keywords**: `<input id="keywords-input" name="keywords" type="text" ...>`
   - **Location**: `<input id="SearchBar__Where" name="where" type="search" ...>`
+
+### Seek.com.au JavaScript Behaviour & Scraping Approach (Update as of December 2025)
+
+Although Seek.com.au’s search UI uses dynamic JavaScript features (type-ahead suggestions, toggle controls, etc.), **the actual job listing pages are server-rendered and respond to standard URL query parameters** such as `keywords`, `where`, and `start`. This makes scraping feasible using static tools.
+
+**Key points:**
+- **No headless browser required:**  
+  Listing pages can be fetched by constructing query URLs and using static HTTP requests (e.g. Toybox’s `http`). All job data and pagination elements appear in the HTML and can be parsed with shell tools (`grep`, `awk`, `sed`).
+- Dynamic UI features (like suggestion dropdowns) are cosmetic and do not affect the underlying listing pages or endpoints.
+- **Stable HTML selectors:**  
+  Listing markup and pagination controls use stable `data-automation` attributes suitable for parsing and extraction.
+- No official API or browser automation is necessary, as long as Seek continues to render results on the server-side.
+- **If Seek ever transitions to client-only rendering (e.g. React hydration without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable alternative for interactive/manual extraction.
+
+__Bottom line:__  
+For this project, **headless browser automation is not required** and static shell scripting is fully sufficient for daily scraping—future browser automation is optional and only needed if Seek changes its technical approach.
 
 ---
 
