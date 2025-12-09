@@ -233,24 +233,33 @@ Overview
 - Stop condition: the Next link is absent from the pagination component.
 - Rationale: page-numbered UX and bookmarkable segments.
 
-## Route model detection (POSIX shell)
-- Detect Model A if URL contains `/jobs?` or `/jobs&`.
-- Detect Model B if URL path matches `-jobs/in-`.
-- Default to Model A when unsure.
+### Minimal Route Detector (POSIX Shell)
 
-Shell function (returns `PAG_START` or `PAG_PAGE`)
+Use this compact, centralized function to determine the appropriate pagination model for each Seek listing seed URL.
+
 ```sh
+# Minimal route detector (POSIX shell equivalent)
+# Returns 'PAG_START' (offset model) or 'PAG_PAGE' (page-number model)
 pick_pagination() {
     url="$1"
-    if echo "$url" | grep -q '/jobs[?&]'; then
+    if [ -z "$url" ]; then
         echo "PAG_START"
+        return
+    fi
+    if echo "$url" | grep -q '/jobs?' || echo "$url" | grep -q '/jobs&'; then
+        echo "PAG_START"  # offset model: start=22*k
     elif echo "$url" | grep -q '-jobs/in-'; then
-        echo "PAG_PAGE"
+        echo "PAG_PAGE"   # page-number model: page=N
     else
-        echo "PAG_START"
+        echo "PAG_START"   # default: conservative
     fi
 }
 ```
+
+# Usage pattern:
+# Derive the starting URL from your seed.
+# Call pick_pagination "$url" to decide whether to loop start or page.
+# Use HTML "Next" checks to stop (e.g., grep for data-automation="page-next").
 
 ## Combined POSIX shell example (toybox http)
 - Uses toybox’s `http` utility (`http -f -s`) for fetches.
