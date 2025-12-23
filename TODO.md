@@ -36,7 +36,7 @@ A step-by-step, incremental roadmap for this project (POSIX shell + curl + coreu
   - Dependency: `.gitignore` (ensure `.env` ignored)  
   - Git: `git checkout -b feature/add-env-example`  
   - Labels: `security`, `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#6` | Estimate: `~20m` | Tags: `#env #security`
-- [ ] Create authoritative folders (branch: `feature/create-folders`)  
+- [X] Create authoritative folders (branch: `feature/create-folders`)  
   - Create: `scripts/`, `scripts/lib/`, `bin/`, `configs/`, `data/calllists/`, `data/seeds/`, `docs/`, `docs/man/`, `logs/`, `tmp/`, `tests/`, `examples/`, `cron/`, `.github/workflows/`  
   - Git: `git checkout -b feature/create-folders`  
   - Labels: `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#7` | Estimate: `~1h` | Tags: `#setup #scaffold`
