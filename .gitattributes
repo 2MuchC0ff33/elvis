@@ -70,9 +70,5 @@
 
 # --- Merge and diff drivers (extend as needed) ---
 # Use default merge for text, disable for binary
-*.sh     merge=union
-*.md     merge=union
-*.csv    merge=union
-*.json   merge=union
 
 # --- End of file ---
