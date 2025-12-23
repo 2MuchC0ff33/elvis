@@ -1,11 +1,9 @@
 # -----------------------------------------------------------------------------
-# .gitattributes — Project Elvis
-# Enforce cross-platform consistency, encoding, and diff/merge behaviour.
+# .gitattributes — Project Elvis (POSIX Shell, CSV, Docs)
+# Enforces cross-platform consistency, encoding, and diff/merge behaviour.
 # -----------------------------------------------------------------------------
 
 # --- Core: Enforce LF line endings and UTF-8 encoding for all text files ---
-
-# All text files: LF endings, UTF-8 encoding
 * text=auto eol=lf working-tree-encoding=UTF-8
 
 # --- Shell scripts and config files ---

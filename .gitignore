@@ -1,55 +1,127 @@
-# Prerequisites
-*.d
+# -----------------------------------------------------------------------------
+# .gitignore — Project Elvis (POSIX Shell, CSV, Docs)
+# Comprehensive ignore rules for build artefacts, temp files, logs, OS/IDE/editor files.
+# -----------------------------------------------------------------------------
 
-# Object files
+# --- Core build, temp, and log artefacts ---
+logs/
+tmp/
+data/calllists/
+data/seeds/
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.old
+*.orig
+*.rej
+*.out
+*.err
+*.pid
+*.seed
+
+# --- Environment and secrets ---
+.env
+.env.*
+
+# --- Dependency and package managers (future-proof) ---
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# --- OS-specific files ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# --- Editor and IDE files ---
+# VS Code
+.vscode/
+# JetBrains IDEs
+.idea/
+*.iml
+# Sublime
+*.sublime-workspace
+*.sublime-project
+# Vim
+*.swp
+*.swo
+# Emacs
+*~
+# nano
+.nano_history
+
+# --- Shell history and session files ---
+.bash_history
+.zsh_history
+.bash_sessions
+
+# --- Compiled/binary artefacts (for future C, Python, etc.) ---
 *.o
 *.ko
 *.obj
 *.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
 *.a
 *.la
 *.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
 *.so
 *.so.*
 *.dylib
-
-# Executables
+*.dll
 *.exe
-*.out
 *.app
 *.i*86
 *.x86_64
 *.hex
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+# --- Backup and patch files ---
+*.patch
+*.diff
+*.bak
+*.tmp
+*.backup
+*.swp
+*.swo
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# --- RCS and version control artefacts ---
+*,v
+*.rcs
+*.scc
+*.CVS
+*.svn
+.hg/
+.git/
+.gitattributes.lock
 
-# debug information files
-*.dwo
+# --- Documentation build artefacts ---
+docs/_build/
+docs/man/*.html
+
+# --- Miscellaneous ---
+*.log
+*.csv~
+*.md~
+*.txt~
+
+# --- End of file ---
