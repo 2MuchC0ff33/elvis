@@ -1,0 +1,83 @@
+# -----------------------------------------------------------------------------
+# .gitattributes — Project Elvis
+# Enforce cross-platform consistency, encoding, and diff/merge behaviour.
+# -----------------------------------------------------------------------------
+
+# --- Core: Enforce LF line endings and UTF-8 encoding for all text files ---
+
+# All text files: LF endings, UTF-8 encoding
+* text=auto eol=lf working-tree-encoding=UTF-8
+
+# --- Shell scripts and config files ---
+*.sh     text eol=lf diff=sh
+*.bash   text eol=lf diff=sh
+*.zsh    text eol=lf diff=sh
+*.conf   text eol=lf
+*.ini    text eol=lf
+*.env    text eol=lf
+*.cron   text eol=lf
+*.rc     text eol=lf
+
+# --- Documentation and markdown ---
+*.md     text eol=lf diff=markdown
+*.txt    text eol=lf
+*.man    text eol=lf
+*.1      text eol=lf
+
+# --- CSV and data files ---
+*.csv    text eol=lf
+*.tsv    text eol=lf
+
+# --- YAML and JSON (for configs, workflows) ---
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+
+# --- GitHub workflows and dotfiles ---
+.github/** text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# --- Source code (if any future additions) ---
+*.c      text eol=lf diff=cpp
+*.h      text eol=lf diff=cpp
+*.py     text eol=lf diff=python
+*.pl     text eol=lf diff=perl
+
+# --- Binary files: mark as binary to disable diff/merge and line ending conversion ---
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.zip    binary
+*.tar    binary
+*.gz     binary
+*.bz2    binary
+*.xz     binary
+*.7z     binary
+*.exe    binary
+*.dll    binary
+*.so     binary
+*.dylib  binary
+
+# --- RCS and backup files ---
+*,v      binary
+*.bak    binary
+
+# --- Special: Prevent CRLF on Windows for all text files ---
+# (Redundant with text=auto eol=lf, but explicit for clarity)
+*.sh     text eol=lf
+*.md     text eol=lf
+*.csv    text eol=lf
+
+# --- Merge and diff drivers (extend as needed) ---
+# Use default merge for text, disable for binary
+*.sh     merge=union
+*.md     merge=union
+*.csv    merge=union
+*.json   merge=union
+
+# --- End of file ---

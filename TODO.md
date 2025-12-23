@@ -21,11 +21,11 @@ A step-by-step, incremental roadmap for this project (POSIX shell + curl + coreu
 
 ## 1. Setup (repo housekeeping & minimal scaffolding)
 
-- [ ] Add `.editorconfig` (UTF-8, LF) (branch: `feature/setup-editorconfig`)  
+- [X] Add `.editorconfig` (UTF-8, LF) (branch: `feature/setup-editorconfig`)  
   - Description: Enforce encoding/line endings for contributors.  
   - Git: `git checkout -b feature/setup-editorconfig`  
   - Labels: `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#3` | Estimate: `~30m` | Tags: `#setup #config`
-- [ ] Add `.gitattributes` to enforce UTF-8 + LF (branch: `feature/add-gitattributes`)  
+- [X] Add `.gitattributes` to enforce UTF-8 + LF (branch: `feature/add-gitattributes`)  
   - Dependency: `.editorconfig`  
   - Git: `git checkout -b feature/add-gitattributes`  
   - Labels: `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#4` | Estimate: `~15m` | Tags: `#setup`
