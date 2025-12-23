@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 
 # --- Core: Enforce LF line endings and UTF-8 encoding for all text files ---
-* text=auto eol=lf working-tree-encoding=UTF-8
+* text=auto eol=lf
 
 # --- Shell scripts and config files ---
 *.sh     text eol=lf diff=sh
