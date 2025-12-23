@@ -376,7 +376,7 @@ mindmap
 ## 17. MVP / First Steps
 
 - Write initial Shell scripts and helpers
-- Create `seeds.txt` (Seek listing URLs + dork templates)
+- Create `data/seeds/seeds.csv` (Seek listing URLs + dork templates). Add a `seed_id` column to enable per-seed overrides in `configs/seek-pagination.ini`.
 - Create and manage `companies_history.txt` (admin initiates)
 - Document everything, structure logs for future audit
 
