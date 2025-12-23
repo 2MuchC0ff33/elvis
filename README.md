@@ -504,6 +504,32 @@ flowchart TB
 └── tests/                    # Integration & smoke tests
     ├── fixtures/
     └── run-tests.sh
+
+## Configuration & Precedence ✅
+
+- **Canonical config file:** `project.conf` (key=value) — used for *non-secret* operational defaults.
+- **Secrets & runtime overrides:** environment variables / `.env` (highest precedence).
+- **Site-specific behaviour:** `configs/seek-pagination.ini` — pagination model, selectors, and per-seed overrides.
+- **Seed manifest:** `data/seeds/seeds.csv` with header `seed_id,location,base_url`. Use the `seed_id` to reference per-seed overrides in `seek-pagination.ini`.
+
+Precedence rule (applies to scripts):
+1. Environment variables (`.env` / runtime) — highest priority
+2. `project.conf` — operator/deployment defaults
+3. Built-in script defaults — fallback
+
+Notes:
+- Prefer `project.conf` for operational tuning (timeouts, retries, limits). Keep secrets in `.env` or a secret manager.
+- `config.ini` is deprecated in favour of `project.conf`; old content is preserved in `config.ini` for reference.
+- Scripts should log the source (env/project.conf/default) for each key used to aid auditing.
+
+Example (per-seed override):
+- In `data/seeds/seeds.csv`: `seed_id=seek_fifo_perth`
+- In `configs/seek-pagination.ini` [overrides] add:
+  # seek_fifo_perth
+  # model = PAG_PAGE
+  # page_param = page
+
+This design keeps site logic and selectors separated (`seek-pagination.ini`), while operational defaults are easy for operators to manage (`project.conf`).
 ```
 
 > Notes:
