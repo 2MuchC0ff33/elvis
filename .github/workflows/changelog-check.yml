@@ -1,0 +1,30 @@
+name: Changelog Check
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate CHANGELOG.md exists
+        run: |
+          if [ ! -f CHANGELOG.md ]; then
+            echo "CHANGELOG.md is missing. Please add a CHANGELOG.md with entries." >&2
+            exit 1
+          fi
+
+      - name: Validate CHANGELOG.md has at least one entry
+        run: |
+          if ! grep -qE '^## ' CHANGELOG.md; then
+            echo "CHANGELOG.md contains no dated entries. Please add a changelog entry under a '## YYYY' header." >&2
+            exit 1
+          fi
+
+      - name: Show top of CHANGELOG
+        run: head -n 30 CHANGELOG.md || true

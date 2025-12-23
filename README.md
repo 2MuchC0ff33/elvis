@@ -1,5 +1,11 @@
 # Comprehensive Project Plan: Australian Sales Lead Call List Scraper
 
+## Table of Contents
+
+- [Configuration & Precedence](#configuration-precedence)
+- [Runbook](docs/runbook.md)
+- [CHANGELOG](CHANGELOG.md)
+
 ## 1. Project Objective
 
 ```mermaid
@@ -505,7 +511,9 @@ flowchart TB
     ├── fixtures/
     └── run-tests.sh
 
-## Configuration & Precedence ✅
+<a name="configuration-precedence"></a>
+
+## Configuration & Precedence
 
 - **Canonical config file:** `project.conf` (key=value) — used for *non-secret* operational defaults.
 - **Secrets & runtime overrides:** environment variables / `.env` (highest precedence).
@@ -1045,12 +1053,7 @@ Results are reviewed manually and copied to the daily CSV.
 
 ---
 
-## Changelog
-
-- 23 December 2025: docs: consolidated README into a single commit and added comprehensive project plan (history rewritten and squashed for clarity)
-- 9 December 2025: Added new "Orchestration Flow" section detailing the full stepwise scraping, validation, enrichment, and output process from seeds to CSV, based on improved analysis of Seek.com.au behaviour.
-- 8 December 2025: All sections rewritten for selector stability and modern Seek.com.au markup, plus attention to Australian spelling, idiom and norms.
-- 6 December 2025: Initial commit (project scaffold)
+For full history and release notes, see the dedicated `CHANGELOG.md` in the repository root.
 
 ---
 
