@@ -23,7 +23,6 @@ data/seeds/
 
 # --- Environment and secrets ---
 .env
-.env.*
 
 # --- Dependency and package managers (future-proof) ---
 node_modules/

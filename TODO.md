@@ -29,10 +29,10 @@ A step-by-step, incremental roadmap for this project (POSIX shell + curl + coreu
   - Dependency: `.editorconfig`  
   - Git: `git checkout -b feature/add-gitattributes`  
   - Labels: `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#4` | Estimate: `~15m` | Tags: `#setup`
-- [ ] Update `.gitignore` to ignore `logs/`, `tmp/`, `data/calllists/`, `.env` (branch: `feature/update-gitignore`)  
+- [X] Update `.gitignore` to ignore `logs/`, `tmp/`, `data/calllists/`, `.env` (branch: `feature/update-gitignore`)  
   - Git: `git checkout -b feature/update-gitignore`  
   - Labels: `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#5` | Estimate: `~15m` | Tags: `#setup #config`
-- [ ] Add `.env.example` (branch: `feature/add-env-example`)  
+- [X] Add `.env.example` (branch: `feature/add-env-example`)  
   - Dependency: `.gitignore` (ensure `.env` ignored)  
   - Git: `git checkout -b feature/add-env-example`  
   - Labels: `security`, `setup` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#6` | Estimate: `~20m` | Tags: `#env #security`
