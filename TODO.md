@@ -45,15 +45,15 @@ A step-by-step, incremental roadmap for this project (POSIX shell + curl + coreu
 
 ## Configuration (templates & examples)
 
-- [ ] Add `configs/seek-pagination.ini` template (branch: `feature/add-configs`)  
+- [X] Add `configs/seek-pagination.ini` template (branch: `feature/add-configs`)  
   - Dependency: `configs/` created  
   - Git: `git checkout -b feature/add-configs`  
   - Labels: `config` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#8` | Estimate: `~1h` | Tags: `#configs`
-- [ ] Add `config.ini` and `project.conf` example files at repo root (branch: `feature/add-config-templates`)  
+- [X] Add `config.ini` and `project.conf` example files at repo root (branch: `feature/add-config-templates`)  
   - Dependency: `configs/seek-pagination.ini`  
   - Git: `git checkout -b feature/add-config-templates`  
   - Labels: `config` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#9` | Estimate: `~1h` | Tags: `#config`
-- [ ] Add `.env` usage docs to `README.md` and `docs/runbook.md` (branch: `feature/doc-env`)  
+- [X] Add `.env` usage docs to `README.md` and `docs/runbook.md` (branch: `feature/doc-env`)  
   - Dependency: `.env.example`  
   - Git: `git checkout -b feature/doc-env`  
   - Labels: `documentation`, `security` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#10` | Estimate: `~1h` | Tags: `#docs #env`

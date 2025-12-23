@@ -393,7 +393,7 @@ flowchart TB
     gitattributes[".gitattributes"]
     gitignore[".gitignore"]
     envfile[".env"]
-    configs_root["config.ini / project.conf"]
+    configs_root["project.conf (primary) / seek-pagination.ini"]
     license["LICENSE"]
     readme["README.md"]
     seeds["seeds.txt"]
@@ -452,7 +452,7 @@ flowchart TB
 ├── .gitattributes            # Enforce UTF-8 + LF normalisation
 ├── .gitignore                # Ignore logs, tmp, generated CSVs, and secrets
 ├── .env                      # Environment variables (should not be committed)
-├── config.ini                # Primary configuration (template stored in `configs/`)
+├── project.conf              # Primary configuration (non-secret operational defaults)
 ├── project.conf              # Alternate configuration format (optional)
 ├── LICENSE                   # Project license
 ├── README.md                 # Project documentation (this file)
