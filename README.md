@@ -449,7 +449,7 @@ flowchart TB
 ```text
 .
 ├── .editorconfig             # Enforce UTF-8 and LF line endings
-├── .gitattributes            # Enforce UTF-8 + LF normalization
+├── .gitattributes            # Enforce UTF-8 + LF normalisation
 ├── .gitignore                # Ignore logs, tmp, generated CSVs, and secrets
 ├── .env                      # Environment variables (should not be committed)
 ├── config.ini                # Primary configuration (template stored in `configs/`)
@@ -468,7 +468,7 @@ flowchart TB
 │   ├── fetch.sh              # HTTP fetch with retries and UA rotation
 │   ├── parse.sh              # Parse listing pages into records
 │   ├── dedupe.sh             # Deduplication helpers
-│   ├── validate.sh           # Validation and normalization rules
+│   ├── validate.sh           # Validation and normalisation rules
 │   ├── enrich.sh             # Manual enrichment helpers & markers
 │   └── lib/                  # Reusable shell libraries (timeouts, logging)
 │       └── http_utils.sh
