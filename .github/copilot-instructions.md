@@ -1,7 +1,7 @@
 # Copilot / AI Agent Instructions — elvis
 
 These instructions help an AI coding agent be immediately productive in this repository.
-Reference files: `README.md` (primary specification), `seeds.txt`, `companies_history.txt`, and `seeds.txt` (seed URL templates).
+Reference files: `README.md` (primary specification), `seeds.txt` (seed URL templates), and `companies_history.txt`.
 
 ---
 
