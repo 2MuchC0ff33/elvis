@@ -380,6 +380,138 @@ mindmap
 - Create and manage `companies_history.txt` (admin initiates)
 - Document everything, structure logs for future audit
 
+## Project Structure
+
+A recommended, scalable scaffold for this repository (POSIX shell + `curl` + `coreutils` stack). Copy the tree below into the README for quick reference and to guide contributors.
+
+```mermaid
+flowchart TB
+  %% Top-level project layout (folders & key files)
+  subgraph ROOT["."]
+    direction TB
+    editorconfig[".editorconfig"]
+    gitattributes[".gitattributes"]
+    gitignore[".gitignore"]
+    envfile[".env"]
+    configs_root["config.ini / project.conf"]
+    license["LICENSE"]
+    readme["README.md"]
+    seeds["seeds.txt"]
+    history["companies_history.txt"]
+
+    subgraph BIN["bin/"]
+      bin_run["elvis-run"]
+    end
+
+    subgraph SCRIPTS["scripts/"]
+      run_sh["run.sh"]
+      fetch_sh["fetch.sh"]
+      parse_sh["parse.sh"]
+      dedupe_sh["dedupe.sh"]
+      validate_sh["validate.sh"]
+      enrich_sh["enrich.sh"]
+      subgraph LIB["scripts/lib/"]
+        http_utils["http_utils.sh"]
+      end
+    end
+
+    subgraph CONFIGS["configs/"]
+      seek_ini["seek-pagination.ini"]
+    end
+
+    subgraph DOCS["docs/"]
+      runbook["runbook.md"]
+      subgraph MAN["docs/man/"]
+        manpage["elvis.1"]
+      end
+    end
+
+    subgraph DATA["data/"]
+      calllists["calllists/"]
+      seeds_data["seeds/"]
+    end
+
+    logs["logs/"]
+    tmp["tmp/"]
+    examples["examples/"]
+    github[".github/"]
+    cron["cron/"]
+    tests["tests/"]
+  end
+
+  %% relationships (visual helpers)
+  readme --> SCRIPTS
+  SCRIPTS --> LIB
+  DATA --> calllists
+  github --> workflows["workflows/ ci.yml"]
+```
+
+```text
+.
+├── .editorconfig             # Enforce UTF-8 and LF line endings
+├── .gitattributes            # Enforce UTF-8 + LF normalization
+├── .gitignore                # Ignore logs, tmp, generated CSVs, and secrets
+├── .env                      # Environment variables (should not be committed)
+├── config.ini                # Primary configuration (template stored in `configs/`)
+├── project.conf              # Alternate configuration format (optional)
+├── LICENSE                   # Project license
+├── README.md                 # Project documentation (this file)
+├── seeds.txt                 # Seed URLs & dork templates
+├── companies_history.txt     # Append-only company history (one name per line)
+├── data/                     # Generated or curated data (see below)
+│
+├── bin/                      # Executable wrappers & launchers
+│   └── elvis-run             # Wrapper that invokes `scripts/run.sh`
+│
+├── scripts/                  # POSIX shell scripts and orchestrators
+│   ├── run.sh                # Top-level orchestrator
+│   ├── fetch.sh              # HTTP fetch with retries and UA rotation
+│   ├── parse.sh              # Parse listing pages into records
+│   ├── dedupe.sh             # Deduplication helpers
+│   ├── validate.sh           # Validation and normalization rules
+│   ├── enrich.sh             # Manual enrichment helpers & markers
+│   └── lib/                  # Reusable shell libraries (timeouts, logging)
+│       └── http_utils.sh
+│
+├── configs/                  # Configuration templates and examples (no secrets)
+│   └── seek-pagination.ini
+│
+├── docs/                     # Documentation, runbook, and manpages
+│   ├── runbook.md            # Run instructions and troubleshooting
+│   └── man/                  # mandoc-compatible man pages (optional)
+│       └── elvis.1
+│
+├── data/                     # Generated or curated data
+│   ├── calllists/            # calllist_YYYY-MM-DD.csv (daily outputs)
+│   └── seeds/                # curated seed templates (e.g., seeds.txt)
+│
+├── logs/                     # Runtime logs and rotated archives (ignored)
+│   └── log.txt
+│
+├── tmp/                      # Runtime temp files (ignored)
+│
+├── examples/                 # Example outputs and sample fixtures
+│   └── sample_calllist.csv
+│
+├── .github/                  # GitHub configuration and workflows
+│   ├── workflows/
+│   │   └── ci.yml            # CI checks (shellcheck, lint, basic smoke tests)
+│   └── copilot-instructions.md
+│
+├── cron/                     # Example crontabs and scheduler snippets
+│   └── elvis.cron
+│
+└── tests/                    # Integration & smoke tests
+    ├── fixtures/
+    └── run-tests.sh
+```
+
+> Notes:
+>
+> - Keep secrets out of Git (`.env` should be listed in `.gitignore`).
+> - Use `scripts/lib/*.sh` for shared utilities; keep scripts small and testable.
+> - Place generated outputs under `data/` or `data/calllists/` and add ignore patterns.
+
 ## Orchestration Flow (from Seeds to Final CSV)
 
 ```mermaid
