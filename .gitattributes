@@ -67,9 +67,6 @@
 
 # --- Special: Prevent CRLF on Windows for all text files ---
 # (Redundant with text=auto eol=lf, but explicit for clarity)
-*.sh     text eol=lf
-*.md     text eol=lf
-*.csv    text eol=lf
 
 # --- Merge and diff drivers (extend as needed) ---
 # Use default merge for text, disable for binary
