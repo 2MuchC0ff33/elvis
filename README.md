@@ -829,7 +829,7 @@ For this project, **headless browser automation is not required** and static she
 |Perth, WA (Fly-In Fly-Out)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=fly-in-fly-out>|
 |Perth, WA (Mobilisation)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=mobilisation>|
 |Perth, WA (Travel)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel>|
-|Darwin, NT|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>|
+|Darwin, NT|<https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT>|
 |...|... (See seeds.txt for full list)|
 
 See 'Filtered Seeds' below for a breadth-first coverage strategy using server-rendered URLs with pre-set filters.
