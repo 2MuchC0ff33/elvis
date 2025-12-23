@@ -814,7 +814,7 @@ Although Seek.com.au’s search UI uses dynamic JavaScript features (type-ahead 
 - **If Seek ever transitions to client-only rendering (e.g. React hydration without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable alternative for interactive/manual extraction.
 - **Best practice:** Construct breadth-first collections of filtered seed listing URLs to avoid simulating the JavaScript search form.
 
-**Bottom line:__  
+**Bottom line:**  
 For this project, **headless browser automation is not required** and static shell scripting is fully sufficient for daily scraping—future browser automation is optional and only needed if Seek changes its technical approach.
 
 ---
