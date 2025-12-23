@@ -64,7 +64,7 @@ flowchart TD
 ```
 
 - **Company required:** Skip any row missing `company_name`.
-- **Company dedupe:** Case-insensitive deduplication of `company_name` only (no normalization of whitespace/punctuation/suffixes).
+- **Company dedupe:** Case-insensitive deduplication of `company_name` only (no normalisation of whitespace/punctuation/suffixes).
 - **Location does not break dedupe:** Same `company_name` with different locations is considered a duplicate for exclusion.
 - **Contact presence (final call list):** Each final CSV row must include at least one valid contact (phone or email) after enrichment.
 
@@ -343,7 +343,7 @@ mindmap
 - **Robots.txt & ToS:** Always review site policies. Operate only on listing pages and public endpoints intended for automated access.
 - **CAPTCHA & anti-bot:** If encountered, log and skip; do not bypass.
 - **Privacy:** Collect only public information. Respect removal requests for persons or companies in history or outputs.
-- **Minimal footprint:** Avoid concurrent flood; prefer serialized or lightly parallelised requests with conservative pacing.
+- **Minimal footprint:** Avoid concurrent flood; prefer serialised or lightly parallelised requests with conservative pacing.
 - **Auditability:** Keep logs structured and retained for accountability.
 
 ---
@@ -505,7 +505,7 @@ ALGORITHM:
          parse_listings(html)  -- separate module handles extraction
          IF page_has_next(html) is FALSE then stop loop
          offset := offset + 22
-         wait a short, randomized delay
+         wait a short, randomised delay
        END LOOP
      ELSE  -- model == 'PAG_PAGE'
        page := 1
@@ -517,7 +517,7 @@ ALGORITHM:
          parse_listings(html)
          IF page_has_next(html) is FALSE then stop loop
          page := page + 1
-         wait a short, randomized delay
+         wait a short, randomised delay
        END LOOP
      END IF
 NOTES:
@@ -549,7 +549,7 @@ ALGORITHM:
          log info and STOP
        END IF
        offset := offset + 22
-       wait a short randomized delay
+       wait a short randomised delay
      END LOOP
 ```
 
@@ -579,7 +579,7 @@ ALGORITHM:
          log info and STOP
        END IF
        page := page + 1
-       wait a short randomized delay
+       wait a short randomised delay
      END LOOP
 ```
 
@@ -601,7 +601,7 @@ flowchart TD
 - Detect the model per seed URL — misdetection can skip pages or cause infinite loops.
 - Use the presence/absence of the “Next” control in the returned HTML as the authoritative stop condition.
 - Prefer stable selectors and automation attributes when parsing listing content (`<article>` roots, `data-automation` attributes, `data-*` ids, and anchor text). Avoid brittle CSS class names.
-- Throttle requests and randomize small sleeps to reduce load and avoid triggering rate limits.
+- Throttle requests and randomise small sleeps to reduce load and avoid triggering rate limits.
 
 - **Job listing/card structure:**
 
@@ -624,7 +624,7 @@ Class names on modern sites change frequently in A/B tests and refactors. Automa
 
 - Anchor your extraction to automation markers first; if absent, fall back to surrounding semantic tags and textual anchors.
 - Never rely on inner CSS names like `.style__Card__1a2b` (those are brittle).
-- Handle minor whitespace/HTML entity variations safely (normalize text).
+- Handle minor whitespace/HTML entity variations safely (normalise text).
 
 **Outcome:** More resilient scrapers that survive minor refactors without constant maintenance.
 
