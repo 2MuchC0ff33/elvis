@@ -25,7 +25,11 @@ flowchart TD
 
 ```
 
-Produce a daily call list of at least 25 unique Australian companies—each record to include the prospect’s name, position, contact details (mobile and/or email), and business location. This data is for sales lead generation and business development. **Company names must always be unique** across days, using company history for deduplication.
+Produce a daily call list of at least 25 unique Australian companies—each record
+to include the prospect’s name, position, contact details (mobile and/or email),
+and business location. This data is for sales lead generation and business
+development. **Company names must always be unique** across days, using company
+history for deduplication.
 
 ---
 
@@ -39,7 +43,7 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 - Location (state/region preferred)
 - Mobile phone (normalised, digits only, e.g. 0412345678)
 - Email (any domain)
-- *Note*: Skip records if all contact details are missing.
+- _Note_: Skip records if all contact details are missing.
 
 ### Data Model & Validation (rules to guarantee consistency)
 
@@ -51,7 +55,8 @@ Produce a daily call list of at least 25 unique Australian companies—each reco
 - `summary` (string; optional)
 - `job_id` (string; internal use)
 
-> Note: Contact info (phone/email) is not expected on listing cards. Contacts are added **later** via manual enrichment from public sources.
+> Note: Contact info (phone/email) is not expected on listing cards. Contacts
+> are added **later** via manual enrichment from public sources.
 
 #### Validation rules
 
@@ -70,19 +75,24 @@ flowchart TD
 ```
 
 - **Company required:** Skip any row missing `company_name`.
-- **Company dedupe:** Case-insensitive deduplication of `company_name` only (no normalisation of whitespace/punctuation/suffixes).
-- **Location does not break dedupe:** Same `company_name` with different locations is considered a duplicate for exclusion.
-- **Contact presence (final call list):** Each final CSV row must include at least one valid contact (phone or email) after enrichment.
+- **Company dedupe:** Case-insensitive deduplication of `company_name` only (no
+  normalisation of whitespace/punctuation/suffixes).
+- **Location does not break dedupe:** Same `company_name` with different
+  locations is considered a duplicate for exclusion.
+- **Contact presence (final call list):** Each final CSV row must include at
+  least one valid contact (phone or email) after enrichment.
 
 #### Regex validation
 
 - **Email:** `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`
-- **Phone:** digits only; convert `+61` mobiles to `0`-prefixed local (e.g., `+61412…` → `0412…`)
+- **Phone:** digits only; convert `+61` mobiles to `0`-prefixed local (e.g.,
+  `+61412…` → `0412…`)
 
 #### Historical exclusion
 
 - Maintain `companies_history.txt` (one name per line).
-- Before adding a row to today’s CSV, check case-insensitive membership against history; if present → skip.
+- Before adding a row to today’s CSV, check case-insensitive membership against
+  history; if present → skip.
 - On acceptance, append new company names to history (manual or scripted).
 
 ```pdl
@@ -112,10 +122,15 @@ NOTES:
 
 ## 3. Data Sources
 
-- **Primary:** [Seek Australia](https://www.seek.com.au/) — job ads for company/employer field
-- **Supplementary:** [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) (manual Google-dork queries)
-- **Supplementary:** [Google](https://www.google.com/) (manual Google-dork queries, .com.au only)
-- Only scrape public web pages; **never** scrape private profiles (LinkedIn, Facebook etc.) or any site that disallows scraping under robots.txt or terms of service.
+- **Primary:** [Seek Australia](https://www.seek.com.au/) — job ads for
+  company/employer field
+- **Supplementary:** [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) (manual
+  Google-dork queries)
+- **Supplementary:** [Google](https://www.google.com/) (manual Google-dork
+  queries, .com.au only)
+- Only scrape public web pages; **never** scrape private profiles (LinkedIn,
+  Facebook etc.) or any site that disallows scraping under robots.txt or terms
+  of service.
 
 ---
 
@@ -123,18 +138,22 @@ NOTES:
 
 - Australian businesses only (.com.au websites/domains)
 - All content in English (preferably en_AU.UTF-8)
-- Seed job searches to cover all major Australian capitals and regions (see Appendix)
+- Seed job searches to cover all major Australian capitals and regions (see
+  Appendix)
 
 ---
 
 ## 5. Success Criteria, KPIs & Acceptance
 
-- **Daily target:** At least 25 unique companies (company names case-insensitive, no repeats checked against company history)
+- **Daily target:** At least 25 unique companies (company names
+  case-insensitive, no repeats checked against company history)
 - Each row must have at least one valid contact detail (phone or email)
 - Missing/incomplete company names: skip
 - No duplicate companies across different days (per historical exclusion)
-- If fewer than 25 leads are found, save the CSV regardless and record a warning in the logs
-- Project “passes” if daily lists have valid contacts and no duplicate companies from the past
+- If fewer than 25 leads are found, save the CSV regardless and record a warning
+  in the logs
+- Project “passes” if daily lists have valid contacts and no duplicate companies
+  from the past
 
 ---
 
@@ -142,7 +161,9 @@ NOTES:
 
 - Minimum 25 leads per run
 - Data refreshed daily
-- Each new call list overwrites the previous day’s file (‘calllist_YYYY-MM-DD.csv’), history file is permanent (`companies_history.txt`)
+- Each new call list overwrites the previous day’s file
+  (‘calllist_YYYY-MM-DD.csv’), history file is permanent
+  (`companies_history.txt`)
 
 ---
 
@@ -150,7 +171,8 @@ NOTES:
 
 - Output: UTF-8, CSV — one line per company/lead
 - Filename: `calllist_YYYY-MM-DD.csv` (overwrites daily)
-- History file: `companies_history.txt` (one company per line, maintained manually)
+- History file: `companies_history.txt` (one company per line, maintained
+  manually)
 - Do not include source URLs, timestamps, or data lineage in the CSV
 - **CSV Example:**
 
@@ -194,9 +216,12 @@ graph LR
 - Shell scripts to control fetch/parse/validate/deduplicate/report
 - Helper binaries are allowed
 
-When building your scraping run, start with a diverse collection of filtered listing URLs (see Filtered Seeds below) to cover job types, regions, work styles, and more—with no headless browser or form simulation required.
+When building your scraping run, start with a diverse collection of filtered
+listing URLs (see Filtered Seeds below) to cover job types, regions, work
+styles, and more—with no headless browser or form simulation required.
 
-- **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo queries, which are opened in lynx), never automatically scraped
+- **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo
+  queries, which are opened in lynx), never automatically scraped
   - Limit domains to .com.au
   - Use flexible dorks (e.g. name/company/job/location/contact) for best results
   - Example dork: `"Jane Smith" "email" OR "phone" OR "mobile" site:.com.au`
@@ -220,18 +245,24 @@ When building your scraping run, start with a diverse collection of filtered lis
 
 To minimise disruptions and respect rate-limit expectations:
 
-- **Randomised delays:** Sleep a random amount between requests (e.g., 1.2–4.8 seconds) to avoid a machine-like cadence.
+- **Randomised delays:** Sleep a random amount between requests (e.g., 1.2–4.8
+  seconds) to avoid a machine-like cadence.
 - **Exponential backoff & retries:**
   - Up to 3 retries per URL
   - Backoff schedule: 5s → 20s → 60s
   - Stop after the 3rd failure; log the error and move on.
-- **User-Agent rotation:** Cycle a vetted pool of UA strings; avoid suspicious or outdated UAs.
+- **User-Agent rotation:** Cycle a vetted pool of UA strings; avoid suspicious
+  or outdated UAs.
 - Do not use proxies or offshore scraping APIs
-- **CAPTCHA detection:** If CAPTCHA text or known markers appear, log the event, skip this route, and **do not** attempt automated solving.
-- **Timeouts:** Set connection and read timeouts (e.g., 10–15 seconds) to avoid hanging.
-- **Respect robots.txt and ToS:** Only operate on listing pages and public endpoints suitable for automated access.
+- **CAPTCHA detection:** If CAPTCHA text or known markers appear, log the event,
+  skip this route, and **do not** attempt automated solving.
+- **Timeouts:** Set connection and read timeouts (e.g., 10–15 seconds) to avoid
+  hanging.
+- **Respect robots.txt and ToS:** Only operate on listing pages and public
+  endpoints suitable for automated access.
 
-> **Outcome:** A conservative, respectful scraper that avoids throttling and reduces maintenance due to anti-bot defences.
+> **Outcome:** A conservative, respectful scraper that avoids throttling and
+> reduces maintenance due to anti-bot defences.
 
 **Shell backoff snippet (example):**
 
@@ -266,7 +297,8 @@ NOTES:
   - Include: timestamp, queried URLs, search terms
     - Number of unique records found
     - Errors/warnings (CAPTCHA, timeout etc.)
-    - Warn if fallback (textual) “Next” detection was triggered or if duplicate pages were detected during pagination.
+    - Warn if fallback (textual) “Next” detection was triggered or if duplicate
+      pages were detected during pagination.
     - Add record-level debugging if ‘verbose’ enabled
     - Retain/rotate logs weekly (policy TBC)
 - No external monitoring or alerting required
@@ -282,7 +314,7 @@ flowchart TD
     E -- Yes --> F[Rotate Logs]
     E -- No --> G[Continue Logging]
     F --> G
-  ```
+```
 
 Record enough context to investigate issues and site changes:
 
@@ -307,7 +339,8 @@ Record enough context to investigate issues and site changes:
   - Emit a `WARN` entry including the exact snippet around pagination.
   - Tag the seed with `ATTR_CHANGE=true` so audits can find it later.
 
-> **Goal:** Fast root‑cause analysis when Seek adjusts markup or pagination behavior.
+> **Goal:** Fast root‑cause analysis when Seek adjusts markup or pagination
+> behavior.
 
 **Log line example:**
 
@@ -346,10 +379,13 @@ mindmap
 
 ### Compliance & Ethics
 
-- **Robots.txt & ToS:** Always review site policies. Operate only on listing pages and public endpoints intended for automated access.
+- **Robots.txt & ToS:** Always review site policies. Operate only on listing
+  pages and public endpoints intended for automated access.
 - **CAPTCHA & anti-bot:** If encountered, log and skip; do not bypass.
-- **Privacy:** Collect only public information. Respect removal requests for persons or companies in history or outputs.
-- **Minimal footprint:** Avoid concurrent flood; prefer serialised or lightly parallelised requests with conservative pacing.
+- **Privacy:** Collect only public information. Respect removal requests for
+  persons or companies in history or outputs.
+- **Minimal footprint:** Avoid concurrent flood; prefer serialised or lightly
+  parallelised requests with conservative pacing.
 - **Auditability:** Keep logs structured and retained for accountability.
 
 ---
@@ -357,7 +393,8 @@ mindmap
 ## 14. Retention & Admin Control
 
 - Daily call list is always overwritten
-- Company history file (`companies_history.txt`) always retained and added via admin/manual only
+- Company history file (`companies_history.txt`) always retained and added via
+  admin/manual only
 - Manual RCS commit for company list/historic file
 
 ---
@@ -371,7 +408,8 @@ mindmap
 
 ## 16. Project Acceptance Criteria
 
-- At least 25 unique companies per CSV file per day (case-insensitive, not in history)
+- At least 25 unique companies per CSV file per day (case-insensitive, not in
+  history)
 - Each row contains at least one valid contact (phone/email)
 - No duplicates across daily runs
 - Less than 25 allowed as partial, write a warning to logs
@@ -382,13 +420,17 @@ mindmap
 ## 17. MVP / First Steps
 
 - Write initial Shell scripts and helpers
-- Create `data/seeds/seeds.csv` (Seek listing URLs + dork templates). Add a `seed_id` column to enable per-seed overrides in `configs/seek-pagination.ini`.
+- Create `data/seeds/seeds.csv` (Seek listing URLs + dork templates). Add a
+  `seed_id` column to enable per-seed overrides in
+  `configs/seek-pagination.ini`.
 - Create and manage `companies_history.txt` (admin initiates)
 - Document everything, structure logs for future audit
 
 ## Project Structure
 
-A recommended, scalable scaffold for this repository (POSIX shell + `curl` + `coreutils` stack). Copy the tree below into the README for quick reference and to guide contributors.
+A recommended, scalable scaffold for this repository (POSIX shell + `curl` +
+`coreutils` stack). Copy the tree below into the README for quick reference and
+to guide contributors.
 
 ```mermaid
 flowchart TB
@@ -543,8 +585,10 @@ This design keeps site logic and selectors separated (`seek-pagination.ini`), wh
 > Notes:
 >
 > - Keep secrets out of Git (`.env` should be listed in `.gitignore`).
-> - Use `scripts/lib/*.sh` for shared utilities; keep scripts small and testable.
-> - Place generated outputs under `data/` or `data/calllists/` and add ignore patterns.
+> - Use `scripts/lib/*.sh` for shared utilities; keep scripts small and
+>   testable.
+> - Place generated outputs under `data/` or `data/calllists/` and add ignore
+>   patterns.
 
 ## Orchestration Flow (from Seeds to Final CSV)
 
@@ -566,7 +610,8 @@ sequenceDiagram
 ```
 
 1. **Load seeds:** Read `seeds.txt` (one URL per line).
-2. **Route detection:** For each seed, pick pagination model (`start` vs `page`).
+2. **Route detection:** For each seed, pick pagination model (`start` vs
+   `page`).
 3. **Paginate:**
    - Fetch each page with backoff/timeouts.
    - Parse listings using stable selectors.
@@ -574,7 +619,8 @@ sequenceDiagram
 4. **Aggregate:** Append parsed rows to an in-memory or temporary store.
 5. **Validate & dedupe:**
    - Drop rows missing `company_name`.
-   - Case-insensitive dedupe `company_name` against today’s set and `companies_history.txt`.
+   - Case-insensitive dedupe `company_name` against today’s set and
+     `companies_history.txt`.
 6. **Enrich contacts (manual):**
    - Add `phone` and/or `email` from public sources.
    - Validate with regex; skip if both missing.
@@ -591,8 +637,10 @@ sequenceDiagram
 
 Overview
 
-- Seek uses two distinct pagination models depending on the URL route. Detect the model for each seed URL and apply the corresponding pagination logic.
-- Always stop when the page’s “Next” control disappears from the returned HTML; never assume a fixed page count.
+- Seek uses two distinct pagination models depending on the URL route. Detect
+  the model for each seed URL and apply the corresponding pagination logic.
+- Always stop when the page’s “Next” control disappears from the returned HTML;
+  never assume a fixed page count.
 
 ### Pagination models
 
@@ -611,7 +659,9 @@ flowchart TD
   - Page 1 → `start=0`
   - Page 2 → `start=22`
   - Page k → `start=22*(k-1)`
-- Stop condition: the Next control (e.g., `<span data-automation="page-next">Next</span>`) is absent from the returned HTML.
+- Stop condition: the Next control (e.g.,
+  `<span data-automation="page-next">Next</span>`) is absent from the returned
+  HTML.
 - Rationale: server-side offset pagination for generic searches.
 
 ### Model B — Category / region routes (paths containing `-jobs/in-`)
@@ -625,7 +675,8 @@ flowchart TD
 
 ### Minimal Route Detector (PDL-style)
 
-Use this compact, centralised module to determine the appropriate pagination model for each Seek listing seed URL.
+Use this compact, centralised module to determine the appropriate pagination
+model for each Seek listing seed URL.
 
 ```pdl
 MODULE pick_pagination(url)  -- returns 'PAG_START' or 'PAG_PAGE'
@@ -764,16 +815,22 @@ flowchart TD
 
 ## Notes & best practices
 
-- Detect the model per seed URL — misdetection can skip pages or cause infinite loops.
-- Use the presence/absence of the “Next” control in the returned HTML as the authoritative stop condition.
-- Prefer stable selectors and automation attributes when parsing listing content (`<article>` roots, `data-automation` attributes, `data-*` ids, and anchor text). Avoid brittle CSS class names.
-- Throttle requests and randomise small sleeps to reduce load and avoid triggering rate limits.
+- Detect the model per seed URL — misdetection can skip pages or cause infinite
+  loops.
+- Use the presence/absence of the “Next” control in the returned HTML as the
+  authoritative stop condition.
+- Prefer stable selectors and automation attributes when parsing listing content
+  (`<article>` roots, `data-automation` attributes, `data-*` ids, and anchor
+  text). Avoid brittle CSS class names.
+- Throttle requests and randomise small sleeps to reduce load and avoid
+  triggering rate limits.
 
 - **Job listing/card structure:**
 
 ### Selector Discipline (stable attributes vs brittle CSS)
 
-Seek’s listing markup provides automation-friendly signals. Prefer these over CSS class names:
+Seek’s listing markup provides automation-friendly signals. Prefer these over
+CSS class names:
 
 - **Job card root**: the `<article>` representing a “normal” job result.
 - **Job title**: the anchor text for the title.
@@ -784,17 +841,22 @@ Seek’s listing markup provides automation-friendly signals. Prefer these over 
 
 #### Why avoid CSS class names?
 
-Class names on modern sites change frequently in A/B tests and refactors. Automation-oriented attributes and structural tags are more stable and intentionally readable by scripts.
+Class names on modern sites change frequently in A/B tests and refactors.
+Automation-oriented attributes and structural tags are more stable and
+intentionally readable by scripts.
 
 #### Parsing guidelines
 
-- Anchor your extraction to automation markers first; if absent, fall back to surrounding semantic tags and textual anchors.
+- Anchor your extraction to automation markers first; if absent, fall back to
+  surrounding semantic tags and textual anchors.
 - Never rely on inner CSS names like `.style__Card__1a2b` (those are brittle).
 - Handle minor whitespace/HTML entity variations safely (normalise text).
 
-**Outcome:** More resilient scrapers that survive minor refactors without constant maintenance.
+**Outcome:** More resilient scrapers that survive minor refactors without
+constant maintenance.
 
 - Each job is: `<article data-automation="normalJob">...</article>`
+
   - **Title:** `<a data-automation="jobTitle">`
     - **Company:** `<a data-automation="jobCompany">`
     - **Location:** `<a data-automation="jobLocation">`
@@ -803,7 +865,9 @@ Class names on modern sites change frequently in A/B tests and refactors. Automa
   - Only fields visible here can be automatically gathered.
 
 - **Contact info (phone/email):**
-  - **Not present** in Seek job cards — must be found by operator using dorks, company sites and public resources.
+
+  - **Not present** in Seek job cards — must be found by operator using dorks,
+    company sites and public resources.
 
 - **Search fields:**
   - **Keywords**: `<input id="keywords-input" name="keywords" type="text" ...>`
@@ -833,23 +897,37 @@ NOTES:
   - Prefer automation attributes where available; fall back to surrounding semantic tags only if necessary.
 ```
 
-### Seek.com.au JavaScript Behaviour & Scraping Approach (Update as of December 2025)
+### Seek.com.au JavaScript Behaviour & Scraping Approach (Update as of Dec. 2025)
 
-Although Seek.com.au’s search UI uses dynamic JavaScript features (type-ahead suggestions, toggle controls, etc.), **the actual job listing pages are server-rendered and respond to standard URL query parameters** such as `keywords`, `where`, and `start`. This makes scraping feasible using static tools.
+Although Seek.com.au’s search UI uses dynamic JavaScript features (type-ahead
+suggestions, toggle controls, etc.), **the actual job listing pages are
+server-rendered and respond to standard URL query parameters** such as
+`keywords`, `where`, and `start`. This makes scraping feasible using static
+tools.
 
 **Key points:**
 
 - **No headless browser required:**  
-  Listing pages can be fetched by constructing query URLs and using static HTTP requests (e.g. `curl`). All job data and pagination elements appear in the HTML and can be parsed with shell tools (`grep`, `awk`, `sed`).
-- Dynamic UI features (like suggestion dropdowns) are cosmetic and do not affect the underlying listing pages or endpoints.
+  Listing pages can be fetched by constructing query URLs and using static HTTP
+  requests (e.g. `curl`). All job data and pagination elements appear in the
+  HTML and can be parsed with shell tools (`grep`, `awk`, `sed`).
+- Dynamic UI features (like suggestion dropdowns) are cosmetic and do not affect
+  the underlying listing pages or endpoints.
 - **Stable HTML selectors:**  
-  Listing markup and pagination controls use stable `data-automation` attributes suitable for parsing and extraction.
-- No official API or browser automation is necessary, as long as Seek continues to render results on the server-side.
-- **If Seek ever transitions to client-only rendering (e.g. React hydration without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable alternative for interactive/manual extraction.
-- **Best practice:** Construct breadth-first collections of filtered seed listing URLs to avoid simulating the JavaScript search form.
+  Listing markup and pagination controls use stable `data-automation` attributes
+  suitable for parsing and extraction.
+- No official API or browser automation is necessary, as long as Seek continues
+  to render results on the server-side.
+- **If Seek ever transitions to client-only rendering (e.g. React hydration
+  without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable
+  alternative for interactive/manual extraction.
+- **Best practice:** Construct breadth-first collections of filtered seed
+  listing URLs to avoid simulating the JavaScript search form.
 
 **Bottom line:**  
-For this project, **headless browser automation is not required** and static shell scripting is fully sufficient for daily scraping—future browser automation is optional and only needed if Seek changes its technical approach.
+For this project, **headless browser automation is not required** and static
+shell scripting is fully sufficient for daily scraping—future browser automation
+is optional and only needed if Seek changes its technical approach.
 
 ---
 
@@ -857,16 +935,17 @@ For this project, **headless browser automation is not required** and static she
 
 ### Seek.com.au Regions/Categories
 
-|Location|Base URL|
-|----------|----------|
-|Perth, WA|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>|
-|Perth, WA (Fly-In Fly-Out)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=fly-in-fly-out>|
-|Perth, WA (Mobilisation)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=mobilisation>|
-|Perth, WA (Travel)|<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel>|
-|Darwin, NT|<https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT>|
-|...|... (See seeds.txt for full list)|
+| Location                   | Base URL                                                                    |
+| -------------------------- | --------------------------------------------------------------------------- |
+| Perth, WA                  | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>                         |
+| Perth, WA (Fly-In Fly-Out) | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=fly-in-fly-out> |
+| Perth, WA (Mobilisation)   | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=mobilisation>   |
+| Perth, WA (Travel)         | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel>         |
+| Darwin, NT                 | <https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT>                        |
+| ...                        | ... (See seeds.txt for full list)                                           |
 
-See 'Filtered Seeds' below for a breadth-first coverage strategy using server-rendered URLs with pre-set filters.
+See 'Filtered Seeds' below for a breadth-first coverage strategy using
+server-rendered URLs with pre-set filters.
 
 ### Seeds & Coverage Checklist
 
@@ -885,18 +964,23 @@ Use this checklist to ensure breadth and correctness:
 
 ### Filtered Seeds (breadth-first coverage without JS simulation)
 
-The search bar UX (type-ahead suggestions, toggles) is JavaScript-driven, but **listing pages themselves** are addressable with **pre-composed URLs**. Originating your crawl from filtered listing URLs avoids headless-browser automation for the search form while still covering the same search space.
+The search bar UX (type-ahead suggestions, toggles) is JavaScript-driven, but
+**listing pages themselves** are addressable with **pre-composed URLs**.
+Originating your crawl from filtered listing URLs avoids headless-browser
+automation for the search form while still covering the same search space.
 
 #### Recommended seed types
 
-- **Work type:** `/jobs/full-time`, `/jobs/part-time`, `/jobs/contract-temp`, `/jobs/casual-vacation`
+- **Work type:** `/jobs/full-time`, `/jobs/part-time`, `/jobs/contract-temp`,
+  `/jobs/casual-vacation`
 - **Remote options:** `/jobs/on-site`, `/jobs/hybrid`, `/jobs/remote`
 - **Salary filters (type and range):**
   - `salarytype=annual|monthly|hourly`
   - `salaryrange=min-max` (e.g., `salaryrange=30000-100000`)
 - **Date listed:** `daterange=1|3|7|14|31` (today → monthly)
 - **Cities/regions:** `/jobs/in-All-Perth-WA`, `/jobs/in-All-Sydney-NSW`, etc.
-- **Category+region:** e.g., `/fifo-jobs/in-Western-Australia-WA`, `/engineering-jobs/in-All-Melbourne-VIC`
+- **Category+region:** e.g., `/fifo-jobs/in-Western-Australia-WA`,
+  `/engineering-jobs/in-All-Melbourne-VIC`
 
 #### Workflow for seeds
 
@@ -907,7 +991,9 @@ The search bar UX (type-ahead suggestions, toggles) is JavaScript-driven, but **
 3. Merge parsed listings; dedupe by company (see Batch 9, Validation).
 4. Log coverage (seed → pages visited → number of listings).
 
-> **Why this works:** These links are server-rendered listing views that present enough HTML markers to parse without simulating client-side JS (type-ahead, form submissions).
+> **Why this works:** These links are server-rendered listing views that present
+> enough HTML markers to parse without simulating client-side JS (type-ahead,
+> form submissions).
 
 ```pdl
 MODULE process_seeds(seed_file)
@@ -942,8 +1028,9 @@ Business Name,Henry Smith,CFO,0411111111,henry@business.com.au,Adelaide, SA
 
 ## Risk Management Summary
 
-- *Rate limiting & CAPTCHA*: Always pace requests conservatively, rotate UAs, and manually skip/record if CAPTCHA is hit
-- *Data quality*: Strict rules and validation, with manual spot checks
+- _Rate limiting & CAPTCHA_: Always pace requests conservatively, rotate UAs,
+  and manually skip/record if CAPTCHA is hit
+- _Data quality_: Strict rules and validation, with manual spot checks
 
 ---
 
@@ -991,8 +1078,9 @@ ALGORITHM:
 ### DuckDuckGo Lite Field Mapping
 
 - **Query Field:** `<input class="query" name="q" ...>`
-- **Search Button:** `<input class="submit" type="submit" ...>`  
-- Example: `http GET 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
+- **Search Button:** `<input class="submit" type="submit" ...>`
+- Example:
+  `http GET 'https://lite.duckduckgo.com/lite/?q=company+email+site:.com.au'`
 - Interactive/manual only—never scraped or parsed automatically
 
 ---
@@ -1003,19 +1091,21 @@ ALGORITHM:
   `<textarea class="gLFyf" id="APjFqb" name="q" ...>`
 - **Search Button:**  
   `<input class="gNO89b" name="btnK" ...>`
-- Example: `http GET 'https://www.google.com.au/search?q=company+email+site:.com.au'`
+- Example:
+  `http GET 'https://www.google.com.au/search?q=company+email+site:.com.au'`
 - Interactive/manual only—never scraped or parsed automatically
 
 ---
 
-**Important:**  
+**Important:**
 
-- Always check robots.txt before scraping any site  
+- Always check robots.txt before scraping any site
   - [Seek robots.txt](https://www.seek.com.au/robots.txt)
   - [DuckDuckGo robots.txt](https://duckduckgo.com/robots.txt)
   - [Google robots.txt](https://www.google.com.au/robots.txt)
-- Only scrape Seek’s *search listing* pages (never job or profile detail pages)
-- Google and DuckDuckGo: results used only to find contacts manually—not to be scraped
+- Only scrape Seek’s _search listing_ pages (never job or profile detail pages)
+- Google and DuckDuckGo: results used only to find contacts manually—not to be
+  scraped
 
 ---
 
@@ -1031,7 +1121,8 @@ flowchart TD
     D -- No --> G[Skip Row]
 ```
 
-Use CLI scripts to pick dorks, launch manual browser queries, and add enriched leads by hand.
+Use CLI scripts to pick dorks, launch manual browser queries, and add enriched
+leads by hand.
 
 **Basic shell:**
 
@@ -1053,8 +1144,11 @@ Results are reviewed manually and copied to the daily CSV.
 
 ---
 
-For full history and release notes, see the dedicated `CHANGELOG.md` in the repository root.
+For full history and release notes, see the dedicated `CHANGELOG.md` in the
+repository root.
 
 ---
 
-**This project strictly observes robots.txt, ToS, and only uses automation where clearly permitted. Manual/interactive protocols for dorking and enrichment are integral. Do not attempt to automate any part not explicitly allowed above.**
+**This project strictly observes robots.txt, ToS, and only uses automation where
+clearly permitted. Manual/interactive protocols for dorking and enrichment are
+integral. Do not attempt to automate any part not explicitly allowed above.**
