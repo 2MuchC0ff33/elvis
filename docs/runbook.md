@@ -274,6 +274,17 @@ bin/elvis-run end-sequence --continue-on-error
 
 # Provide a descriptive label for the snapshot
 bin/elvis-run end-sequence --snapshot-desc "daily end-run"
+
+# Enable automatic recovery attempts (opt-in)
+bin/elvis-run end-sequence --auto-heal
+
+Notes & safety:
+
+- **Auto-heal is opt-in and disabled by default.** Use `--auto-heal` to allow the
+  orchestrator to attempt restoration and re-run of failed steps.
+- Recovery attempts preserve failed artifacts under `.snapshots/failed/` and
+  always log recovery actions for auditability.
+- Auto-heal behaviour respects `--continue-on-error` and will not attempt infinite retries by default.
 ```
 
 Implementation notes:

@@ -48,6 +48,9 @@ Run the set-status workflow: manual enrichment of `results.csv`, validation, ded
 .TP
 .B end-sequence
 Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
+.TP
+.B \\--auto-heal
+Enable opt-in automatic recovery attempts for failed steps (preserves failed artifacts under `.snapshots/failed/`).
 .SH EXAMPLES
 .TP
 .B elvis-run init

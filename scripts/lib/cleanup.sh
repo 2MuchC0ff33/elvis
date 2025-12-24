@@ -52,9 +52,12 @@ cleanup_tmp() {
       find "$p" -type f -mtime +"$keep_days" -print -exec rm -f {} \; || true
       find "$p" -type d -empty -delete || true
     else
-      # remove contents but keep directory
+      # remove contents but keep directory. Use find to remove all entries
+      # (including dotfiles) safely and avoid leaving hidden files behind.
       if [ -d "$p" ]; then
-        rm -rf "$p"/* || true
+        find "$p" -mindepth 1 -maxdepth 1 -exec rm -rf {} + || true
+        # Remove any empty files that may be left as stale markers
+        find "$p" -type f -empty -delete || true
       else
         rm -f "$p" || true
       fi

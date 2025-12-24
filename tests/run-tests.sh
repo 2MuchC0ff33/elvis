@@ -246,6 +246,82 @@ else
   grep -q 'calllists_count' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing calllists_count"; fail=1; }
   grep -q 'log_warnings' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing log_warnings"; fail=1; }
 fi
+
+# Unit test: retry_with_backoff (retries + backoff)
+echo "[TEST] retry_with_backoff: retries and succeeds after intermittent failures"
+unit_retry="$tmp/retry_test"
+rm -rf "$unit_retry"
+mkdir -p "$unit_retry"
+cat > "$unit_retry/failer.sh" <<'SH'
+#!/bin/sh
+# fails twice then succeeds
+countfile="$PWD/failer.count"
+count=0
+if [ -f "$countfile" ]; then
+  count=$(cat "$countfile" | tr -d '[:space:]' || echo 0)
+fi
+count=$((count + 1))
+printf '%s' "$count" > "$countfile"
+if [ "$count" -lt 3 ]; then
+  echo "failing attempt $count" >&2
+  exit 1
+else
+  echo "succeeding attempt $count"
+  exit 0
+fi
+SH
+chmod +x "$unit_retry/failer.sh"
+. "$REPO_ROOT/scripts/lib/error.sh"
+# run retry; 5 attempts should be enough
+if ! retry_with_backoff 5 "$unit_retry/failer.sh"; then
+  echo "FAIL: retry_with_backoff did not recover"; fail=1
+else
+  echo "PASS: retry_with_backoff recovered"
+fi
+rm -rf "$unit_retry"
+
+# Unit test: healer preserve & restore
+echo "[TEST] heal: preserve_failed_artifacts and restore_latest_snapshot"
+unit_heal="$tmp/heal_test"
+rm -rf "$unit_heal"
+mkdir -p "$unit_heal/data"
+printf 'hello' > "$unit_heal/data/seed.txt"
+# create a snapshot where the heal functions will look for it
+mkdir -p "$unit_heal/.snapshots"
+( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
+# ensure SNAPSHOT_DIR points to the test snapshots
+export SNAPSHOT_DIR="$unit_heal/.snapshots"
+. "$REPO_ROOT/scripts/lib/heal.sh"
+# preserve artifacts
+mkdir -p tmp
+printf 'failed' > tmp/test.step.status
+preserve_failed_artifacts test.step
+ls -1 "$SNAPSHOT_DIR/failed" | grep -q 'failed-test.step-'
+if [ $? -ne 0 ]; then
+  echo "FAIL: preserve_failed_artifacts did not create failed tarball"; fail=1
+else
+  echo "PASS: preserve_failed_artifacts created failed tarball"
+fi
+# restore snapshot
+restore_dir=$(restore_latest_snapshot)
+[ -d "$restore_dir" ] || { echo "FAIL: restore_latest_snapshot did not create dir"; fail=1; }
+[ -f "$restore_dir/data/seed.txt" ] || { echo "FAIL: restore_latest_snapshot missing file"; fail=1; }
+rm -rf "$unit_heal" "$SNAPSHOT_DIR" tmp
+
+# Unit test: attempt_recover_step (re-run success)
+echo "[TEST] attempt_recover_step: runs provided recovery command and logs success"
+mkdir -p tmp
+. "$REPO_ROOT/scripts/lib/heal.sh"
+# provide a simple success command
+attempt_recover_step unitstep "sh -c 'printf recovered > tmp/heal_recovered.txt; exit 0'"
+if [ ! -f tmp/heal_recovered.txt ]; then
+  echo "FAIL: attempt_recover_step did not run recovery command"; fail=1
+else
+  grep -q 'HEAL: re-run succeeded' logs/log.txt || { echo "FAIL: heal log missing success entry"; fail=1; }
+  echo "PASS: attempt_recover_step re-ran command and logged success"
+fi
+rm -rf tmp logs || true
+
 # cleanup
 rm -rf "$unit_tmp_summ" data logs
 
@@ -275,9 +351,10 @@ sh "$REPO_ROOT/bin/elvis-run" end-sequence || { echo "FAIL: bin/elvis-run end-se
 # Check snapshot created
 snap_file=$(ls -1 "$SNAPSHOT_DIR" | grep '^snap-' | head -n1 || true)
 [ -n "$snap_file" ] || { echo "FAIL: end-sequence did not create snapshot"; fail=1; }
-# Check tmp cleaned
-if [ -n "$(find tmp -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
-  echo "FAIL: tmp not cleaned by end-sequence"; fail=1
+# Check tmp cleaned (ignore step status files created by safe_run)
+non_status="$(find tmp -maxdepth 1 -mindepth 1 ! -name '*.status' -print -quit 2>/dev/null || true)"
+if [ -n "$non_status" ]; then
+  echo "FAIL: tmp not cleaned by end-sequence (remaining: $non_status)"; fail=1
 fi
 # Check summary.txt exists
 [ -f summary.txt ] || { echo "FAIL: summary.txt not produced"; fail=1; }
