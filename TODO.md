@@ -24,7 +24,7 @@ A step-by-step, incremental roadmap for this project (POSIX shell + curl +
 coreutils). Follow tasks in order. See primary spec: [README.md](README.md) and
 agent guidance:
 [.github/copilot-instructions.md](.github/copilot-instructions.md). Seeds are in
-[seeds.txt](seeds.txt).
+[data/seeds/seeds.csv](/data/seeds/seeds.csv).
 
 ---
 
@@ -118,9 +118,10 @@ Referenced files:
   - Labels: `automation` | Project: `Project Elvis` | Milestone: `v1.0` | Issue:
     `#14` | Estimate: `~1h` | Tags: `#bin #launcher`
 - [ ] Add `scripts/run.sh` skeleton (branch: `feature/add-run-sh`)
-  - Read `seeds.txt`, create temp workspace, call fetch/parse/dedupe, output CSV
-    to `data/calllists/calllist_YYYY-MM-DD.csv`.
-  - Dependency: `seeds.txt` exists ([seeds.txt](seeds.txt))
+  - Read `data/seeds/seeds.csv`, create temp workspace, call fetch/parse/dedupe,
+    output CSV to `data/calllists/calllist_YYYY-MM-DD.csv`.
+  - Dependency: `data/seeds/seeds.csv` exists
+    ([data/seeds/seeds.csv](data/seeds/seeds.csv))
   - Git: `git checkout -b feature/add-run-sh`
   - Labels: `automation` | Project: `Project Elvis` | Milestone: `v1.0` | Issue:
     `#15` | Estimate: `~4h` | Tags: `#scripts #orchestrator`
@@ -301,9 +302,10 @@ Referenced file:
 
 ## Nice-to-have / future improvements (optional)
 
-- [ ] Add lightweight headless browser fallback for client-only rendered
-      pages (branch: `feature/browser-fallback`)
-  - Description: Add headless browser or similar fallback for client-only rendering.
+- [ ] Add lightweight headless browser fallback for client-only rendered pages
+      (branch: `feature/browser-fallback`)
+  - Description: Add headless browser or similar fallback for client-only
+    rendering.
   - Labels: `feature` | Project: `Project Elvis` | Milestone: `future` | Issue:
     `#40` | Estimate: `~3d` | Tags: `#browser`
 - [ ] Add TUI for manual enrichment (branch: `feature/enrichment-tui`)
