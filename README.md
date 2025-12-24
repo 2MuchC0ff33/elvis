@@ -191,20 +191,20 @@ graph LR
     Shell[POSIX Shell Scripts] -- controls --> CurlCoreutils["Curl + Coreutils"]
     Shell -- uses --> RCS
     Shell -- can trigger --> Cron
-    Shell -- for docs/review --> Mandoc
+    Shell -- for docs/review --> Roff
 ```
 
 ### Essential
 
-- Bourne Shell for scripting
-- Curl for transferring data using URLS
-- Coreutils for command line utilities
+- Bourne Shell (`sh`) for scripting
+- `curl` for transferring data using URLS
+- `coreutils` for command line utilities
 - RCS for manual version control
 
 ### Non-Essential
 
-- mandoc (UNIX docs/manpages)
-- Cron for automation and task scheduling
+- `roff` (UNIX docs/manpages)
+- `cron` for automation and task scheduling
 
 **Cross-platform**: Linux, BSD, macOS, and Windows.
 
@@ -500,6 +500,7 @@ flowchart TB
 ├── .gitattributes            # Enforce UTF-8 + LF normalisation
 ├── .gitignore                # Ignore logs, tmp, generated CSVs, and secrets
 ├── .env                      # Environment variables (should not be committed)
+├── .snapshots/               # Environment variable snapshots (should not be committed)
 ├── project.conf              # Primary configuration (non-secret operational defaults)
 ├── project.conf              # Alternate configuration format (optional)
 ├── LICENSE                   # Project license
@@ -526,7 +527,7 @@ flowchart TB
 │
 ├── docs/                     # Documentation, runbook, and manpages
 │   ├── runbook.md            # Run instructions and troubleshooting
-│   └── man/                  # mandoc-compatible man pages (optional)
+│   └── man/                  # man pages (roff for typesetting)
 │       └── elvis.1
 │
 ├── data/                     # Generated or curated data
@@ -919,7 +920,7 @@ tools.
 - No official API or browser automation is necessary, as long as Seek continues
   to render results on the server-side.
 - **If Seek ever transitions to client-only rendering (e.g. React hydration
-  without SSR),** switch to an ed-alike browser (`edbrowse`) or suitable
+  without SSR),** switch to a headless browser or suitable
   alternative for interactive/manual extraction.
 - **Best practice:** Construct breadth-first collections of filtered seed
   listing URLs to avoid simulating the JavaScript search form.

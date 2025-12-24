@@ -91,7 +91,7 @@ agent guidance:
   - Git: `git checkout -b docs/add-runbook`
   - Labels: `documentation` | Project: `Project Elvis` | Milestone: `v1.0` |
     Issue: `#11` | Estimate: `~2d` | Tags: `#docs #runbook`
-- [ ] Add `docs/man/elvis.1` (mandoc man page) (branch: `docs/add-manpage`)
+- [ ] Add `docs/man/elvis.1` (roff man page) (branch: `docs/add-manpage`)
   - Dependency: skeleton `bin/elvis-run` (below)
   - Git: `git checkout -b docs/add-manpage`
   - Labels: `documentation` | Project: `Project Elvis` | Milestone: `v1.0` |
@@ -301,11 +301,15 @@ Referenced file:
 
 ## Nice-to-have / future improvements (optional)
 
-- [ ] Add `edbrowse` or lightweight browser fallback for client-only rendered
+- [ ] Add lightweight headless browser fallback for client-only rendered
       pages (branch: `feature/browser-fallback`)
-  - Description: Add `edbrowse` or similar fallback for client-only rendering.
+  - Description: Add headless browser or similar fallback for client-only rendering.
   - Labels: `feature` | Project: `Project Elvis` | Milestone: `future` | Issue:
     `#40` | Estimate: `~3d` | Tags: `#browser`
+- [ ] Add TUI for manual enrichment (branch: `feature/enrichment-tui`)
+  - Description: Provide a terminal UI to help manual enrichment.
+  - Labels: `feature`, `ux` | Project: `Project Elvis` | Milestone: `future` |
+    Issue: `#44` | Estimate: `~1w` | Tags: `#tui #enrich`
 - [ ] Add a small web UI for manual enrichment (branch: `feature/enrichment-ui`)
   - Description: Provide a small UI to help manual enrichment.
   - Labels: `feature`, `ux` | Project: `Project Elvis` | Milestone: `future` |
@@ -316,6 +320,16 @@ Referenced file:
     emails.
   - Labels: `ops` | Project: `Project Elvis` | Milestone: `future` | Issue:
     `#42` | Estimate: `~3d` | Tags: `#audit #ops`
+- [ ] Add `chroot` for enhanced security during fetch/parse (branch:
+      `feature/add-chroot`)
+  - Description: Use `chroot` to isolate fetch/parse steps for security.
+  - Labels: `security` | Project: `Project Elvis` | Milestone: `future` | Issue:
+    `#43` | Estimate: `~2d` | Tags: `#chroot #security`
+- [ ] Add `rcs` (revision control system) for `companies_history.txt` (branch:
+      `feature/add-rcs`)
+  - Description: Use RCS or similar to version-control `companies_history.txt`.
+  - Labels: `feature` | Project: `Project Elvis` | Milestone: `future` | Issue:
+    `#45` | Estimate: `~1d` | Tags: `#rcs #history`
 
 ## How to use this TODO
 

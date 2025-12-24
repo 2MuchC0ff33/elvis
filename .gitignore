@@ -112,6 +112,7 @@ __pycache__/
 .hg/
 .git/
 .gitattributes.lock
+.snapshots/
 
 # --- Documentation build artefacts ---
 docs/_build/
