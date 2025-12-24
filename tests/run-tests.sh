@@ -113,16 +113,16 @@ CSV
 # Prepare enriched file where second record gets a phone
 cp "$tmp/results.csv" "$tmp/enriched.csv"
 # Add phone for DupCo
-awk -F, 'BEGIN{OFS=FS} NR==1{print $0} NR==3{$5="0412345678"; $6=""; print $0} NR==2{print $0}}' "$tmp/enriched.csv" > "$tmp/enriched.tmp" && mv "$tmp/enriched.tmp" "$tmp/enriched.csv"
+awk -F, 'BEGIN{OFS=FS} NR==1{print} NR==2{print} NR==3{$4="0412345678"; $5=""; print}' "$tmp/enriched.csv" > "$tmp/enriched.tmp" && mv "$tmp/enriched.tmp" "$tmp/enriched.csv"
 
 # Backup history and audit
 HIST_BACKUP="$tmp/companies_history.bak"
-cp -f ../../companies_history.txt "$HIST_BACKUP"
+cp -f companies_history.txt "$HIST_BACKUP"
 AUDIT_BACKUP="$tmp/audit.bak"
-cp -f ../../audit.txt "$AUDIT_BACKUP" 2>/dev/null || true
+cp -f audit.txt "$AUDIT_BACKUP" 2>/dev/null || true
 
 # Run set-status with commit to append history
-sh ../../scripts/set_status.sh --input "$tmp/results.csv" --enriched "$tmp/enriched.csv" --out-dir "$tmp/calllists" --commit-history || { echo "FAIL: set_status.sh failed"; fail=1; }
+sh "$REPO_ROOT/scripts/set_status.sh" --input "$tmp/results.csv" --enriched "$tmp/enriched.csv" --out-dir "$tmp/calllists" --commit-history || { echo "FAIL: set_status.sh failed"; fail=1; }
 
 # Check calllist exists
 CALLFILE=$(ls -1 "$tmp/calllists" | grep calllist_ || true)
@@ -135,14 +135,14 @@ else
 fi
 
 # Check companies_history was appended (case-insensitive match)
-tail -n 5 ../../companies_history.txt | tr '[:upper:]' '[:lower:]' | grep -q 'acme pty ltd' || { echo "FAIL: history not appended for Acme"; fail=1; }
+tail -n 5 companies_history.txt | tr '[:upper:]' '[:lower:]' | grep -q 'acme pty ltd' || { echo "FAIL: history not appended for Acme"; fail=1; }
 
 # Check audit.txt has an entry
-grep -q 'set-status run' ../../audit.txt || { echo "FAIL: audit entry missing"; fail=1; }
+grep -q 'set-status run' audit.txt || { echo "FAIL: audit entry missing"; fail=1; }
 
 # Restore backups
-mv "$HIST_BACKUP" ../../companies_history.txt
-mv "$AUDIT_BACKUP" ../../audit.txt 2>/dev/null || true
+mv "$HIST_BACKUP" companies_history.txt
+mv "$AUDIT_BACKUP" audit.txt 2>/dev/null || true
 
 if [ "$fail" -eq 0 ]; then
   echo "All tests passed."

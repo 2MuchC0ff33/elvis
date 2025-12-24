@@ -36,14 +36,9 @@ fi
 
 # Ensure header contains required fields
 header=$(head -n1 "$INPUT" | tr -d '\r')
-required='company_name,prospect_name,title,phone,email,location'
-IFS=, read -r -a hdrs <<EOF
-$header
-EOF
-
-# Check required columns exist
+# Check required columns exist (POSIX sh compatible)
 for col in company_name prospect_name title phone email location; do
-  echo "$header" | grep -q "\\b$col\\b" || { echo "ERROR: missing column: $col" >&2; exit 2; }
+  echo "$header" | grep -q "$col" || { echo "ERROR: missing column: $col" >&2; exit 2; }
 done
 
 # Process rows: normalise phone, validate fields, emit to OUT only valid rows
@@ -52,16 +47,20 @@ NR==1{print $0; next}
 {
   # simple trimming
   for(i=1;i<=NF;i++){gsub(/^ +| +$/,"",$i)}
-  company=$1; phone=$5; email=$6
-  # Note: header index depends on column order - assume canonical order
+  company=$1; phone=$4; email=$5
+  # reconstruct location (fields 6..NF) into a single field
+  location=""
+  if (NF>=6) {
+    location=$6
+    for(j=7;j<=NF;j++){ location = location "," $j }
+  }
   # phone normalisation: replace +61 prefix with 0 and remove non-digits
   gsub(/\+61/,"0",phone)
   gsub(/[^0-9]/,"",phone)
   # email validation
   valid_email=1
   if (length(email)>0) {
-    match(email, email_re)
-    if (RSTART!=1 || RLENGTH!=length(email)) valid_email=0
+    if (email !~ ("^" email_re "$")) valid_email=0
   }
   # company required
   if (company=="" ){
@@ -70,9 +69,10 @@ NR==1{print $0; next}
   # contact requirement: at least one contact (phone or email)
   if (length(phone)==0 && length(email)==0){ print "INVALID",NR, "missing contact" > "/dev/stderr"; next }
   if (length(email)>0 && valid_email==0){ print "INVALID",NR, "invalid email: " email > "/dev/stderr"; next }
-  # Replace field 5 (phone) with normalized phone
-  $5=phone
-  $6=email
+  # Replace fields with normalized values
+  $4=phone
+  $5=email
+  $6=location
   print $0
 }' "$INPUT" > "$OUT" || {
   echo "ERROR: validation failed; see stderr for details" >&2
