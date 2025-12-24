@@ -305,7 +305,7 @@ else
 fi
 SH
 chmod +x "$tmp/mock_fetch3.sh"
-PAGE_NEXT_MARKER='data-automation="NEXT-MY"'
+export PAGE_NEXT_MARKER='data-automation="NEXT-MY"'
 FETCH_SCRIPT="$tmp/mock_fetch3.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate3.out" || true
 grep -q 'first' "$tmp/paginate3.out" || { echo "FAIL: paginate did not process custom marker"; fail=1; }
 rm -f "$tmp/mock_fetch3.sh" "$tmp/paginate3.out" /tmp/mock_fetch3_called_* || true
@@ -435,9 +435,9 @@ printf 'hello' > "$unit_heal/data/seed.txt"
 mkdir -p "$unit_heal/.snapshots"
 ( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
 # ensure SNAPSHOT_DIR points to the test snapshots
-# shellcheck disable=SC1091
 # Ensure SNAPSHOT_DIR points to the test snapshots
 export SNAPSHOT_DIR="$unit_heal/.snapshots"
+# shellcheck disable=SC1091
 . "$REPO_ROOT/scripts/lib/heal.sh"
 # preserve artifacts
 mkdir -p tmp

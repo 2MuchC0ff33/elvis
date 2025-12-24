@@ -47,7 +47,7 @@ fetch_with_backoff() {
     if [ -z "$robots" ]; then
       return 0
     fi
-    awk_script='BEGIN{ua=0} /^User-agent:/ {ua=($0 ~ /User-agent:[[:space:]]*\*/)?1:0} ua && /^Disallow:/ {print $0}'
+    awk_script="BEGIN{ua=0} /^User-agent:/ {ua=(\$0 ~ /User-agent:[[:space:]]*\*/)?1:0} ua && /^Disallow:/ {print \$0}"
     disallows=$(printf '%s' "$robots" | awk "$awk_script")
     if [ -n "$disallows" ]; then
       while IFS= read -r line; do

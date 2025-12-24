@@ -37,7 +37,7 @@ allowed_by_robots() {
     return 0
   fi
   # Very small parser: find lines under User-agent: * until next User-agent or EOF
-  awk_script='BEGIN{ua=0} /^User-agent:/ {ua=($0 ~ /User-agent:[[:space:]]*\*/)?1:0} ua && /^Disallow:/ {print $0}'
+  awk_script="BEGIN{ua=0} /^User-agent:/ {ua=(\$0 ~ /User-agent:[[:space:]]*\*/)?1:0} ua && /^Disallow:/ {print \$0}"
   disallows=$(printf '%s' "$robots" | awk "$awk_script")
   # Iterate disallow entries and check for prefix match against the path
   # Use a heredoc to read lines in the current shell (avoid subshells)
