@@ -1,0 +1,29 @@
+seed_id,location,base_url
+seek_fifo_perth,"Perth, WA",https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+seek_fifo_perth_flyin,"Perth, WA (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=fly-in-fly-out
+seek_fifo_perth_mobilisation,"Perth, WA (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=mobilisation
+seek_fifo_perth_travel,"Perth, WA (Travel)",https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel
+seek_fifo_darwin,"Darwin, NT",https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT
+seek_fifo_darwin_flyin,"Darwin, NT (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT?keywords=fly-in-fly-out
+seek_fifo_darwin_mobilisation,"Darwin, NT (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT?keywords=mobilisation
+seek_fifo_darwin_travel,"Darwin, NT (Travel)",https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT?keywords=travel
+seek_fifo_adelaide,"Adelaide, SA",https://www.seek.com.au/fifo-jobs/in-All-Adelaide-SA
+seek_fifo_adelaide_flyin,"Adelaide, SA (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-All-Adelaide-SA?keywords=fly-in-fly-out
+seek_fifo_adelaide_mobilisation,"Adelaide, SA (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-All-Adelaide-SA?keywords=mobilisation
+seek_fifo_adelaide_travel,"Adelaide, SA (Travel)",https://www.seek.com.au/fifo-jobs/in-All-Adelaide-SA?keywords=travel
+seek_fifo_western_aus,"Western Australia (WA)",https://www.seek.com.au/fifo-jobs/in-Western-Australia-WA
+seek_fifo_western_aus_flyin,"Western Australia (WA) (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-Western-Australia-WA?keywords=fly-in-fly-out
+seek_fifo_western_aus_mobilisation,"Western Australia (WA) (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-Western-Australia-WA?keywords=mobilisation
+seek_fifo_western_aus_travel,"Western Australia (WA) (Travel)",https://www.seek.com.au/fifo-jobs/in-Western-Australia-WA?keywords=travel
+seek_fifo_south_aus,"South Australia (SA)",https://www.seek.com.au/fifo-jobs/in-South-Australia-SA
+seek_fifo_south_aus_flyin,"South Australia (SA) (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-South-Australia-SA?keywords=fly-in-fly-out
+seek_fifo_south_aus_mobilisation,"South Australia (SA) (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-South-Australia-SA?keywords=mobilisation
+seek_fifo_south_aus_travel,"South Australia (SA) (Travel)",https://www.seek.com.au/fifo-jobs/in-South-Australia-SA?keywords=travel
+seek_fifo_alice_springs,"Alice Springs & Central Australia",https://www.seek.com.au/fifo-jobs/in-Alice-Springs-&-Central-Australia-NT
+seek_fifo_alice_springs_flyin,"Alice Springs & Central Australia (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-Alice-Springs-&-Central-Australia-NT?keywords=fly-in-fly-out
+seek_fifo_alice_springs_mobilisation,"Alice Springs & Central Australia (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-Alice-Springs-&-Central-Australia-NT?keywords=mobilisation
+seek_fifo_alice_springs_travel,"Alice Springs & Central Australia (Travel)",https://www.seek.com.au/fifo-jobs/in-Alice-Springs-&-Central-Australia-NT?keywords=travel
+seek_fifo_nt,"Northern Territory (NT)",https://www.seek.com.au/fifo-jobs/in-Northern-Territory-NT
+seek_fifo_nt_flyin,"Northern Territory (NT) (Fly-In Fly-Out)",https://www.seek.com.au/fifo-jobs/in-Northern-Territory-NT?keywords=fly-in-fly-out
+seek_fifo_nt_mobilisation,"Northern Territory (NT) (Mobilisation)",https://www.seek.com.au/fifo-jobs/in-Northern-Territory-NT?keywords=mobilisation
+seek_fifo_nt_travel,"Northern Territory (NT) (Travel)",https://www.seek.com.au/fifo-jobs/in-Northern-Territory-NT?keywords=travel
