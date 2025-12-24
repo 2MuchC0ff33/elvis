@@ -293,6 +293,8 @@ mkdir -p "$unit_heal/.snapshots"
 ( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
 # ensure SNAPSHOT_DIR points to the test snapshots
 # shellcheck disable=SC1091
+# Ensure SNAPSHOT_DIR points to the test snapshots
+export SNAPSHOT_DIR="$unit_heal/.snapshots"
 . "$REPO_ROOT/scripts/lib/heal.sh"
 # preserve artifacts
 mkdir -p tmp

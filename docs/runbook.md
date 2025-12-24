@@ -117,7 +117,13 @@ process exits non-zero.
 ## Key files & purpose
 
 - `.env` / `.env.example` — runtime overrides and **secrets** (highest
-  precedence). Do not commit secrets.
+  precedence). Do not commit secrets. Use `.env.example` as a template when
+  creating your own `.env` file.
+
+* - If rotating User-Agent is enabled (`UA_ROTATE=true`), provide
+    `configs/user_agents.txt` with one UA string per line and set `UA_LIST_PATH`
+    appropriately in `.env` or `project.conf`.
+
 - `project.conf` — canonical, non-secret operational defaults (key=value).
   Scripts should use this as the single source of truth for defaults.
 - `configs/seek-pagination.ini` — Seek-specific selectors and per-seed override

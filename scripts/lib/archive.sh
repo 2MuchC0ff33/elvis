@@ -54,7 +54,9 @@ archive_artifacts() {
   snapshot_path="$SNAP_DIR/$snapshot_name"
 
   # Create tarball (preserve file ownership and permissions as much as possible)
-  tar -czf "$snapshot_path" "$to_archive"
+  # Use positional parameters to expand multiple paths safely in POSIX sh
+  set -- $to_archive
+  tar -czf "$snapshot_path" "$@"
 
   # Compute checksum using available tool
   if command -v sha1sum >/dev/null 2>&1; then
