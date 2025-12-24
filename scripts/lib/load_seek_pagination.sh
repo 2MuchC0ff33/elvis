@@ -18,7 +18,7 @@ while IFS= read -r line; do
     \[*\]) section="$(echo "$line" | sed 's/\[//;s/\]//;s/[^A-Za-z0-9]/_/g')" ;;
     ''|\#*) continue ;;
     *=*)
-      key="$(echo "$line" | cut -d= -f1 | tr -d ' ' | tr 'a-z' 'A-Z')"
+      key="$(echo "$line" | cut -d= -f1 | tr -d ' ' | awk '{print toupper($0)}')"
       val="$(echo "$line" | cut -d= -f2- | sed 's/^ *//;s/ *$//')"
       [ -n "$section" ] && export "SEEK_${section}_${key}"="$val"
       ;;

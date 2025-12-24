@@ -25,20 +25,36 @@ source_clear() {
   set --
   if [ "$#" -gt 0 ]; then
     # set any explicit args for the sourced script
-    set -- $*
+    set -- "$*"
   fi
+  # Let ShellCheck follow these possible dynamic sources
+  # shellcheck source=../scripts/lib/load_env.sh
+  # shellcheck source=../scripts/lib/load_config.sh
+  # shellcheck source=../scripts/lib/load_seek_pagination.sh
+  # shellcheck source=../scripts/lib/validate_env.sh
+  # shellcheck source=../scripts/lib/prepare_log.sh
   . "$script"
   # restore original args for elvis-run
-  set -- $restore
+  set -- "$restore"
 }
 
 case "${1:-}" in
   init)
+    # shellcheck source=../scripts/lib/load_env.sh
     source_clear "$(dirname "$0")/../scripts/lib/load_env.sh"
+
+    # shellcheck source=../scripts/lib/load_config.sh
     source_clear "$(dirname "$0")/../scripts/lib/load_config.sh"
+
+    # shellcheck source=../scripts/lib/load_seek_pagination.sh
     source_clear "$(dirname "$0")/../scripts/lib/load_seek_pagination.sh"
+
+    # shellcheck source=../scripts/lib/validate_env.sh
     source_clear "$(dirname "$0")/../scripts/lib/validate_env.sh"
+
+    # shellcheck source=../scripts/lib/prepare_log.sh
     source_clear "$(dirname "$0")/../scripts/lib/prepare_log.sh"
+
     echo "[elvis-run] Initialisation complete."
     ;;
   help|-h|--help)

@@ -1,19 +1,27 @@
-
 # Runbook — Elvis (operations & configuration)
 
-This runbook documents the operational configuration, initialisation, and quick reference for running the Elvis scraper.
+This runbook documents the operational configuration, initialisation, and quick
+reference for running the Elvis scraper.
 
 ## Initialisation Sequence (Init Workflow)
 
-Elvis uses a modular, POSIX-compliant shell init sequence to prepare the environment before scraping or lead generation. The init process ensures all configuration files are loaded, required environment variables are validated, and logging is set up.
+Elvis uses a modular, POSIX-compliant shell init sequence to prepare the
+environment before scraping or lead generation. The init process ensures all
+configuration files are loaded, required environment variables are validated,
+and logging is set up.
 
 ### Init Steps
 
-1. **Load .env**: `scripts/lib/load_env.sh` — loads environment overrides and secrets (optional).
-2. **Load project.conf**: `scripts/lib/load_config.sh` — loads canonical project configuration.
-3. **Load Seek pagination config**: `scripts/lib/load_seek_pagination.sh` — loads Seek-specific selectors and pagination settings.
-4. **Validate environment**: `scripts/lib/validate_env.sh` — checks all required variables are set.
-5. **Prepare log file**: `scripts/lib/prepare_log.sh` — ensures `logs/log.txt` and its directory exist.
+1. **Load .env**: `scripts/lib/load_env.sh` — loads environment overrides and
+   secrets (optional).
+2. **Load project.conf**: `scripts/lib/load_config.sh` — loads canonical project
+   configuration.
+3. **Load Seek pagination config**: `scripts/lib/load_seek_pagination.sh` —
+   loads Seek-specific selectors and pagination settings.
+4. **Validate environment**: `scripts/lib/validate_env.sh` — checks all required
+   variables are set.
+5. **Prepare log file**: `scripts/lib/prepare_log.sh` — ensures `logs/log.txt`
+   and its directory exist.
 
 The master orchestrator is `bin/elvis-run`, which runs all steps in order:
 
@@ -27,7 +35,8 @@ For help and usage examples:
 bin/elvis-run help
 ```
 
-Each modular script can be sourced or executed directly. See `scripts/init-help.sh` for details.
+Each modular script can be sourced or executed directly. See
+`scripts/init-help.sh` for details.
 
 ### Example: Manual Step-by-Step Init
 
@@ -39,7 +48,8 @@ Each modular script can be sourced or executed directly. See `scripts/init-help.
 . scripts/lib/prepare_log.sh
 ```
 
-If any required config or variable is missing, a clear error is printed and the process exits non-zero.
+If any required config or variable is missing, a clear error is printed and the
+process exits non-zero.
 
 ## Key files & purpose
 
@@ -61,59 +71,59 @@ If any required config or variable is missing, a clear error is printed and the 
 Scripts should load configuration in that order and **log** which source
 provided each setting for auditability.
 
-
 ## Practical usage examples
 
 1. Set a runtime override locally (temporary):
 
-  FETCH_TIMEOUT=10 bin/elvis-run init
+FETCH_TIMEOUT=10 bin/elvis-run init
 
-2. Permanent operational default (project-level): edit `project.conf`:
+1. Permanent operational default (project-level): edit `project.conf`:
 
-  FETCH_TIMEOUT=15
+FETCH_TIMEOUT=15
 
-3. Secrets (API keys, notification credentials): place only in `.env` or use a secret manager and ensure `.env` is in `.gitignore`.
+1. Secrets (API keys, notification credentials): place only in `.env` or use a
+   secret manager and ensure `.env` is in `.gitignore`.
 
-4. Run all init steps and start a new log:
+2. Run all init steps and start a new log:
 
-  bin/elvis-run init
+bin/elvis-run init
 
-5. Show help for all init scripts:
+1. Show help for all init scripts:
 
-  bin/elvis-run help
+bin/elvis-run help
 
-6. Run tests for the init workflow:
+1. Run tests for the init workflow:
 
-  tests/run-tests.sh
+tests/run-tests.sh
 
 ## Seeds & per-seed overrides
 
 - Keep seeds in `data/seeds/seeds.csv` with `seed_id` column. Example row:
 
-  seek_fifo_perth,"Perth, WA",<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>
+  seek_fifo_perth,"Perth,
+  WA",<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>
+
 - Per-seed overrides live in `configs/seek-pagination.ini` under `[overrides]`
   and are keyed by `seed_id` (example in the file comments).
 
-grep -E '^[A-Z0-9_]+=.*' project.conf > "$tmp_conf"
+```sh
+grep -E '^[A-Z0-9_]+=.\*' project.conf > "$tmp_conf"
 done < "$tmp_conf"
+
+```
 
 ## Modular Init Scripts Reference
 
 - `scripts/lib/load_env.sh` — Loads `.env` (if present) into the environment.
 - `scripts/lib/load_config.sh` — Loads `project.conf` into the environment.
-- `scripts/lib/load_seek_pagination.sh` — Loads Seek pagination config as SEEK_* variables.
+- `scripts/lib/load_seek_pagination.sh` — Loads Seek pagination config as
+  SEEK\_\* variables.
 - `scripts/lib/validate_env.sh` — Validates all required environment variables.
 - `scripts/lib/prepare_log.sh` — Ensures log file and directory exist.
 - `scripts/init-help.sh` — Prints help and usage for all init scripts.
 - `bin/elvis-run` — Orchestrates the full init sequence.
 
 All scripts are POSIX-compliant and provide clear error messages on failure.
-
-## Troubleshooting & change detection
-
-- If any init step fails, check the error message for missing files or variables.
-- If pagination fails across seeds, check `configs/seek-pagination.ini` selectors and `page_next_marker` first.
-- If run behaviour differs between environments, ensure you check the effective source for keys (env vs `project.conf`) by adding logging to the script.
 
 ## Testing the Init Workflow
 
@@ -123,10 +133,64 @@ Run all tests for the init sequence:
 tests/run-tests.sh
 ```
 
-This will check config loading, environment validation, and log setup. All tests should pass for a correct setup.
+This will check config loading, environment validation, and log setup. All tests
+should pass for a correct setup.
+
+### ShellCheck (recommended)
+
+We recommend installing `shellcheck` for local linting and CI checks.
+`shellcheck` helps catch common shell scripting errors and enforces good
+practices. The test suite will run `shellcheck -x` (if available) across all
+`.sh` files.
+
+- Install (macOS/Homebrew): `brew install shellcheck`
+- Install (Debian/Ubuntu): `sudo apt install shellcheck`
+- Run locally:
+
+```sh
+shellcheck -x bin/elvis-run scripts/lib/*.sh scripts/*.sh
+```
+
+- VS Code: set the workspace setting to follow sources (see
+  `.vscode/settings.json`):
+
+```json
+{
+  "shellcheck.extraArgs": ["-x"]
+}
+```
+
+If `shellcheck` is not installed the test runner will SKIP the lint step and
+continue. Installing it is recommended for contributors and CI to ensure script
+quality and maintainability.
+
+### Cygwin / Windows note
+
+On Cygwin, ShellCheck installed under Windows (Scoop/Chocolatey) may not accept
+POSIX paths by default. We provide a small wrapper
+`scripts/lib/shellcheck-cygwin-wrapper.sh` that converts POSIX file paths to
+Windows paths and calls the Windows `shellcheck.exe`. To use it, set the
+`SHELLCHECK` environment variable to the Windows executable's POSIX path
+(example shown), or place the wrapper earlier in your `PATH`.
+
+Example (Cygwin):
+
+```sh
+WINPATH=$(cmd.exe /c "where shellcheck" 2>/dev/null | tr -d '\r' | sed -n '1p')
+[ -n "$WINPATH" ] && export SHELLCHECK="$(cygpath -u "$WINPATH")"
+```
+
+Once set, re-run `./tests/run-tests.sh` and the test runner will use the wrapper
+and the Windows ShellCheck.
 
 ## Troubleshooting & change detection
 
+- If any init step fails, check the error message for missing files or
+  variables.
+- If pagination fails across seeds, check `configs/seek-pagination.ini`
+  selectors and `page_next_marker` first.
+- If run behaviour differs between environments, ensure you check the effective
+  source for keys (env vs `project.conf`) by adding logging to the script.
 - If pagination fails across seeds, check `configs/seek-pagination.ini`
   selectors and `page_next_marker` first.
 - If run behaviour differs between environments, ensure you check the effective
@@ -140,5 +204,5 @@ This will check config loading, environment validation, and log setup. All tests
 
 ---
 
-
-Keep this runbook updated when configuration practices, file locations, or init scripts change.
+Keep this runbook updated when configuration practices, file locations, or init
+scripts change.
