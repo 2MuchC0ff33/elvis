@@ -787,7 +787,7 @@ flowchart TB
     ├── fixtures/
     └── run-tests.sh
 
-<a name="configuration-and-precedence"></a>
+```
 
 ## Configuration and Precedence
 
@@ -814,7 +814,6 @@ Example (per-seed override):
   # page_param = page
 
 This design keeps site logic and selectors separated (`seek-pagination.ini`), while operational defaults are easy for operators to manage (`project.conf`).
-```
 
 > Notes:
 >
