@@ -3,13 +3,13 @@
 elvis \- initialise and run daily Australian sales lead call list generation
 .SH SYNOPSIS
 .B elvis-run
-.RI [ init | help ]
+.RI [ init | get-transaction-data | help ]
 .SH DESCRIPTION
 .PP
 .B elvis-run
-is the master orchestrator for the Elvis lead-generation utility. It prepares the environment by loading configuration, validating variables, and ensuring logging is set up before any scraping or enrichment.
+is the master orchestrator for the Elvis lead-generation utility. It supports modular initialisation and a full transaction data workflow for lead generation, strictly following the logic and pseudocode in README.md.
 .PP
-The initialisation sequence is modular and POSIX-compliant. Each step can be run independently or via the orchestrator.
+The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically.
 .SH INIT SEQUENCE
 .TP
 .B load_env.sh
@@ -37,12 +37,18 @@ Runs all init steps in order.
 .B init
 Run the full initialisation sequence.
 .TP
+.B get-transaction-data
+Run the full transaction data workflow: normalise, split, detect pagination, and fetch all seeds.
+.TP
 .B help
 Show help and usage for all init scripts.
 .SH EXAMPLES
 .TP
 .B elvis-run init
 Run all initialisation steps.
+.TP
+.B elvis-run get-transaction-data
+Run the full transaction data workflow (normalise, split, detect, fetch).
 .TP
 .B elvis-run help
 Show help for all init scripts.
@@ -71,6 +77,15 @@ Seek-specific selectors and pagination config.
 .TP
 .B logs/log.txt
 Log file for run details.
+.TP
+.B tmp/seeds.normalized.csv
+Normalised seeds file (intermediate).
+.TP
+.B tmp/records/seed_N.txt
+Per-record split files (intermediate).
+.TP
+.B tmp/<seed_id>.htmls
+Fetched HTML for each seed.
 .SH AUTHOR
 Elvis project contributors.
 .SH BUGS

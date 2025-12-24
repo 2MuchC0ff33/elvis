@@ -48,6 +48,55 @@ if ! sh "$REPO_ROOT/bin/elvis-run" init; then
   fail=1
 fi
 
+# Additional tests for get transaction data workflow
+
+tmp=tmp/test
+mkdir -p "$tmp"
+
+echo "[TEST] normalize.awk: trims and cleans CSV"
+printf 'seed_id,location,base_url\nfoo , Perth , https://x\n' | awk -f scripts/lib/normalize.awk > "$tmp/norm.csv"
+grep -q 'foo,Perth,https://x' "$tmp/norm.csv" || { echo "FAIL: normalize.awk"; fail=1; }
+
+echo "[TEST] split_records.sh: splits to .txt files"
+sh scripts/lib/split_records.sh "$tmp/norm.csv" "$tmp/records" || { echo "FAIL: split_records.sh error"; fail=1; }
+[ -f "$tmp/records/seed_1.txt" ] || { echo "FAIL: split_records.sh output"; fail=1; }
+grep -q 'seed_id=foo' "$tmp/records/seed_1.txt" || { echo "FAIL: split_records.sh content"; fail=1; }
+
+echo "[TEST] pick_pagination.sh: detects PAG_START"
+out=$(sh scripts/lib/pick_pagination.sh 'https://seek.com.au/jobs?foo')
+[ "$out" = "PAG_START" ] || { echo "FAIL: pick_pagination.sh"; fail=1; }
+
+echo "[TEST] fetch.sh: fails on bad URL"
+if sh scripts/fetch.sh 'http://127.0.0.1:9999/404' 1 2 > /dev/null 2>&1; then
+  echo "FAIL: fetch.sh should fail"; fail=1
+else
+  echo "PASS: fetch.sh error handling"
+fi
+
+echo "[TEST] paginate.sh: paginates and stops (mock)"
+cat > "$tmp/mock.html" <<EOF
+<html><body>page1<span data-automation=\"page-next\"></span></body></html>
+EOF
+# Create a temporary mock fetch script (POSIX-friendly)
+cat > "$tmp/mock_fetch.sh" <<SH
+#!/bin/sh
+# Mock fetch: output the mock html file and then remove it to simulate page change
+cat "$tmp/mock.html"
+rm -f "$tmp/mock.html"
+SH
+chmod +x "$tmp/mock_fetch.sh"
+cp scripts/lib/paginate.sh "$tmp/paginate.sh"
+# Run paginate with FETCH_SCRIPT pointing to the mock script and capture output
+FETCH_SCRIPT="$tmp/mock_fetch.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_START' > "$tmp/paginate.out" || true
+if [ -f "$tmp/paginate.out" ]; then
+  out=$(cat "$tmp/paginate.out")
+else
+  echo "FAIL: paginate.sh did not produce output"; fail=1
+  out=""
+fi
+
+echo "$out" | grep -q 'page1' || { echo "FAIL: paginate.sh page1"; fail=1; }
+
 if [ "$fail" -eq 0 ]; then
   echo "All tests passed."
 else
