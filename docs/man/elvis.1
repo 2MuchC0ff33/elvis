@@ -1,0 +1,77 @@
+.TH ELVIS 1 "2025-12-24" "elvis 0.1" "User Commands"
+.SH NAME
+elvis \- initialise and run daily Australian sales lead call list generation
+.SH SYNOPSIS
+.B elvis-run
+.RI [ init | help ]
+.SH DESCRIPTION
+.PP
+.B elvis-run
+is the master orchestrator for the Elvis lead-generation utility. It prepares the environment by loading configuration, validating variables, and ensuring logging is set up before any scraping or enrichment.
+.PP
+The initialisation sequence is modular and POSIX-compliant. Each step can be run independently or via the orchestrator.
+.SH INIT SEQUENCE
+.TP
+.B load_env.sh
+Loads .env file (if present) into the environment.
+.TP
+.B load_config.sh
+Loads project.conf into the environment.
+.TP
+.B load_seek_pagination.sh
+Loads Seek pagination config as SEEK_* variables.
+.TP
+.B validate_env.sh
+Validates all required environment variables.
+.TP
+.B prepare_log.sh
+Ensures log file and directory exist.
+.TP
+.B init-help.sh
+Displays help and usage for all init scripts.
+.TP
+.B elvis-run init
+Runs all init steps in order.
+.SH OPTIONS
+.TP
+.B init
+Run the full initialisation sequence.
+.TP
+.B help
+Show help and usage for all init scripts.
+.SH EXAMPLES
+.TP
+.B elvis-run init
+Run all initialisation steps.
+.TP
+.B elvis-run help
+Show help for all init scripts.
+.TP
+.B . scripts/lib/load_env.sh
+Manually load .env file.
+.TP
+.B . scripts/lib/load_config.sh
+Manually load project.conf.
+.TP
+.B . scripts/lib/validate_env.sh
+Validate required environment variables.
+.TP
+.B . scripts/lib/prepare_log.sh
+Ensure log file and directory exist.
+.SH FILES
+.TP
+.B project.conf
+Canonical project configuration.
+.TP
+.B .env
+Environment overrides and secrets.
+.TP
+.B configs/seek-pagination.ini
+Seek-specific selectors and pagination config.
+.TP
+.B logs/log.txt
+Log file for run details.
+.SH AUTHOR
+Elvis project contributors.
+.SH BUGS
+Report issues via project repository.
