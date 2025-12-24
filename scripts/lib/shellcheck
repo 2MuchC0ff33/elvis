@@ -1,5 +1,0 @@
-#!/bin/sh
-# scripts/lib/shellcheck
-# Thin shim to call the shellcheck-cygwin-wrapper for Cygwin environments.
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-exec "$SCRIPT_DIR/shellcheck-cygwin-wrapper.sh" "$@"

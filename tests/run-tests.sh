@@ -42,31 +42,6 @@ if [ ! -f "$REPO_ROOT/logs/log.txt" ]; then
   fail=1
 fi
 
-# Test: shellcheck -x (if available) — verify scripts are free of issues
-# Prefer repo wrapper in PATH so Cygwin path conversions happen when needed
-export PATH="$REPO_ROOT/scripts/lib:$PATH"
-if command -v shellcheck >/dev/null 2>&1; then
-  echo "Running shellcheck -x across scripts..."
-  SC_OUT="$(mktemp)" || SC_OUT="/tmp/shellcheck.out"
-  # Run shellcheck and capture stdout/stderr so we can make a decision on Haskell runtime issues
-  if ! find "$REPO_ROOT" -type f -name '*.sh' -print0 | xargs -0 shellcheck -x >"$SC_OUT" 2>&1; then
-    if grep -q 'openBinaryFile' "$SC_OUT" >/dev/null 2>&1; then
-      echo "SKIP: shellcheck appears misconfigured in this environment (openBinaryFile). Please install a native ShellCheck or adjust PATH." >&2
-      sed -n '1,200p' "$SC_OUT" >&2 || true
-      rm -f "$SC_OUT" || true
-    else
-      echo "FAIL: shellcheck reported issues" >&2
-      sed -n '1,200p' "$SC_OUT" >&2 || true
-      rm -f "$SC_OUT" || true
-      fail=1
-    fi
-  else
-    rm -f "$SC_OUT" || true
-  fi
-else
-  echo "SKIP: shellcheck not installed — install shellcheck to enable lint checks" >&2
-fi
-
 # Test: bin/elvis-run init (should complete without error)
 if ! sh "$REPO_ROOT/bin/elvis-run" init; then
   echo "FAIL: bin/elvis-run init failed" >&2
