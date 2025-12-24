@@ -134,7 +134,7 @@ process exits non-zero.
   precedence). Do not commit secrets. Use `.env.example` as a template when
   creating your own `.env` file.
 
-* - If rotating User-Agent is enabled (`UA_ROTATE=true`), provide
+- If rotating User-Agent is enabled (`UA_ROTATE=true`), provide
     `configs/user_agents.txt` with one UA string per line and set `UA_LIST_PATH`
     appropriately in `.env` or `project.conf`.
 
