@@ -736,7 +736,6 @@ flowchart TB
 ├── .env                      # Environment variables (should not be committed)
 ├── .snapshots/               # Environment variable snapshots (should not be committed)
 ├── project.conf              # Primary configuration (non-secret operational defaults)
-├── project.conf              # Alternate configuration format (optional)
 ├── LICENSE                   # Project license
 ├── README.md                 # Project documentation (this file)
 ├── seeds.txt                 # Seed URLs & dork templates
