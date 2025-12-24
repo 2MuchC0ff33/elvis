@@ -5,18 +5,23 @@
 set -eu
 
 show_help() {
-  echo "Usage: $0 init | help"
-  echo "  init   Run initialisation sequence (load env, config, pagination, validate, log)"
-  echo "  help   Show help for init scripts"
+  echo "Usage: $0 init | get-transaction-data | set-status | end-sequence | choose-dork | help"
+  echo "  init                  Run initialisation sequence (load env, config, pagination, validate, log)"
+  echo "  get-transaction-data  Run transaction data workflow (seeds, normalise, split, pagination, fetch)"
+  echo "  set-status            Run the 'set status' workflow for results.csv (enrich -> validate -> dedupe -> output)"
+  echo "  end-sequence          Run the end-sequence workflow: archive, cleanup, summarise"
+  echo "  choose-dork           Interactive: select a Google dork template and open in browser"
+  echo "  help                  Show this help"
   exit 0
 }
 usage() {
   cat <<EOF
-elvis-run [init|get-transaction-data|set-status|end-sequence|help]
+elvis-run [init|get-transaction-data|set-status|end-sequence|choose-dork|help]
   init                  Run initialisation sequence
   get-transaction-data  Run transaction data workflow (seeds, normalise, split, pagination, fetch)
   set-status            Run the 'set status' workflow for results.csv (enrich -> validate -> dedupe -> output)
   end-sequence          Run the end-sequence workflow: archive, cleanup, summarise
+  choose-dork           Interactive: select a Google dork template and open in browser
   help                  Show this help
 EOF
   exit 0
@@ -82,6 +87,10 @@ case "${1:-}" in
   end-sequence)
     shift
     exec "$(dirname "$0")/../scripts/end_sequence.sh" "$@"
+    ;;
+  choose-dork)
+    shift
+    exec "$(dirname "$0")/../scripts/choose_dork.sh" "$@"
     ;;
   *)
     show_help

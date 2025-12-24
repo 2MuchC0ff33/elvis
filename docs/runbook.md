@@ -39,6 +39,20 @@ logic and pseudocode in README.md.
 - The entire workflow is run via: `bin/elvis-run get-transaction-data`
 - Output: HTML for each seed is saved to `tmp/<seed_id>.htmls`
 
+### Additional Utility Workflows
+
+#### Company History Check (is_dup_company)
+
+- Use `scripts/lib/is_dup_company.sh "Company Name" [history_file]` to check if
+  a company exists in history (case-insensitive). Returns TRUE or FALSE.
+- Used in deduplication and validation steps.
+
+#### Manual Dork Selection (choose-dork)
+
+- Use `bin/elvis-run choose-dork [dork_templates.txt]` to interactively select a
+  Google dork template and open it in the browser for manual enrichment.
+- Supports manual research for contact enrichment as described in the README.
+
 ### Error Handling
 
 - Missing or malformed seeds file: workflow aborts with a clear error.
@@ -170,7 +184,15 @@ done < "$tmp_conf"
 - `scripts/lib/validate_env.sh` — Validates all required environment variables.
 - `scripts/lib/prepare_log.sh` — Ensures log file and directory exist.
 - `scripts/init-help.sh` — Prints help and usage for all init scripts.
-- `bin/elvis-run` — Orchestrates the full init sequence.
+- `bin/elvis-run` — Orchestrates the full init sequence and all workflows,
+  including choose-dork and is_dup_company.
+
+## Utility Scripts
+
+- `scripts/lib/is_dup_company.sh` — Checks if a company name exists in history
+  (case-insensitive).
+- `scripts/choose_dork.sh` — Interactive dork template selector for manual
+  enrichment.
 
 All scripts are POSIX-compliant and provide clear error messages on failure.
 
@@ -330,7 +352,8 @@ Notes:
 
 This workflow supports updating result records (`results.csv`) with manual
 enrichment by an administrator and producing a final daily calllist with updated
-statuses and an audit trail.
+statuses and an audit trail. Use `is_dup_company.sh` for history checks and
+`choose-dork` for manual enrichment as needed.
 
 Quick steps:
 

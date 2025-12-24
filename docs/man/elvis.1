@@ -3,7 +3,7 @@
 elvis \- initialise and run daily Australian sales lead call list generation
 .SH SYNOPSIS
 .B elvis-run
-.RI [ init | get-transaction-data | set-status | end-sequence | help ]
+.RI [ init | get-transaction-data | set-status | end-sequence | choose-dork | help ]
 .SH DESCRIPTION
 .PP
 .B elvis-run
@@ -48,6 +48,12 @@ Run the set-status workflow: manual enrichment of `results.csv`, validation, ded
 .TP
 .B end-sequence
 Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
+.TP
+.B choose-dork
+Interactive: select a Google dork template and open in browser for manual enrichment.
+.TP
+.B is_dup_company.sh
+Check if a company name exists in history (case-insensitive). Usage: scripts/lib/is_dup_company.sh "Company Name" [history_file]
 .TP
 .B \\--auto-heal
 Enable opt-in automatic recovery attempts for failed steps (preserves failed artifacts under `.snapshots/failed/`).
