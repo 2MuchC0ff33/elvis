@@ -37,12 +37,7 @@ if [ "$seed_count" -eq 0 ]; then
 fi
 
 # Extract seed_id and base_url and iterate in POSIX sh (no arrays, no indirect expansion)
-awk -F',' 'NR>1 {
-  seed=$1; base=$3;
-  gsub(/^"|"$/, "", seed);
-  gsub(/^"|"$/, "", base);
-  if (seed != "" && base != "") print seed "|" base
-}' "$NORM_FILE" | while IFS='|' read -r seed_id base_url; do
+awk -F',' -f "$(dirname "$0")/lib/extract_seeds.awk" "$NORM_FILE" | while IFS='|' read -r seed_id base_url; do
   model=$(sh "$(dirname "$0")/lib/pick_pagination.sh" "$base_url")
   echo "INFO: [$seed_id] Using model $model for $base_url"
   sh "$(dirname "$0")/lib/paginate.sh" "$base_url" "$model" > "$TMP_DIR/${seed_id}.htmls"

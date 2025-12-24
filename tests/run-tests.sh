@@ -66,6 +66,73 @@ echo "[TEST] pick_pagination.sh: detects PAG_START"
 out=$(sh scripts/lib/pick_pagination.sh 'https://seek.com.au/jobs?foo')
 [ "$out" = "PAG_START" ] || { echo "FAIL: pick_pagination.sh"; fail=1; }
 
+# Unit test: extract_seeds.awk
+echo "[TEST] extract_seeds.awk: extracts seed_id and base_url"
+unit_tmp_seeds="$tmp/seeds_test"
+mkdir -p "$unit_tmp_seeds"
+cat > "$unit_tmp_seeds/norm.csv" <<CSV
+seed_id,location,base_url
+seek_fifo_perth,Perth,https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+foo,Bar,https://example.com/jobs
+CSV
+
+awk -F',' -f scripts/lib/extract_seeds.awk "$unit_tmp_seeds/norm.csv" > "$unit_tmp_seeds/out.txt" || { echo "FAIL: extract_seeds.awk failed"; fail=1; }
+grep -q 'seek_fifo_perth|https://www.seek.com.au/fifo-jobs/in-All-Perth-WA' "$unit_tmp_seeds/out.txt" || { echo "FAIL: extract_seeds.awk missing seek_fifo_perth"; fail=1; }
+
+rm -rf "$unit_tmp_seeds"
+
+# Unit test: http_utils.sh (sourcing)
+echo "[TEST] http_utils.sh: can be sourced and provides fetch_with_backoff"
+. scripts/lib/http_utils.sh || { echo "FAIL: sourcing http_utils.sh"; fail=1; }
+# function should exist
+if ! command -v fetch_with_backoff >/dev/null 2>&1; then
+  echo "FAIL: fetch_with_backoff not available"; fail=1
+fi
+
+# Unit test: parse.sh (minimal parse from mock HTML)
+echo "[TEST] parse.sh: parse job cards from HTML"
+unit_tmp_parse="$tmp/parse_test"
+mkdir -p "$unit_tmp_parse"
+cat > "$unit_tmp_parse/mock.htmls" <<HTML
+<article data-automation="normalJob" data-job-id="job-123">
+  <a data-automation="jobCompany">Example Pty Ltd</a>
+  <a data-automation="jobTitle">Manager</a>
+  <a data-automation="jobLocation">Perth, WA</a>
+  <span data-automation="jobShortDescription">Summary text for example</span>
+</article>
+
+<article data-automation="normalJob" data-job-id="job-456">
+  <a data-automation="jobCompany">Another Co</a>
+  <a data-automation="jobTitle">Engineer</a>
+  <a data-automation="jobLocation">Sydney, NSW</a>
+  <span data-automation="jobShortDescription">Another summary</span>
+</article>
+HTML
+
+sh scripts/parse.sh "$unit_tmp_parse/mock.htmls" --out "$unit_tmp_parse/out.csv" || { echo "FAIL: parse.sh failed"; fail=1; }
+grep -q 'Example Pty Ltd' "$unit_tmp_parse/out.csv" || { echo "FAIL: Example Pty Ltd missing in parse output"; fail=1; }
+# check job_id and summary present
+grep -q 'job-123' "$unit_tmp_parse/out.csv" || { echo "FAIL: job-123 missing in parse output"; fail=1; }
+grep -q 'Summary text for example' "$unit_tmp_parse/out.csv" || { echo "FAIL: summary missing in parse output"; fail=1; }
+
+rm -rf "$unit_tmp_parse"
+
+# Unit test: enrich.sh (wrapper to enrich_status.sh)
+echo "[TEST] enrich.sh: wrapper to enrich_status.sh"
+unit_tmp_enrich="$tmp/enrich_test"
+mkdir -p "$unit_tmp_enrich"
+cat > "$unit_tmp_enrich/in.csv" <<CSV
+company_name,prospect_name,title,phone,email,location
+A,Joe,MD,0411000000,joe@example.com,Perth,WA
+CSV
+
+sh scripts/enrich.sh "$unit_tmp_enrich/in.csv" "$unit_tmp_enrich/out.csv" || { echo "FAIL: enrich.sh failed"; fail=1; }
+[ -f "$unit_tmp_enrich/out.csv" ] || { echo "FAIL: enrich.sh did not produce out file"; fail=1; }
+rm -rf "$unit_tmp_enrich"
+
+# Unit test: run.sh help
+sh scripts/run.sh help >/dev/null || { echo "FAIL: run.sh help"; fail=1; }
+
 echo "[TEST] fetch.sh: fails on bad URL"
 if sh scripts/fetch.sh 'http://127.0.0.1:9999/404' 1 2 > /dev/null 2>&1; then
   echo "FAIL: fetch.sh should fail"; fail=1
