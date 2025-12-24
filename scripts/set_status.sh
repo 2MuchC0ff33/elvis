@@ -51,9 +51,9 @@ sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv
 
 # Step 3: Deduplication
 if [ "$COMMIT_HISTORY" = true ]; then
-  sh scripts/dedupe_status.sh tmp/validated.csv --out tmp/deduped.csv --append-history
+  sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv --append-history
 else
-  sh scripts/dedupe_status.sh tmp/validated.csv --out tmp/deduped.csv
+  sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv
 fi
 
 # Step 4: Produce daily CSV

@@ -97,6 +97,65 @@ fi
 
 echo "$out" | grep -q 'page1' || { echo "FAIL: paginate.sh page1"; fail=1; }
 
+# Unit test: validate.sh (unit)
+echo "[TEST] validate.sh: validation & normalisation (unit test)"
+unit_tmp_validate="$tmp/validate_test"
+mkdir -p "$unit_tmp_validate"
+cat > "$unit_tmp_validate/input.csv" <<CSV
+company_name,prospect_name,title,phone,email,location
+GoodCo,John,MD,+61410000000,john@good.co,Perth,WA
+,,Owner,0412223333,owner@nocomp.com,Sydney,VIC
+NoContact,Jane,HR,, ,Brisbane,QLD
+BadEmail,Bob,CTO,,not-an-email,Melbourne,VIC
+CommaLoc,Alan,CEO,0413444444,,Adelaide,SA
+CSV
+
+# Run validation
+sh scripts/validate.sh "$unit_tmp_validate/input.csv" --out "$unit_tmp_validate/out.csv" || { echo "FAIL: validate.sh failed"; fail=1; }
+
+# Check output contains only GoodCo and CommaLoc
+grep -q 'GoodCo' "$unit_tmp_validate/out.csv" || { echo "FAIL: GoodCo missing in validate out"; fail=1; }
+grep -q 'CommaLoc' "$unit_tmp_validate/out.csv" || { echo "FAIL: CommaLoc missing in validate out"; fail=1; }
+# Ensure NoCompany, NoContact and BadEmail are excluded
+grep -q 'NoCompany' "$unit_tmp_validate/out.csv" && { echo "FAIL: NoCompany should be excluded"; fail=1; }
+grep -q 'NoContact' "$unit_tmp_validate/out.csv" && { echo "FAIL: NoContact should be excluded"; fail=1; }
+grep -q 'BadEmail' "$unit_tmp_validate/out.csv" && { echo "FAIL: BadEmail should be excluded"; fail=1; }
+# Check phone normalisation (+61 -> 0)
+grep -q '0410000000' "$unit_tmp_validate/out.csv" || { echo "FAIL: phone normalisation failed"; fail=1; }
+
+# Clean up
+rm -rf "$unit_tmp_validate"
+
+# Unit test: deduper.sh
+echo "[TEST] deduper.sh: dedupe + append history (unit test)"
+unit_tmp="$tmp/deduper_test"
+mkdir -p "$unit_tmp"
+cat > "$unit_tmp/input.csv" <<CSV
+company_name,prospect_name,title,phone,email,location
+Acme Pty Ltd,John Smith,MD,0411000000,john@example.com,Sydney
+Acme Pty Ltd,Jane Doe,Owner,0411999999,jane@example.com,Sydney
+NewCo,Alan,CEO,,alan@newco.com,Perth
+CSV
+
+# Prepare isolated history file
+echo "OldCo Ltd" > "$unit_tmp/history.txt"
+
+# Run deduper and append to our isolated history file
+sh scripts/deduper.sh --in "$unit_tmp/input.csv" --out "$unit_tmp/out.csv" --history "$unit_tmp/history.txt" --append-history || { echo "FAIL: deduper.sh failed"; fail=1; }
+
+# Validate output: should contain single Acme and NewCo
+grep -q 'Acme Pty Ltd' "$unit_tmp/out.csv" || { echo "FAIL: Acme missing in deduper out"; fail=1; }
+grep -q 'NewCo' "$unit_tmp/out.csv" || { echo "FAIL: NewCo missing in deduper out"; fail=1; }
+# Ensure Acme appears only once
+count=$(tail -n +2 "$unit_tmp/out.csv" | awk -F, '$1=="Acme Pty Ltd"{c++} END{print c+0}')
+[ "$count" -eq 1 ] || { echo "FAIL: Acme dedup not working (count=$count)"; fail=1; }
+
+# Check history appended
+grep -q 'NewCo' "$unit_tmp/history.txt" || { echo "FAIL: NewCo not appended to history"; fail=1; }
+
+# Clean up unit test temp
+rm -rf "$unit_tmp"
+
 # -----------------------------------------------------------------------------
 # Tests for set-status workflow (enrichment -> validate -> dedupe -> logging)
 # -----------------------------------------------------------------------------

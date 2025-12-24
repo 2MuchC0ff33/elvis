@@ -42,39 +42,7 @@ for col in company_name prospect_name title phone email location; do
 done
 
 # Process rows: normalise phone, validate fields, emit to OUT only valid rows
-awk -v email_re="$EMAIL_REGEX" 'BEGIN{FS=","; OFS=","}
-NR==1{print $0; next}
-{
-  # simple trimming
-  for(i=1;i<=NF;i++){gsub(/^ +| +$/,"",$i)}
-  company=$1; phone=$4; email=$5
-  # reconstruct location (fields 6..NF) into a single field
-  location=""
-  if (NF>=6) {
-    location=$6
-    for(j=7;j<=NF;j++){ location = location "," $j }
-  }
-  # phone normalisation: replace +61 prefix with 0 and remove non-digits
-  gsub(/\+61/,"0",phone)
-  gsub(/[^0-9]/,"",phone)
-  # email validation
-  valid_email=1
-  if (length(email)>0) {
-    if (email !~ ("^" email_re "$")) valid_email=0
-  }
-  # company required
-  if (company=="" ){
-    print "INVALID",NR, "missing company" > "/dev/stderr"; next
-  }
-  # contact requirement: at least one contact (phone or email)
-  if (length(phone)==0 && length(email)==0){ print "INVALID",NR, "missing contact" > "/dev/stderr"; next }
-  if (length(email)>0 && valid_email==0){ print "INVALID",NR, "invalid email: " email > "/dev/stderr"; next }
-  # Replace fields with normalized values
-  $4=phone
-  $5=email
-  $6=location
-  print $0
-}' "$INPUT" > "$OUT" || {
+awk -v email_re="$EMAIL_REGEX" -f scripts/lib/validator.awk "$INPUT" > "$OUT" || {
   echo "ERROR: validation failed; see stderr for details" >&2
   exit 3
 }

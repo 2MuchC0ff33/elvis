@@ -251,7 +251,7 @@ and the Windows ShellCheck.
   non-secret keys from `config.ini` into `project.conf` and remove references to
   `config.ini` in automation scripts.
 
-# Set-status workflow — Enrich, Validate, Deduplicate, Audit ✅
+## Set-status workflow — Enrich, Validate, Deduplicate, Audit ✅
 
 This workflow supports updating result records (`results.csv`) with manual
 enrichment by an administrator and producing a final daily calllist with updated
