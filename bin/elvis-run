@@ -12,9 +12,10 @@ show_help() {
 }
 usage() {
   cat <<EOF
-elvis-run [init|get-transaction-data|help]
+elvis-run [init|get-transaction-data|set-status|help]
   init                  Run initialisation sequence
   get-transaction-data  Run transaction data workflow (seeds, normalise, split, pagination, fetch)
+  set-status            Run the 'set status' workflow for results.csv (enrich -> validate -> dedupe -> output)
   help                  Show this help
 EOF
   exit 0
@@ -71,6 +72,11 @@ case "${1:-}" in
     ;;
   get-transaction-data)
     exec "$(dirname "$0")/../scripts/get_transaction_data.sh"
+    ;;
+  set-status)
+    # forward remaining args to set_status.sh
+    shift
+    exec "$(dirname "$0")/../scripts/set_status.sh" "$@"
     ;;
   *)
     show_help

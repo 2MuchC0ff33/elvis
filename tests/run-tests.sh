@@ -97,6 +97,53 @@ fi
 
 echo "$out" | grep -q 'page1' || { echo "FAIL: paginate.sh page1"; fail=1; }
 
+# -----------------------------------------------------------------------------
+# Tests for set-status workflow (enrichment -> validate -> dedupe -> logging)
+# -----------------------------------------------------------------------------
+
+echo "[TEST] set-status: full workflow (non-interactive)"
+# Prepare test data
+rm -rf "$tmp/calllists" "$tmp/logs"
+mkdir -p "$tmp/calllists"
+cat > "$tmp/results.csv" <<CSV
+company_name,prospect_name,title,phone,email,location
+Acme Pty Ltd,John Smith,MD,,john@example.com,Sydney, NSW
+DupCo Ltd,Jane Doe,Owner,, ,Melbourne, VIC
+CSV
+# Prepare enriched file where second record gets a phone
+cp "$tmp/results.csv" "$tmp/enriched.csv"
+# Add phone for DupCo
+awk -F, 'BEGIN{OFS=FS} NR==1{print $0} NR==3{$5="0412345678"; $6=""; print $0} NR==2{print $0}}' "$tmp/enriched.csv" > "$tmp/enriched.tmp" && mv "$tmp/enriched.tmp" "$tmp/enriched.csv"
+
+# Backup history and audit
+HIST_BACKUP="$tmp/companies_history.bak"
+cp -f ../../companies_history.txt "$HIST_BACKUP"
+AUDIT_BACKUP="$tmp/audit.bak"
+cp -f ../../audit.txt "$AUDIT_BACKUP" 2>/dev/null || true
+
+# Run set-status with commit to append history
+sh ../../scripts/set_status.sh --input "$tmp/results.csv" --enriched "$tmp/enriched.csv" --out-dir "$tmp/calllists" --commit-history || { echo "FAIL: set_status.sh failed"; fail=1; }
+
+# Check calllist exists
+CALLFILE=$(ls -1 "$tmp/calllists" | grep calllist_ || true)
+if [ -z "$CALLFILE" ]; then
+  echo "FAIL: calllist not produced"; fail=1
+else
+  echo "Produced calllist: $CALLFILE"
+  grep -q 'Acme Pty Ltd' "$tmp/calllists/$CALLFILE" || { echo "FAIL: Acme not in calllist"; fail=1; }
+  grep -q 'DupCo Ltd' "$tmp/calllists/$CALLFILE" || { echo "FAIL: DupCo not in calllist"; fail=1; }
+fi
+
+# Check companies_history was appended (case-insensitive match)
+tail -n 5 ../../companies_history.txt | tr '[:upper:]' '[:lower:]' | grep -q 'acme pty ltd' || { echo "FAIL: history not appended for Acme"; fail=1; }
+
+# Check audit.txt has an entry
+grep -q 'set-status run' ../../audit.txt || { echo "FAIL: audit entry missing"; fail=1; }
+
+# Restore backups
+mv "$HIST_BACKUP" ../../companies_history.txt
+mv "$AUDIT_BACKUP" ../../audit.txt 2>/dev/null || true
+
 if [ "$fail" -eq 0 ]; then
   echo "All tests passed."
 else

@@ -3,7 +3,7 @@
 elvis \- initialise and run daily Australian sales lead call list generation
 .SH SYNOPSIS
 .B elvis-run
-.RI [ init | get-transaction-data | help ]
+.RI [ init | get-transaction-data | set-status | help ]
 .SH DESCRIPTION
 .PP
 .B elvis-run
@@ -42,6 +42,9 @@ Run the full transaction data workflow: normalise, split, detect pagination, and
 .TP
 .B help
 Show help and usage for all init scripts.
+.TP
+.B set-status
+Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging.
 .SH EXAMPLES
 .TP
 .B elvis-run init

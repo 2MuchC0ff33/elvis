@@ -251,6 +251,42 @@ and the Windows ShellCheck.
   non-secret keys from `config.ini` into `project.conf` and remove references to
   `config.ini` in automation scripts.
 
+# Set-status workflow — Enrich, Validate, Deduplicate, Audit ✅
+
+This workflow supports updating result records (`results.csv`) with manual
+enrichment by an administrator and producing a final daily calllist with updated
+statuses and an audit trail.
+
+Quick steps:
+
+1. Prepare `results.csv` with expected headers:
+   `company_name,prospect_name,title,phone,email,location`.
+2. Run `scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit` to
+   create an editable copy and open it in `$EDITOR` for manual enrichment.
+3. After enrichment, run
+   `scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
+   to validate, dedupe and produce `data/calllists/calllist_YYYY-MM-DD.csv`.
+4. Logs are written to `logs/log.txt` and audit records to `audit.txt`.
+
+Notes & behaviour:
+
+- Validation checks: required fields, at least one contact (phone or email),
+  email regex, and phone normalisation (converts `+61` prefixes to `0` and
+  strips non-digits).
+- Deduplication: case-insensitive match on `company_name` against
+  `companies_history.txt` (append-only). Use `--commit-history` to append newly
+  accepted companies to history.
+- The workflow is orchestrated by `scripts/set_status.sh` and is available via
+  `bin/elvis-run set-status`.
+
+Example (non-interactive):
+
+sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv
+--out-dir data/calllists --commit-history
+
+This will run validation, deduplication (appending history), produce the daily
+CSV, and write audit/log entries.
+
 ---
 
 Keep this runbook updated when configuration practices, file locations, or init
