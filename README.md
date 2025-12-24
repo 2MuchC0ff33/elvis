@@ -524,10 +524,10 @@ Mermaid diagram — Mini VCS workflow
 
 ```mermaid
 flowchart LR
-  A[Create Snapshot\n(.snapshots/snap-&lt;ts&gt;.tar.gz)] --> B[Store checksum\n(.snapshots/checksums/*.sha1)]
+  A[Create Snapshot\n(.snapshots/snap-<ts>.tar.gz)] --> B[Store checksum\n(.snapshots/checksums/*.sha1)]
   B --> C[Detect Changes\n(compare with previous snapshot)]
-  C --> D[Generate Patch\n(.snapshots/patches/&lt;name&gt;.patch)]
-  D --> E[Apply Patch\n(patch -p0 &lt; patchfile)]
+  C --> D[Generate Patch\n(.snapshots/patches/<name>.patch)]
+  D --> E[Apply Patch\n(patch -p0 < patchfile)]
   A --> F[Restore Snapshot\n(tar -xzf .snapshots/snap-&lt;ts&gt;.tar.gz -C target)]
   E --> G[Record in index/log]
 ```
