@@ -83,7 +83,9 @@ rm -rf "$unit_tmp_seeds"
 
 # Unit test: http_utils.sh (sourcing)
 echo "[TEST] http_utils.sh: can be sourced and provides fetch_with_backoff"
-. scripts/lib/http_utils.sh || { echo "FAIL: sourcing http_utils.sh"; fail=1; }
+if ! . "../scripts/lib/http_utils.sh"; then
+  echo "FAIL: sourcing http_utils.sh"; fail=1
+fi
 # function should exist
 if ! command -v fetch_with_backoff >/dev/null 2>&1; then
   echo "FAIL: fetch_with_backoff not available"; fail=1
@@ -251,7 +253,13 @@ cp -f audit.txt "$AUDIT_BACKUP" 2>/dev/null || true
 sh "$REPO_ROOT/scripts/set_status.sh" --input "$tmp/results.csv" --enriched "$tmp/enriched.csv" --out-dir "$tmp/calllists" --commit-history || { echo "FAIL: set_status.sh failed"; fail=1; }
 
 # Check calllist exists
-CALLFILE=$(ls -1 "$tmp/calllists" | grep calllist_ || true)
+CALLFILE=""
+for f in "$tmp/calllists"/calllist_*; do
+  if [ -e "$f" ]; then
+    CALLFILE="${f##*/}"
+    break
+  fi
+done
 if [ -z "$CALLFILE" ]; then
   echo "FAIL: calllist not produced"; fail=1
 else
