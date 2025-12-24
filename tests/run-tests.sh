@@ -83,7 +83,7 @@ rm -rf "$unit_tmp_seeds"
 
 # Unit test: http_utils.sh (sourcing)
 echo "[TEST] http_utils.sh: can be sourced and provides fetch_with_backoff"
-if ! . "../scripts/lib/http_utils.sh"; then
+if ! . "$REPO_ROOT/scripts/lib/http_utils.sh"; then
   echo "FAIL: sourcing http_utils.sh"; fail=1
 fi
 # function should exist
@@ -166,8 +166,133 @@ fi
 
 echo "$out" | grep -q 'page1' || { echo "FAIL: paginate.sh page1"; fail=1; }
 
-# Unit test: validate.sh (unit)
-echo "[TEST] validate.sh: validation & normalisation (unit test)"
+# Unit test: archive_artifacts (archival)
+echo "[TEST] archive_artifacts: creates snapshot, checksum and index"
+unit_tmp_archive="$tmp/archive_test"
+rm -rf "$unit_tmp_archive"
+mkdir -p "$unit_tmp_archive/subdir"
+# create sample files
+printf 'hello' > "$unit_tmp_archive/file1.txt"
+printf 'world' > "$unit_tmp_archive/subdir/file2.txt"
+# Use an isolated snapshot dir
+export SNAPSHOT_DIR="$unit_tmp_archive/snapshots"
+# Run archive wrapper with explicit paths
+sh "$REPO_ROOT/scripts/archive.sh" "$unit_tmp_archive/file1.txt" "$unit_tmp_archive/subdir" || { echo "FAIL: archive.sh failed"; fail=1; }
+# Check snapshot created
+snap_file=$(ls -1 "$unit_tmp_archive/snapshots" | grep '^snap-' | head -n1 || true)
+if [ -z "$snap_file" ]; then
+  echo "FAIL: no snapshot produced"; fail=1
+else
+  echo "Produced snapshot: $snap_file"
+  # Check checksum exists
+  if [ ! -f "$unit_tmp_archive/snapshots/checksums/${snap_file}.sha1" ]; then
+    echo "FAIL: checksum missing for $snap_file"; fail=1
+  fi
+  # Check index contains entry
+  grep -q "$snap_file" "$unit_tmp_archive/snapshots/index" || { echo "FAIL: index missing snapshot entry"; fail=1; }
+  # Verify checksum if tool available
+  if command -v sha1sum >/dev/null 2>&1; then
+    (cd "$unit_tmp_archive/snapshots" && sha1sum -c "checksums/${snap_file}.sha1" >/dev/null 2>&1) || { echo "FAIL: sha1sum check failed"; fail=1; }
+  else
+    echo "WARN: sha1sum not available - skipping checksum verification"
+  fi
+fi
+# Cleanup unit tmp
+rm -rf "$unit_tmp_archive"
+
+# Unit test: cleanup_tmp (garbage collection)
+echo "[TEST] cleanup_tmp: removes contents of tmp path"
+unit_tmp_clean="$tmp/cleanup_test"
+rm -rf "$unit_tmp_clean"
+mkdir -p "$unit_tmp_clean/subdir"
+# create files
+printf 'a' > "$unit_tmp_clean/fileA.tmp"
+printf 'b' > "$unit_tmp_clean/subdir/fileB.tmp"
+# Run cleanup (default behaviour: remove contents but keep dir)
+sh "$REPO_ROOT/scripts/cleanup.sh" "$unit_tmp_clean" || { echo "FAIL: cleanup.sh failed"; fail=1; }
+# Verify contents removed
+if [ -n "$(find "$unit_tmp_clean" -mindepth 1 -print -quit)" ]; then
+  echo "FAIL: cleanup did not remove contents of $unit_tmp_clean"; fail=1
+fi
+rm -rf "$unit_tmp_clean"
+
+# Unit test: summarise (summary.txt generation)
+echo "[TEST] generate_summary: writes summary.txt with expected fields"
+unit_tmp_summ="$tmp/summarise_test"
+rm -rf "$unit_tmp_summ"
+mkdir -p "$unit_tmp_summ/snapshots"
+# create a small archive
+printf 'x' > "$unit_tmp_summ/fileA"
+( cd "$unit_tmp_summ" && tar -czf snapshots/snap-test.tar.gz fileA )
+# ensure logs and calllists
+mkdir -p "$unit_tmp_summ/data/calllists"
+printf 'company\n' > "$unit_tmp_summ/data/calllists/calllist_2025-12-24.csv"
+mkdir -p "$unit_tmp_summ/logs"
+printf 'WARN: something happened\nINFO: ok\n' > "$unit_tmp_summ/logs/log.txt"
+export SNAPSHOT_DIR="$unit_tmp_summ/snapshots"
+# point project dirs to our test directories for summarise to see
+# copy calllists and logs into repo-relative locations
+rm -rf data/calllists logs || true
+cp -r "$unit_tmp_summ/data" .
+cp -r "$unit_tmp_summ/logs" .
+# run summarise
+sh "$REPO_ROOT/scripts/summarise.sh" --out "$unit_tmp_summ/summary.txt" || { echo "FAIL: summarise.sh failed"; fail=1; }
+# Check file exists and has expected fields
+if [ ! -f "$unit_tmp_summ/summary.txt" ]; then
+  echo "FAIL: summary.txt not created"; fail=1
+else
+  grep -q 'latest_snapshot' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing latest_snapshot"; fail=1; }
+  grep -q 'archived_files_count' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing archived_files_count"; fail=1; }
+  grep -q 'calllists_count' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing calllists_count"; fail=1; }
+  grep -q 'log_warnings' "$unit_tmp_summ/summary.txt" || { echo "FAIL: summary missing log_warnings"; fail=1; }
+fi
+# cleanup
+rm -rf "$unit_tmp_summ" data logs
+
+# Integration test: end-sequence orchestrator
+echo "[TEST] end-sequence: full integration (archive, cleanup, summarise)"
+unit_tmp_end="$tmp/endseq_test"
+rm -rf "$unit_tmp_end"
+mkdir -p "$unit_tmp_end"
+# Backup existing data/calllists and logs if present
+if [ -d data/calllists ]; then
+  mv data/calllists "$unit_tmp_end/calllists.bak"
+fi
+if [ -d logs ]; then
+  mv logs "$unit_tmp_end/logs.bak"
+fi
+# Prepare test data
+mkdir -p data/calllists
+mkdir -p logs
+printf 'company\n' > data/calllists/calllist_test.csv
+printf 'WARN: test warning\n' > logs/log.txt
+# create tmp files to be cleaned
+mkdir -p tmp
+printf 'temp' > tmp/tempfile.txt
+export SNAPSHOT_DIR="$REPO_ROOT/.snapshots_test"
+# Run end-sequence via bin/elvis-run
+sh "$REPO_ROOT/bin/elvis-run" end-sequence || { echo "FAIL: bin/elvis-run end-sequence failed"; fail=1; }
+# Check snapshot created
+snap_file=$(ls -1 "$SNAPSHOT_DIR" | grep '^snap-' | head -n1 || true)
+[ -n "$snap_file" ] || { echo "FAIL: end-sequence did not create snapshot"; fail=1; }
+# Check tmp cleaned
+if [ -n "$(find tmp -maxdepth 1 -mindepth 1 -print -quit 2>/dev/null)" ]; then
+  echo "FAIL: tmp not cleaned by end-sequence"; fail=1
+fi
+# Check summary.txt exists
+[ -f summary.txt ] || { echo "FAIL: summary.txt not produced"; fail=1; }
+# Check final log contains success message
+grep -q 'END-SEQUENCE: completed successfully' logs/log.txt || { echo "FAIL: end-sequence success not logged"; fail=1; }
+# Restore backups
+rm -rf data/calllists logs || true
+if [ -d "$unit_tmp_end/calllists.bak" ]; then
+  mv "$unit_tmp_end/calllists.bak" data/calllists
+fi
+if [ -d "$unit_tmp_end/logs.bak" ]; then
+  mv "$unit_tmp_end/logs.bak" logs
+fi
+# cleanup snapshot test dir
+rm -rf "$unit_tmp_end" .snapshots_test
 unit_tmp_validate="$tmp/validate_test"
 mkdir -p "$unit_tmp_validate"
 cat > "$unit_tmp_validate/input.csv" <<CSV

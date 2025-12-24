@@ -238,6 +238,70 @@ and the Windows ShellCheck.
   variables.
 - If pagination fails across seeds, check `configs/seek-pagination.ini`
   selectors and `page_next_marker` first.
+
+## End‑sequence workflow (archive, cleanup, summarise) 🔧
+
+Purpose: Perform end-of-run housekeeping to make the run auditable and to remove
+temporary artefacts before next runs. The workflow performs three modular steps
+in order:
+
+1. **Archive** — create a timestamped tarball under `.snapshots/` containing key
+   artefacts (`data/calllists/`, `companies_history.txt`, `logs/`), write a
+   checksum to `.snapshots/checksums/`, and append an entry to
+   `.snapshots/index`.
+
+2. **Cleanup** — safely remove temporary files (default: `tmp/` contents), and
+   optionally remove files older than N days using `--keep-days`.
+
+3. **Summarise** — write a concise `summary.txt` in the repository root with run
+   metadata: latest snapshot name, archived file count, calllist count and
+   logged warnings.
+
+Usage (CLI):
+
+```sh
+# Run the full end-sequence workflow
+bin/elvis-run end-sequence
+
+# Run as a dry-run (no destructive actions)
+bin/elvis-run end-sequence --dry-run
+
+# Skip archiving (useful for debugging)
+bin/elvis-run end-sequence --no-archive
+
+# Continue on error (try and finish other steps)
+bin/elvis-run end-sequence --continue-on-error
+
+# Provide a descriptive label for the snapshot
+bin/elvis-run end-sequence --snapshot-desc "daily end-run"
+```
+
+Implementation notes:
+
+- Scripts:
+
+  - `scripts/lib/archive.sh` — `archive_artifacts` function and helpers
+  - `scripts/archive.sh` — wrapper CLI
+  - `scripts/lib/cleanup.sh` — `cleanup_tmp` function
+  - `scripts/cleanup.sh` — wrapper CLI
+  - `scripts/lib/summarise.sh` — `generate_summary` function
+  - `scripts/summarise.sh` — wrapper CLI
+  - `scripts/end_sequence.sh` — orchestrates the three steps
+
+- The orchestration is available via `bin/elvis-run end-sequence` and writes run
+  details to `logs/log.txt` and `summary.txt`.
+
+- Tests added in `tests/run-tests.sh` cover archive, cleanup and summary
+  behaviours.
+
+Notes:
+
+- The end-sequence workflow follows the project's archiving, checksum and index
+  conventions as described in `README.md` (see "Mini VCS Integration").
+- These scripts are POSIX-compliant and include safety checks to avoid
+  accidental deletion of non-temporary files. Always use `--dry-run` when
+  testing on new environments.
+
 - If run behaviour differs between environments, ensure you check the effective
   source for keys (env vs `project.conf`) by adding logging to the script.
 - If pagination fails across seeds, check `configs/seek-pagination.ini`

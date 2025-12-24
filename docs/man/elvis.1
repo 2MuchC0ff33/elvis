@@ -3,7 +3,7 @@
 elvis \- initialise and run daily Australian sales lead call list generation
 .SH SYNOPSIS
 .B elvis-run
-.RI [ init | get-transaction-data | set-status | help ]
+.RI [ init | get-transaction-data | set-status | end-sequence | help ]
 .SH DESCRIPTION
 .PP
 .B elvis-run
@@ -45,6 +45,9 @@ Show help and usage for all init scripts.
 .TP
 .B set-status
 Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging.
+.TP
+.B end-sequence
+Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
 .SH EXAMPLES
 .TP
 .B elvis-run init
@@ -55,6 +58,9 @@ Run the full transaction data workflow (normalise, split, detect, fetch).
 .TP
 .B elvis-run help
 Show help for all init scripts.
+.TP
+.B elvis-run end-sequence
+Run the end-sequence workflow (archive, cleanup, summarise).
 .TP
 .B . scripts/lib/load_env.sh
 Manually load .env file.
@@ -80,6 +86,12 @@ Seek-specific selectors and pagination config.
 .TP
 .B logs/log.txt
 Log file for run details.
+.TP
+.B summary.txt
+Run summary produced by end-sequence (latest run metadata).
+.TP
+.B .snapshots/
+Snapshot directory containing `snap-<ts>.tar.gz`, checksums and `index`. (See README: Mini VCS Integration)
 .TP
 .B tmp/seeds.normalized.csv
 Normalised seeds file (intermediate).
