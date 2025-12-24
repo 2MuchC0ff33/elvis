@@ -618,7 +618,7 @@ PURPOSE:
   Restore a named snapshot into target_dir
 ALGORITHM:
   1. tar -xzf .snapshots/ + snapshot_name -C target_dir
-  2. verify checksum with sha1sum -c .snapshots/checksums/snap-&lt;ts&gt;.sha1
+  2. verify checksum with sha1sum -c .snapshots/checksums/snap-<ts>.sha1
 ```
 
 Notes & policy
