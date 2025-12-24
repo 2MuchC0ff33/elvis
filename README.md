@@ -2,7 +2,6 @@
 
 ## Table of Contents
 
-- [Configuration and Precedence](#configuration-and-precedence)
 - [Runbook](docs/runbook.md)
 - [CHANGELOG](CHANGELOG.md)
 
@@ -189,7 +188,7 @@ NOTES:
 ```mermaid
 graph LR
     Shell[POSIX Shell Scripts] -- controls --> CurlCoreutils["Curl + Coreutils"]
-    Shell -- uses --> DiffPatchTarCmpEd["Diff + Patch, Tar + Cmp + Ed"]
+    Shell -- uses --> DiffPatchTarCmpEdCp["Diff + Patch, Tar + Cmp + Ed + Cp"]
     Shell -- can trigger --> Cron
     Shell -- for docs/review --> Roff
 ```
@@ -207,7 +206,7 @@ graph LR
 
 ### Non-Essential
 
-- `roff` (UNIX docs/manpages)
+- `roff` or `nroff` (UNIX docs/manpages)
 - `cron` for automation and task scheduling
 
 **Cross-platform**: Linux, BSD, macOS, and Windows.
