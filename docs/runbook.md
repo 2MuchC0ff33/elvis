@@ -59,12 +59,17 @@ if [ -f .env ]; then
 fi
 
 # load project.conf (safe parse)
+tmp_conf=$(mktemp)
+grep -E '^[A-Z0-9_]+=.*' project.conf > "$tmp_conf"
+
 while IFS='=' read -r key val; do
   case "$key" in
     ''|\#*) continue ;;
     *) export "$key"="$val" ;;
   esac
-done < <(grep -E '^[A-Z0-9_]+=.*' project.conf)
+done < "$tmp_conf"
+
+rm -f "$tmp_conf"
 ```
 
 Notes:
