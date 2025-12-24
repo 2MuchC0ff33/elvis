@@ -1,11 +1,14 @@
 ---
-description: 'Shell scripting best practices and conventions for bash, sh, zsh, and other shells'
-applyTo: '**/*.sh'
+description:
+  "Shell scripting best practices and conventions for bash, sh, zsh, and other
+  shells"
+applyTo: "**/*.sh"
 ---
 
 # Shell Scripting Guidelines
 
-Instructions for writing clean, safe, and maintainable shell scripts for bash, sh, zsh, and other shells.
+Instructions for writing clean, safe, and maintainable shell scripts for bash,
+sh, zsh, and other shells.
 
 ## General Principles
 
@@ -15,19 +18,26 @@ Instructions for writing clean, safe, and maintainable shell scripts for bash, s
 - Generate concise and simple echo outputs to provide execution status
 - Avoid unnecessary echo output and excessive logging
 - Use shellcheck for static analysis when available
-- Assume scripts are for automation and testing rather than production systems unless specified otherwise
-- Prefer safe expansions: double-quote variable references (`"$var"`), use `${var}` for clarity, and avoid `eval`
-- Use modern Bash features (`[[ ]]`, `local`, arrays) when portability requirements allow; fall back to POSIX constructs only when needed
+- Assume scripts are for automation and testing rather than production systems
+  unless specified otherwise
+- Prefer safe expansions: double-quote variable references (`"$var"`), use
+  `${var}` for clarity, and avoid `eval`
+- Use modern Bash features (`[[ ]]`, `local`, arrays) when portability
+  requirements allow; fall back to POSIX constructs only when needed
 - Choose reliable parsers for structured data instead of ad-hoc text processing
 
 ## Error Handling & Safety
 
-- Always enable `set -euo pipefail` to fail fast on errors, catch unset variables, and surface pipeline failures
+- Always enable `set -euo pipefail` to fail fast on errors, catch unset
+  variables, and surface pipeline failures
 - Validate all required parameters before execution
 - Provide clear error messages with context
-- Use `trap` to clean up temporary resources or handle unexpected exits when the script terminates
-- Declare immutable values with `readonly` (or `declare -r`) to prevent accidental reassignment
-- Use `mktemp` to create temporary files or directories safely and ensure they are removed in your cleanup handler
+- Use `trap` to clean up temporary resources or handle unexpected exits when the
+  script terminates
+- Declare immutable values with `readonly` (or `declare -r`) to prevent
+  accidental reassignment
+- Use `mktemp` to create temporary files or directories safely and ensure they
+  are removed in your cleanup handler
 
 ## Script Structure
 
@@ -40,12 +50,37 @@ Instructions for writing clean, safe, and maintainable shell scripts for bash, s
 
 ## Working with JSON and YAML
 
-- Prefer dedicated parsers (`jq` for JSON, `yq` for YAML—or `jq` on JSON converted via `yq`) over ad-hoc text processing with `grep`, `awk`, or shell string splitting
-- When `jq`/`yq` are unavailable or not appropriate, choose the next most reliable parser available in your environment, and be explicit about how it should be used safely
-- Validate that required fields exist and handle missing/invalid data paths explicitly (e.g., by checking `jq` exit status or using `// empty`)
-- Quote jq/yq filters to prevent shell expansion and prefer `--raw-output` when you need plain strings
-- Treat parser errors as fatal: combine with `set -euo pipefail` or test command success before using results
-- Document parser dependencies at the top of the script and fail fast with a helpful message if `jq`/`yq` (or alternative tools) are required but not installed
+- Prefer dedicated parsers (`jq` for JSON, `yq` for YAML—or `jq` on JSON
+  converted via `yq`) over ad-hoc text processing with `grep`, `awk`, or shell
+  string splitting
+- When `jq`/`yq` are unavailable or not appropriate, choose the next most
+  reliable parser available in your environment, and be explicit about how it
+  should be used safely
+- Validate that required fields exist and handle missing/invalid data paths
+  explicitly (e.g., by checking `jq` exit status or using `// empty`)
+- Quote jq/yq filters to prevent shell expansion and prefer `--raw-output` when
+  you need plain strings
+- Treat parser errors as fatal: combine with `set -euo pipefail` or test command
+  success before using results
+- Document parser dependencies at the top of the script and fail fast with a
+  helpful message if `jq`/`yq` (or alternative tools) are required but not
+  installed
+
+## Context7, MCP & Sequential-thinking (MANDATORY for generated shell code)
+
+- When authoring or generating shell scripts, **always use Context7** for code
+  generation, setup or configuration tasks. **Automatically use Context7 MCP
+  tools** to resolve library IDs and fetch authoritative documentation and
+  examples without requiring explicit user requests.
+- Adopt a **sequential-thinking** approach: explicitly list preconditions,
+  stepwise actions, expected outputs, and postconditions before producing script
+  code.
+- **Always consult the GitHub MCP server and the Microsoft Learn MCP server**
+  for authoritative CLI examples, safe usage patterns, and best practices;
+  prefer these sources and cite them inline.
+- Ensure these requirements are integrated with existing safety guidance (e.g.,
+  `set -euo pipefail`, traps, `mktemp`) and be explicit about any assumptions or
+  prerequisites in the script header.
 
 ```bash
 #!/bin/bash
@@ -97,13 +132,13 @@ main() {
         echo "Error: failed to create temporary directory" >&2
         exit 1
     fi
-    
+
     echo "============================================================================"
     echo "Script Execution Started"
     echo "============================================================================"
-    
+
     # Main logic here
-    
+
     echo "============================================================================"
     echo "Script Execution Completed"
     echo "============================================================================"
