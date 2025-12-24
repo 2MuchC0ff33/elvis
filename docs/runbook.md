@@ -3,7 +3,7 @@
 This runbook documents the operational configuration, initialisation, and quick
 reference for running the Elvis scraper.
 
-# Get Transaction Data Workflow
+## Get Transaction Data Workflow
 
 This workflow automates the process of loading, normalising, splitting, and
 fetching paginated data from seeds for lead generation, strictly following the
@@ -17,24 +17,24 @@ logic and pseudocode in README.md.
 - Uses:
   `awk -f scripts/lib/normalize.awk data/seeds/seeds.csv > tmp/seeds.normalized.csv`
 
-2. **Split into per-record .txt files**
+1. **Split into per-record .txt files**
 
 - Each record is written to `tmp/records/seed_N.txt` for modular processing.
 - Uses: `sh scripts/lib/split_records.sh tmp/seeds.normalized.csv tmp/records/`
 
-3. **Load seeds and detect pagination model**
+1. **Load seeds and detect pagination model**
 
 - Loads seeds into arrays and determines the correct pagination logic for each.
 - Uses: `. scripts/lib/load_seeds.sh tmp/seeds.normalized.csv` and
   `sh scripts/lib/pick_pagination.sh <url>`
 
-4. **Paginate and fetch with backoff**
+1. **Paginate and fetch with backoff**
 
 - Iterates through each page for each seed, using exponential backoff on
   failures, via fetch.sh.
 - Uses: `sh scripts/lib/paginate.sh <base_url> <model>`
 
-5. **Orchestration**
+1. **Orchestration**
 
 - The entire workflow is run via: `bin/elvis-run get-transaction-data`
 - Output: HTML for each seed is saved to `tmp/<seed_id>.htmls`

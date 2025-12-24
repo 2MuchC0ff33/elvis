@@ -12,7 +12,9 @@ if [ ! -f "$SEEDS_FILE" ]; then
 fi
 
 first=1
-while IFS=, read -r seed_id location base_url; do
+# 'location' field in the CSV is intentionally ignored by the pipeline.
+# Use '_' as a placeholder to make intent explicit and avoid ShellCheck SC2034.
+while IFS=, read -r seed_id _ base_url; do
   if [ "$first" = 1 ]; then
     first=0
     continue

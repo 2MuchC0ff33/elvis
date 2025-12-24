@@ -15,7 +15,7 @@ for attempt in $(seq 1 "$retries"); do
 		echo "$response"
 		exit 0
 	fi
-	sleep_time=$(echo $backoff_seq | cut -d' ' -f$attempt 2>/dev/null || echo 60)
+	sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
 	echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
 	sleep "$sleep_time"
 done
