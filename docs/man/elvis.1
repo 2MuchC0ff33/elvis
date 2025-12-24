@@ -1,0 +1,116 @@
+.TH ELVIS 1 "2025-12-24" "elvis 0.1" "User Commands"
+.SH NAME
+elvis \- initialise and run daily Australian sales lead call list generation
+.SH SYNOPSIS
+.B elvis-run
+.RI [ init | get-transaction-data | set-status | end-sequence | choose-dork | help ]
+.SH DESCRIPTION
+.PP
+.B elvis-run
+is the master orchestrator for the Elvis lead-generation utility. It supports modular initialisation and a full transaction data workflow for lead generation, strictly following the logic and pseudocode in README.md.
+.PP
+The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls.
+.SH INIT SEQUENCE
+.TP
+.B load_env.sh
+Loads .env file (if present) into the environment.
+.TP
+.B load_config.sh
+Loads project.conf into the environment.
+.TP
+.B load_seek_pagination.sh
+Loads Seek pagination config as SEEK_* variables.
+.TP
+.B validate_env.sh
+Validates all required environment variables.
+.TP
+.B prepare_log.sh
+Ensures log file and directory exist.
+.TP
+.B init-help.sh
+Displays help and usage for all init scripts.
+.TP
+.B elvis-run init
+Runs all init steps in order.
+.SH OPTIONS
+.TP
+.B init
+Run the full initialisation sequence.
+.TP
+.B get-transaction-data
+Run the full transaction data workflow: normalise, split, detect pagination, and fetch all seeds.
+.TP
+.B help
+Show help and usage for all init scripts.
+.TP
+.B set-status
+Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging.
+.TP
+.B end-sequence
+Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
+.TP
+.B choose-dork
+Interactive: select a Google dork template and open in browser for manual enrichment.
+.TP
+.B is_dup_company.sh
+Check if a company name exists in history (case-insensitive). Usage: scripts/lib/is_dup_company.sh "Company Name" [history_file]
+.TP
+.B \\--auto-heal
+Enable opt-in automatic recovery attempts for failed steps (preserves failed artifacts under `.snapshots/failed/`).
+.SH EXAMPLES
+.TP
+.B elvis-run init
+Run all initialisation steps.
+.TP
+.B elvis-run get-transaction-data
+Run the full transaction data workflow (normalise, split, detect, fetch).
+.TP
+.B elvis-run help
+Show help for all init scripts.
+.TP
+.B elvis-run end-sequence
+Run the end-sequence workflow (archive, cleanup, summarise).
+.TP
+.B . scripts/lib/load_env.sh
+Manually load .env file.
+.TP
+.B . scripts/lib/load_config.sh
+Manually load project.conf.
+.TP
+.B . scripts/lib/validate_env.sh
+Validate required environment variables.
+.TP
+.B . scripts/lib/prepare_log.sh
+Ensure log file and directory exist.
+.SH FILES
+.TP
+.B project.conf
+Canonical project configuration.
+.TP
+.B .env
+Environment overrides and secrets.
+.TP
+.B configs/seek-pagination.ini
+Seek-specific selectors and pagination config.
+.TP
+.B logs/log.txt
+Log file for run details.
+.TP
+.B summary.txt
+Run summary produced by end-sequence (latest run metadata).
+.TP
+.B .snapshots/
+Snapshot directory containing `snap-<ts>.tar.gz`, checksums and `index`. (See README: Mini VCS Integration)
+.TP
+.B tmp/seeds.normalized.csv
+Normalised seeds file (intermediate).
+.TP
+.B tmp/records/seed_N.txt
+Per-record split files (intermediate).
+.TP
+.B tmp/<seed_id>.htmls
+Fetched HTML for each seed.
+.SH AUTHOR
+Elvis project contributors.
+.SH BUGS
+Report issues via project repository.
