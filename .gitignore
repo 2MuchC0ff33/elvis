@@ -125,3 +125,4 @@ docs/man/*.html
 *.txt~
 
 # --- End of file ---
+*/shellcheck.exe
