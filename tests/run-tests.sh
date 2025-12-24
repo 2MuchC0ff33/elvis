@@ -65,6 +65,10 @@ grep -q 'seed_id=foo' "$tmp/records/seed_1.txt" || { echo "FAIL: split_records.s
 echo "[TEST] pick_pagination.sh: detects PAG_START"
 out=$(sh scripts/lib/pick_pagination.sh 'https://seek.com.au/jobs?foo')
 [ "$out" = "PAG_START" ] || { echo "FAIL: pick_pagination.sh"; fail=1; }
+# PAG_PAGE detection
+echo "[TEST] pick_pagination.sh: detects PAG_PAGE"
+out2=$(sh scripts/lib/pick_pagination.sh 'https://seek.com.au/software-developer-jobs/in-Perth-WA')
+[ "$out2" = "PAG_PAGE" ] || { echo "FAIL: pick_pagination.sh PAG_PAGE expected, got $out2"; fail=1; }
 
 # Unit test: extract_seeds.awk
 echo "[TEST] extract_seeds.awk: extracts seed_id and base_url"
@@ -143,6 +147,79 @@ else
   echo "PASS: fetch.sh error handling"
 fi
 
+# Unit test: fetch.sh UA rotation and CURL_CMD override
+echo "[TEST] fetch.sh: UA rotation and CURL_CMD override"
+unit_tmp_fetch="$tmp/fetch_test"
+rm -rf "$unit_tmp_fetch"
+mkdir -p "$unit_tmp_fetch"
+# mock curl that prints received User-Agent header and a body
+cat > "$unit_tmp_fetch/mock_curl.sh" <<'SH'
+#!/bin/sh
+# mock curl: find -H headers and print the User-Agent header then a body
+ua=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -H)
+      shift; if echo "$1" | grep -qi 'User-Agent:'; then ua="$1"; fi;;
+    --max-time) shift; ;;
+    -s|-S|-sS) ;;
+    *) url="$1";;
+  esac
+  shift || true
+done
+# echo header and a body
+printf '%s\n' "$ua"
+printf 'OK'
+SH
+chmod +x "$unit_tmp_fetch/mock_curl.sh"
+# create a UA list
+printf 'UA-One\nUA-Two\n' > "$unit_tmp_fetch/uas.txt"
+export CURL_CMD="$unit_tmp_fetch/mock_curl.sh"
+export UA_ROTATE=true
+export UA_LIST_PATH="$unit_tmp_fetch/uas.txt"
+# call fetch.sh and capture output
+out=$(sh scripts/fetch.sh 'http://example/' 1 2 2>/dev/null || true)
+# expect one of UA-One or UA-Two in the header line
+if echo "$out" | grep -q -E 'User-Agent:.*UA-(One|Two)'; then
+  echo "PASS: fetch.sh UA rotation used";
+else
+  echo "FAIL: fetch.sh UA rotation didn't set header"; fail=1
+fi
+
+# Unit test: fetch.sh robots.txt blocking
+echo "[TEST] fetch.sh: robots.txt block behaviour"
+unit_tmp_robots="$tmp/robots_test"
+rm -rf "$unit_tmp_robots"
+mkdir -p "$unit_tmp_robots"
+cat > "$unit_tmp_robots/mock_curl_robots.sh" <<'SH'
+#!/bin/sh
+# mock curl for robots: if URL ends with /robots.txt print Disallow: /jobs, else print page content
+# portable last-arg capture
+last=""
+while [ "$#" -gt 0 ]; do
+  last="$1"
+  shift
+done
+url="$last"
+if echo "$url" | grep -q '/robots.txt$'; then
+  printf 'User-agent: *\nDisallow: /jobs\n'
+else
+  printf 'page content'
+fi
+SH
+chmod +x "$unit_tmp_robots/mock_curl_robots.sh"
+export CURL_CMD="$unit_tmp_robots/mock_curl_robots.sh"
+export VERIFY_ROBOTS=true
+# fetch a jobs URL - should be blocked (exit code 2)
+if sh scripts/fetch.sh 'http://example/jobs' 1 2 > /dev/null 2>&1; then
+  echo "FAIL: fetch.sh should have been blocked by robots.txt"; fail=1
+else
+  echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
+fi
+# cleanup
+unset CURL_CMD UA_ROTATE UA_LIST_PATH VERIFY_ROBOTS
+rm -rf "$unit_tmp_fetch" "$unit_tmp_robots"
+
 echo "[TEST] paginate.sh: paginates and stops (mock)"
 cat > "$tmp/mock.html" <<EOF
 <html><body>page1<span data-automation=\"page-next\"></span></body></html>
@@ -166,6 +243,72 @@ else
 fi
 
 echo "$out" | grep -q 'page1' || { echo "FAIL: paginate.sh page1"; fail=1; }
+
+# Unit test: paginate.sh random delay and SLEEP_CMD override
+echo "[TEST] paginate.sh: uses SLEEP_CMD and random delay range"
+# Create a mock fetch that returns two pages with Next marker then a final page without it
+cat > "$tmp/mock_fetch2.sh" <<'SH'
+#!/bin/sh
+# cycle through page responses stored in files; maintain a counter
+COUNTER_FILE="$PWD/mock_fetch2.counter"
+count=1
+if [ -f "$COUNTER_FILE" ]; then
+  count=$(cat "$COUNTER_FILE" | tr -d '[:space:]' || echo 1)
+fi
+if [ "$count" -eq 1 ]; then
+  printf '<html><body>page1<span data-automation="page-next"></span></body></html>'
+elif [ "$count" -eq 2 ]; then
+  printf '<html><body>page2<span data-automation="page-next"></span></body></html>'
+else
+  printf '<html><body>page3</body></html>'
+fi
+count=$((count+1))
+printf '%s' "$count" > "$COUNTER_FILE"
+SH
+chmod +x "$tmp/mock_fetch2.sh"
+# Mock sleep command records the value
+cat > "$tmp/mock_sleep.sh" <<'SH'
+#!/bin/sh
+printf '%s' "$1" > "$PWD/mock_sleep.called"
+exit 0
+SH
+chmod +x "$tmp/mock_sleep.sh"
+# Ensure deterministic delay by setting DELAY_MIN and DELAY_MAX the same
+export DELAY_MIN=2
+export DELAY_MAX=2
+FETCH_SCRIPT="$tmp/mock_fetch2.sh" SLEEP_CMD="$tmp/mock_sleep.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate2.out" || true
+# check for any mock_sleep.called file (the mock writes to its $PWD)
+sleep_file="$(find . -maxdepth 2 -name 'mock_sleep.called' -print -quit || true)"
+if [ -n "$sleep_file" ]; then
+  called=$(cat "$sleep_file")
+  case "$called" in
+    2|2.000|2.0000|2.0) echo "PASS: paginate used SLEEP_CMD with expected delay";;
+    *) echo "FAIL: paginate sleep value unexpected: $called"; fail=1;;
+  esac
+else
+  echo "FAIL: paginate did not call SLEEP_CMD"; fail=1
+fi
+rm -f "$tmp/mock_fetch2.counter" "$tmp/mock_sleep.called" || true
+rm -f "$tmp/mock_fetch2.sh" "$tmp/mock_sleep.sh"
+
+# Unit test: paginate honors custom PAGE_NEXT_MARKER env var
+echo "[TEST] paginate.sh: custom PAGE_NEXT_MARKER is honoured"
+cat > "$tmp/mock_fetch3.sh" <<'SH'
+#!/bin/sh
+# Return page with custom marker once then a page without (robust /tmp flag)
+FLAGFILE="/tmp/mock_fetch3_called_$$"
+if [ ! -f "$FLAGFILE" ]; then
+  printf '<html><body>first <span data-automation="NEXT-MY"></span></body></html>'
+  touch "$FLAGFILE"
+else
+  printf '<html><body>final</body></html>'
+fi
+SH
+chmod +x "$tmp/mock_fetch3.sh"
+PAGE_NEXT_MARKER='data-automation="NEXT-MY"'
+FETCH_SCRIPT="$tmp/mock_fetch3.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate3.out" || true
+grep -q 'first' "$tmp/paginate3.out" || { echo "FAIL: paginate did not process custom marker"; fail=1; }
+rm -f "$tmp/mock_fetch3.sh" "$tmp/paginate3.out" /tmp/mock_fetch3_called_* || true
 
 # Unit test: archive_artifacts (archival)
 echo "[TEST] archive_artifacts: creates snapshot, checksum and index"
@@ -391,6 +534,7 @@ GoodCo,John,MD,+61410000000,john@good.co,Perth,WA
 NoContact,Jane,HR,, ,Brisbane,QLD
 BadEmail,Bob,CTO,,not-an-email,Melbourne,VIC
 CommaLoc,Alan,CEO,0413444444,,Adelaide,SA
+MobilePlus61,Tim,Sales,+61 412 345 678,,Perth,WA
 CSV
 
 # Run validation
@@ -398,6 +542,8 @@ sh scripts/validate.sh "$unit_tmp_validate/input.csv" --out "$unit_tmp_validate/
 
 # Check output contains only GoodCo and CommaLoc
 grep -q 'GoodCo' "$unit_tmp_validate/out.csv" || { echo "FAIL: GoodCo missing in validate out"; fail=1; }
+# Check mobile +61 normalisation (MobilePlus61 -> 0412345678)
+grep -q '0412345678' "$unit_tmp_validate/out.csv" || { echo "FAIL: +61 mobile normalisation failed"; fail=1; }
 grep -q 'CommaLoc' "$unit_tmp_validate/out.csv" || { echo "FAIL: CommaLoc missing in validate out"; fail=1; }
 # Ensure NoCompany, NoContact and BadEmail are excluded
 grep -q 'NoCompany' "$unit_tmp_validate/out.csv" && { echo "FAIL: NoCompany should be excluded"; fail=1; }
@@ -408,6 +554,26 @@ grep -q '0410000000' "$unit_tmp_validate/out.csv" || { echo "FAIL: phone normali
 
 # Clean up
 rm -rf "$unit_tmp_validate"
+
+# Unit test: is_dup_company.sh checks (history/dedupe)
+echo "[TEST] is_dup_company.sh: case-insensitive history lookup"
+unit_tmp_hist="$tmp/isdup_test"
+rm -rf "$unit_tmp_hist"
+mkdir -p "$unit_tmp_hist"
+printf 'ACME Ltd\nSomeOtherCo\n' > "$unit_tmp_hist/history.txt"
+# exact case-insensitive match
+if sh scripts/lib/is_dup_company.sh 'acme ltd' "$unit_tmp_hist/history.txt" | grep -q TRUE; then
+  echo "PASS: is_dup_company detected existing company (case-insensitive)"
+else
+  echo "FAIL: is_dup_company failed to detect company"; fail=1
+fi
+# non-existing company
+if sh scripts/lib/is_dup_company.sh 'NewCo' "$unit_tmp_hist/history.txt" | grep -q FALSE; then
+  echo "PASS: is_dup_company correctly reports missing company"
+else
+  echo "FAIL: is_dup_company false positive"; fail=1
+fi
+rm -rf "$unit_tmp_hist"
 
 # Unit test: deduper.sh
 echo "[TEST] deduper.sh: dedupe + append history (unit test)"

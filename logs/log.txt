@@ -1,1 +1,2 @@
-2025-12-24T06:24:56Z input=tmp/test/calllists/calllist_2025-12-24.csv total=2 msg=set-status run
+WARN: produced calllist has 2 leads, below MIN_LEADS=25
+2025-12-24T06:49:41Z input=tmp/test/calllists/calllist_2025-12-24.csv total=2 msg=set-status run (low leads)

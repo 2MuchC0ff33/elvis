@@ -63,7 +63,17 @@ cp tmp/deduped.csv "$OUTFILE"
 
 echo "Produced calllist: $OUTFILE"
 
-# Step 5: Logging & Audit
-sh scripts/log_status.sh --input "$OUTFILE" --msg "set-status run" --audit-file audit.txt
+# Check against MIN_LEADS and log a warning if below target
+MIN_LEADS="${MIN_LEADS:-25}"
+total_rows=$(tail -n +2 "$OUTFILE" | wc -l | tr -d ' ')
+if [ "${total_rows:-0}" -lt "$MIN_LEADS" ]; then
+  # ensure logs dir exists
+  mkdir -p "$(dirname "logs/log.txt")"
+  echo "WARN: produced calllist has $total_rows leads, below MIN_LEADS=$MIN_LEADS" >> logs/log.txt
+  sh scripts/log_status.sh --input "$OUTFILE" --msg "set-status run (low leads)" --audit-file audit.txt
+else
+  # Step 5: Logging & Audit
+  sh scripts/log_status.sh --input "$OUTFILE" --msg "set-status run" --audit-file audit.txt
+fi
 
 exit 0

@@ -31,7 +31,21 @@ logic and pseudocode in README.md.
 1. **Paginate and fetch with backoff**
 
 - Iterates through each page for each seed, using exponential backoff on
-  failures, via fetch.sh.
+  failures, via `scripts/lib/paginate.sh` and `scripts/fetch.sh`.
+- Fetch behaviour is configurable via environment variables and `project.conf`:
+  - `BACKOFF_SEQUENCE` — comma-separated retry delays (default: `5,20,60`)
+  - `FETCH_TIMEOUT` — curl timeout in seconds (default: `15`)
+  - `UA_ROTATE` / `UA_LIST_PATH` — enable User-Agent rotation and provide the
+    list file (default: `configs/user_agents.txt`)
+  - `VERIFY_ROBOTS` — when `true`, respect `robots.txt` and block disallowed
+    routes
+  - `CURL_CMD` — override the curl command (useful for tests)
+- Pagination is route-aware: supports `PAG_START` (offset) and `PAG_PAGE` (page
+  number) models. The `PAGE_NEXT_MARKER` environment variable (or Seek INI) sets
+  the HTML marker used to detect the presence of a "Next" control.
+- Safety limits and delays are configurable:
+  - `DELAY_MIN` / `DELAY_MAX` — per-request random delay range (seconds)
+  - `MAX_PAGES` / `MAX_OFFSET` — safety stop limits to avoid runaway loops
 - Uses: `sh scripts/lib/paginate.sh <base_url> <model>`
 
 1. **Orchestration**
