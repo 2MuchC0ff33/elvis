@@ -72,3 +72,4 @@
 # Use default merge for text, disable for binary
 
 # --- End of file ---
+*.sh text eol=lf
