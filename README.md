@@ -189,7 +189,7 @@ NOTES:
 ```mermaid
 graph LR
     Shell[POSIX Shell Scripts] -- controls --> CurlCoreutils["Curl + Coreutils"]
-    Shell -- uses --> RCS
+    Shell -- uses --> DiffPatchTarCmpEd["Diff + Patch, Tar + Cmp + Ed"]
     Shell -- can trigger --> Cron
     Shell -- for docs/review --> Roff
 ```
@@ -199,7 +199,7 @@ graph LR
 - Bourne Shell (`sh`) for scripting
 - `curl` for transferring data using URLS
 - `coreutils` for command line utilities
-- RCS for manual version control
+- `diff`, `patch`, `tar`, `cmp`, and `ed` for manual version control
 
 ### Non-Essential
 
@@ -395,7 +395,7 @@ mindmap
 - Daily call list is always overwritten
 - Company history file (`companies_history.txt`) always retained and added via
   admin/manual only
-- Manual RCS commit for company list/historic file
+- Manual built-in POSIX utilities (mini-VCS) for company list/historic file
 
 ---
 

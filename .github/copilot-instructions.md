@@ -59,7 +59,7 @@ Reference files: `README.md` (primary specification), `seeds.txt` (seed URL temp
 
 - Scripts are shell-based (Bourne shell / POSIX): prefer `curl`, `grep`, `sed`, `awk`, `tr`, `sort`, `uniq` and `coreutils` for parsing and orchestration.
 - Platform: cross-platform but primarily POSIX-like; Windows support expected through compatible shells.
-- RCS is referenced for manual commits (no forced git hooks or CI referenced in repo).
+- Manual built-in POSIX utilities (mini-VCS) (no forced git hooks or CI referenced in repo): prefer `diff`, `patch`, `tar`, `cmp`, and `ed` for version control of key files.
 
 ## Examples (copy into PRs or quick tests)
 
