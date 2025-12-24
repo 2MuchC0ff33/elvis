@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-- [Configuration & Precedence](#configuration-precedence)
+- [Configuration and Precedence](#configuration-and-precedence)
 - [Runbook](docs/runbook.md)
 - [CHANGELOG](CHANGELOG.md)
 
@@ -198,8 +198,12 @@ graph LR
 
 - Bourne Shell (`sh`) for scripting
 - `curl` for transferring data using URLS
-- `coreutils` for command line utilities
+- `coreutils` for command line utilities (e.g., `cp`, `mv`, `find`, `touch`,
+  `ln`)
 - `diff`, `patch`, `tar`, `cmp`, and `ed` for manual version control
+- `tar` for efficient snapshots and restores
+- Checksum utilities (`md5sum`, `sha1sum`) to detect changes and verify
+  integrity
 
 ### Non-Essential
 
@@ -207,6 +211,88 @@ graph LR
 - `cron` for automation and task scheduling
 
 **Cross-platform**: Linux, BSD, macOS, and Windows.
+
+---
+
+## Creating Manuals with roff and nroff 📖
+
+### Overview
+
+`roff` is the original Unix typesetting system used to write and format manual
+pages. The `man` macro package (roff macros) provides a concise way to structure
+sections like NAME, SYNOPSIS, DESCRIPTION, OPTIONS and EXAMPLES. Use `nroff` to
+format roff sources for plain terminal viewing; use `groff` (GNU troff) when you
+need richer output (UTF‑8, PostScript, PDF, HTML).
+
+### Basic workflow & commands
+
+- Create source pages under `docs/man/` (e.g., `docs/man/elvis.1`).
+- View locally with `nroff` (terminal):
+
+```sh
+nroff -man docs/man/elvis.1 | less -R
+```
+
+- View a local file using `man` (some systems support `-l` for local files):
+
+```sh
+man -l docs/man/elvis.1
+```
+
+- Render UTF‑8 output with `groff` (if installed):
+
+```sh
+groff -Tutf8 -man docs/man/elvis.1 | less -R
+```
+
+- Produce a PDF with `groff` (if available):
+
+```sh
+groff -Tpdf -man docs/man/elvis.1 > docs/man/elvis.pdf
+```
+
+- Install manpages system‑wide (example for `man1` section):
+
+```sh
+mkdir -p /usr/local/share/man/man1
+cp docs/man/elvis.1 /usr/local/share/man/man1/
+compress -f /usr/local/share/man/man1/elvis.1  # or gzip elvis.1
+mandb || true  # update mancache (may require root)
+```
+
+### Best practices
+
+- Keep roff sources in `docs/man/` and name files with the proper section suffix
+  (e.g., `.1` for user commands, `.8` for admin/system tools).
+- Use standard macro sections: `.TH`, `.SH NAME`, `.SH SYNOPSIS`,
+  `.SH DESCRIPTION`, `.SH OPTIONS`, `.SH EXAMPLES`, `.SH FILES`, `.SH AUTHOR`,
+  `.SH BUGS`.
+- Keep the NAME and SYNOPSIS concise and accurate — these are used by `man` and
+  search tools.
+- Add a simple `scripts/build-man.sh` that runs `nroff`/`groff` checks and
+  optionally produces PDF/UTF‑8 text for review.
+- When packaging or installing, place generated pages in the appropriate `manN`
+  directory and update the man database with `mandb` where available.
+
+### Minimal roff example (docs/man/elvis.1)
+
+```roff
+.TH ELVIS 1 "2025-12-24" "elvis 0.1" "User Commands"
+.SH NAME
+elvis \- produce daily Australian sales lead call lists
+.SH SYNOPSIS
+.B elvis
+\fIOPTIONS\fR
+.SH DESCRIPTION
+.PP
+elvis fetches listings, extracts companies and writes `calllist_YYYY-MM-DD.csv`.
+.SH EXAMPLES
+.TP
+.B elvis -r
+Run the full scraping run in dry-run mode.
+```
+
+---
 
 ---
 
@@ -395,7 +481,155 @@ mindmap
 - Daily call list is always overwritten
 - Company history file (`companies_history.txt`) always retained and added via
   admin/manual only
-- Manual built-in POSIX utilities (mini-VCS) for company list/historic file
+
+### Mini VCS Integration 🔧
+
+To keep a simple, auditable history of important project files (for example
+`companies_history.txt`, `data/seeds/`, and configuration files) we use a
+lightweight, POSIX-friendly "mini VCS" based on standard utilities already
+available in POSIX environments.
+
+**Goals:** keep snapshots, generate small patches, verify integrity, and make
+restores straightforward without requiring a full Git install.
+
+What it uses:
+
+- Snapshot archives: `tar` (+ `gzip` / `xz` if available)
+- Diffs and patches: `diff -u` and `patch -p0`
+- File comparison: `cmp`, `md5sum`/`sha1sum`
+- Small edits & scripted automation: `ed`, `sed`, `awk` (when needed)
+- Filesystem utilities: `cp`, `mv`, `find`, `touch`, `ln`, `mkdir`
+
+The `.snapshots/` directory
+
+- Location: `.snapshots/` (at project root) — included in `.gitignore` if you
+  use Git for code but want lightweight, local snapshots kept separately.
+- Contents:
+  - `snap-YYYY-MM-DDTHHMMSS.tar.gz` — full snapshots of selected paths
+  - `patches/` — `snapname.patch` (unified diffs generated between snapshots)
+  - `checksums/` — `snap-YYYY-MM-DDTHHMMSS.sha1` for quick integrity checks
+  - `index` — a simple text index mapping snapshot names to descriptions
+
+Basic workflow (conceptual):
+
+1. Create a snapshot: `tar -czf .snapshots/snap-<ts>.tar.gz <paths>` and write a
+   checksum.
+2. When changes are made, create a patch:
+   `diff -u old/ new/ > .snapshots/patches/<name>.patch`.
+3. Apply a patch: `patch -p0 < .snapshots/patches/<name>.patch` to a working
+   copy.
+4. Restore from snapshot: `tar -xzf .snapshots/snap-<ts>.tar.gz -C <target>`.
+
+Mermaid diagram — Mini VCS workflow
+
+```mermaid
+flowchart LR
+  A[Create Snapshot\n(.snapshots/snap-<ts>.tar.gz)] --> B[Store checksum\n(.snapshots/checksums/*.sha1)]
+  B --> C[Detect Changes\n(compare with previous snapshot)]
+  C --> D[Generate Patch\n(.snapshots/patches/<name>.patch)]
+  D --> E[Apply Patch\n(patch -p0 < patchfile)]
+  A --> F[Restore Snapshot\n(tar -xzf snap-<ts>.tar.gz -C target)]
+  E --> G[Record in index/log]
+```
+
+Practical commands & examples
+
+- Create snapshot (full):
+
+```sh
+# create snapshot of important paths
+ts=$(date -u +%Y%m%dT%H%M%SZ)
+tar -czf .snapshots/snap-$ts.tar.gz companies_history.txt data/seeds configs && sha1sum .snapshots/snap-$ts.tar.gz > .snapshots/checksums/snap-$ts.sha1
+```
+
+- Generate a patch between two extracted snapshots (or working tree):
+
+```sh
+diff -uNr old/ new/ > .snapshots/patches/changes-$ts.patch
+```
+
+- Apply a patch to a working copy:
+
+```sh
+patch -p0 < .snapshots/patches/changes-$ts.patch
+```
+
+- Verify snapshot integrity:
+
+```sh
+sha1sum -c .snapshots/checksums/snap-$ts.sha1
+```
+
+Additional helper utilities (recommended):
+
+- `find` — select paths to snapshot by pattern
+- `xargs` — batch operations
+- `gzip`/`xz` — compress snapshots
+- `md5sum`/`sha1sum` — checksums
+- `ln` — maintain latest snapshot symlink: `.snapshots/latest` → `snap-...`
+
+Polyglot pseudocode (POSIX-friendly & portable)
+
+```pdl
+MODULE create_snapshot(paths[], description)
+PURPOSE:
+  Create a timestamped tarball snapshot of 'paths' and record a checksum and index entry.
+INPUTS:
+  paths[] : array of file/directory paths
+  description : short text
+OUTPUTS:
+  snapshot_name : string (e.g., snap-YYYYMMDDTHHMMSS.tar.gz)
+ALGORITHM:
+  1. ts := utc_timestamp()
+  2. snapshot_name := 'snap-' + ts + '.tar.gz'
+  3. tar -czf .snapshots/ + snapshot_name paths[]
+  4. checksum := sha1sum .snapshots/ + snapshot_name
+  5. write checksum to .snapshots/checksums/snap- + ts + '.sha1'
+  6. append "snapshot_name | ts | description" to .snapshots/index
+  7. create or update symlink .snapshots/latest → snapshot_name
+  8. return snapshot_name
+
+MODULE generate_patch(base_dir, new_dir, patch_name)
+PURPOSE:
+  Produce a unified diff between two trees and store it in .snapshots/patches.
+INPUTS:
+  base_dir : directory for base
+  new_dir  : directory for new
+  patch_name : output patch filename
+OUTPUTS:
+  path to generated patch
+ALGORITHM:
+  1. diff -uNr base_dir new_dir > .snapshots/patches/ + patch_name
+  2. return .snapshots/patches/ + patch_name
+
+MODULE apply_patch(patch_file, target_dir)
+PURPOSE:
+  Apply a stored patch to a working copy
+INPUTS:
+  patch_file : path to patch
+  target_dir : directory to apply patch in
+ALGORITHM:
+  1. cd target_dir
+  2. patch -p0 < patch_file
+  3. verify with 'git status' or 'cmp' / 'sha1sum' as suitable
+
+MODULE restore_snapshot(snapshot_name, target_dir)
+PURPOSE:
+  Restore a named snapshot into target_dir
+ALGORITHM:
+  1. tar -xzf .snapshots/ + snapshot_name -C target_dir
+  2. verify checksum with sha1sum -c .snapshots/checksums/snap-<ts>.sha1
+```
+
+Notes & policy
+
+- This mini VCS is **not** a replacement for a distributed VCS like Git for
+  source code, but it is a practical, auditable tool to track snapshots and
+  patches for generated data (call lists, seeds, and history files) in
+  environments where installing Git may be impractical.
+- Keep `.snapshots/` in `.gitignore` if you use Git for source code to avoid
+  storing large archives in the repository.
+- Use checksums and an index file for basic auditability.
 
 ---
 
@@ -554,9 +788,9 @@ flowchart TB
     ├── fixtures/
     └── run-tests.sh
 
-<a name="configuration-precedence"></a>
+<a name="configuration-and-precedence"></a>
 
-## Configuration & Precedence
+## Configuration and Precedence
 
 - **Canonical config file:** `project.conf` (key=value) — used for *non-secret* operational defaults.
 - **Secrets & runtime overrides:** environment variables / `.env` (highest precedence).
@@ -920,8 +1154,8 @@ tools.
 - No official API or browser automation is necessary, as long as Seek continues
   to render results on the server-side.
 - **If Seek ever transitions to client-only rendering (e.g. React hydration
-  without SSR),** switch to a headless browser or suitable
-  alternative for interactive/manual extraction.
+  without SSR),** switch to a headless browser or suitable alternative for
+  interactive/manual extraction.
 - **Best practice:** Construct breadth-first collections of filtered seed
   listing URLs to avoid simulating the JavaScript search form.
 
