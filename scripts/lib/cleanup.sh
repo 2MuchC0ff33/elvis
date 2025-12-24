@@ -3,7 +3,8 @@
 # Minimal safe cleanup helpers for Elvis end-sequence workflow.
 # Exports: cleanup_tmp [--dry-run] [--keep-days N] [paths...]
 
-set -euo pipefail
+# Use strict mode: exit on error and undefined vars. 'pipefail' is not POSIX.
+set -eu
 
 cleanup_tmp() {
   dry_run=false

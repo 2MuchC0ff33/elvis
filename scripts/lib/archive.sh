@@ -4,7 +4,7 @@
 # Archives provided paths into a timestamped tar.gz under SNAPSHOT_DIR (default .snapshots)
 # Writes checksum (.sha1), index entry and updates .snapshots/latest symlink
 
-set -euo pipefail
+set -eu
 
 archive_artifacts() {
   # Usage: archive_artifacts [--description "text"] <path> [<path> ...]
@@ -26,7 +26,6 @@ archive_artifacts() {
 
   # Default snapshot dir
   SNAP_DIR="${SNAPSHOT_DIR:-.snapshots}"
-  CHECKSUM_BIN=""
 
   mkdir -p "$SNAP_DIR/checksums"
 
@@ -55,7 +54,7 @@ archive_artifacts() {
   snapshot_path="$SNAP_DIR/$snapshot_name"
 
   # Create tarball (preserve file ownership and permissions as much as possible)
-  tar -czf "$snapshot_path" $to_archive
+  tar -czf "$snapshot_path" "$to_archive"
 
   # Compute checksum using available tool
   if command -v sha1sum >/dev/null 2>&1; then

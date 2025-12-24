@@ -3,13 +3,26 @@
 # Provides basic error-handling utilities: trap handler, safe_run, retry_with_backoff
 # Usage: . scripts/lib/error.sh  (then call safe_run "step-name" cmd args...)
 
-set -euo pipefail
+# Enable strict error handling. Use "set -o pipefail" when available
+# (it's not supported by pure POSIX sh implementations like dash).
+set -eu
 
 # Basic on-err handler: logs and leaves status files
+# Mark when handler runs to avoid duplicate calls (installed via ERR or EXIT traps)
 on_err() {
   rc=$?
+  # If exit code is zero, nothing to do. This allows using EXIT trap
+  # on shells that don't support ERR (POSIX sh).
+  if [ "$rc" -eq 0 ]; then
+    return 0
+  fi
+  # Avoid re-entry or duplicate invocation from both ERR and EXIT traps
+  if [ "${__on_err_called:-}" = "1" ]; then
+    return 0
+  fi
+  __on_err_called=1
   ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  echo "ERROR: step failed (rc=$rc) at $ts" >> logs/log.txt
+  echo "ERROR: step failed (rc=$rc) at $ts" >> logs/log.txt || true
   # write a failure marker for operator inspection
   echo "failed:$rc:$ts" > "tmp/last_failed.status" || true
 }
@@ -56,8 +69,8 @@ retry_with_backoff() {
     # compute sleep time from sequence or last value
     sleep_time=$(echo "$backoff_seq" | awk -v a=$attempt '{n=split($0,s," "); if(a<=n) print s[a]; else print s[n]}')
     # add small jitter
-    jitter=$(expr $RANDOM % 3)
-    sleep_time=$(expr $sleep_time + $jitter)
+    jitter=$(awk 'BEGIN{srand(); print int(rand()*3)}')
+    sleep_time=$(( sleep_time + jitter ))
     echo "WARN: attempt $attempt failed; sleeping $sleep_time s before retry" >> logs/log.txt || true
     sleep "$sleep_time"
     attempt=$((attempt + 1))
@@ -67,8 +80,8 @@ retry_with_backoff() {
 
 # Helper to install trap in scripts that source this file
 install_trap() {
-  # Install ERR trap to call on_err
-  trap 'on_err' ERR
+  # Install EXIT trap to call on_err
+  trap 'on_err' EXIT
 }
 
 # If executed directly, show usage

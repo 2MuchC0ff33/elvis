@@ -3,7 +3,7 @@
 # Orchestrator for end-sequence workflow: archive -> cleanup -> summarise
 # Usage: end_sequence.sh [--no-archive] [--no-cleanup] [--no-summary] [--snapshot-desc "text"] [--dry-run] [--continue-on-error]
 
-set -euo pipefail
+set -eu
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 . "$SCRIPT_DIR/lib/error.sh"
@@ -52,7 +52,11 @@ if [ "$no_archive" = false ]; then
   else
     echo "INFO: archiving artifacts..." >> logs/log.txt
     if safe_run archive archive_artifacts --description "$snapshot_desc" data/calllists companies_history.txt logs 2>>logs/log.txt; then
-      snapshot_path="$(ls -1 "${SNAPSHOT_DIR:-.snapshots}" | grep '^snap-' | tail -n1 || true)"
+      snapshot_path=""
+      for file in "${SNAPSHOT_DIR:-.snapshots}"/snap-*; do
+        [ -e "$file" ] || continue
+        snapshot_path="$(basename "$file")"
+      done
       echo "INFO: snapshot created: $snapshot_path" >> logs/log.txt
     else
       echo "ERROR: archive step failed" | tee -a logs/log.txt >&2
@@ -62,7 +66,11 @@ if [ "$no_archive" = false ]; then
         attempt_recover_step archive "archive_artifacts --description '$snapshot_desc' data/calllists companies_history.txt logs" || true
         # try a re-run
         if safe_run archive archive_artifacts --description "$snapshot_desc" data/calllists companies_history.txt logs 2>>logs/log.txt; then
-          snapshot_path="$(ls -1 "${SNAPSHOT_DIR:-.snapshots}" | grep '^snap-' | tail -n1 || true)"
+          snapshot_path=""
+          for file in "${SNAPSHOT_DIR:-.snapshots}"/snap-*; do
+            [ -e "$file" ] || continue
+            snapshot_path="$(basename "$file")"
+          done
           echo "INFO: snapshot created after recovery: $snapshot_path" >> logs/log.txt
         else
           run_failed=1

@@ -83,6 +83,7 @@ rm -rf "$unit_tmp_seeds"
 
 # Unit test: http_utils.sh (sourcing)
 echo "[TEST] http_utils.sh: can be sourced and provides fetch_with_backoff"
+# shellcheck disable=SC1091
 if ! . "$REPO_ROOT/scripts/lib/http_utils.sh"; then
   echo "FAIL: sourcing http_utils.sh"; fail=1
 fi
@@ -179,7 +180,7 @@ export SNAPSHOT_DIR="$unit_tmp_archive/snapshots"
 # Run archive wrapper with explicit paths
 sh "$REPO_ROOT/scripts/archive.sh" "$unit_tmp_archive/file1.txt" "$unit_tmp_archive/subdir" || { echo "FAIL: archive.sh failed"; fail=1; }
 # Check snapshot created
-snap_file=$(ls -1 "$unit_tmp_archive/snapshots" | grep '^snap-' | head -n1 || true)
+snap_file=$(find "$unit_tmp_archive/snapshots" -maxdepth 1 -name 'snap-*' -type f -print0 -quit | xargs -0 basename 2>/dev/null || true)
 if [ -z "$snap_file" ]; then
   echo "FAIL: no snapshot produced"; fail=1
 else
@@ -271,6 +272,7 @@ else
 fi
 SH
 chmod +x "$unit_retry/failer.sh"
+# shellcheck disable=SC1091
 . "$REPO_ROOT/scripts/lib/error.sh"
 # run retry; 5 attempts should be enough
 if ! retry_with_backoff 5 "$unit_retry/failer.sh"; then
@@ -290,14 +292,13 @@ printf 'hello' > "$unit_heal/data/seed.txt"
 mkdir -p "$unit_heal/.snapshots"
 ( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
 # ensure SNAPSHOT_DIR points to the test snapshots
-export SNAPSHOT_DIR="$unit_heal/.snapshots"
+# shellcheck disable=SC1091
 . "$REPO_ROOT/scripts/lib/heal.sh"
 # preserve artifacts
 mkdir -p tmp
 printf 'failed' > tmp/test.step.status
 preserve_failed_artifacts test.step
-ls -1 "$SNAPSHOT_DIR/failed" | grep -q 'failed-test.step-'
-if [ $? -ne 0 ]; then
+if [ -z "$(find "$SNAPSHOT_DIR/failed" -name 'failed-test.step-*' -print -quit)" ]; then
   echo "FAIL: preserve_failed_artifacts did not create failed tarball"; fail=1
 else
   echo "PASS: preserve_failed_artifacts created failed tarball"
@@ -311,7 +312,10 @@ rm -rf "$unit_heal" "$SNAPSHOT_DIR" tmp
 # Unit test: attempt_recover_step (re-run success)
 echo "[TEST] attempt_recover_step: runs provided recovery command and logs success"
 mkdir -p tmp
-. "$REPO_ROOT/scripts/lib/heal.sh"
+# shellcheck disable=SC1091
+if ! . "$REPO_ROOT/scripts/lib/heal.sh"; then
+  echo "FAIL: sourcing heal.sh"; fail=1
+fi
 # provide a simple success command
 attempt_recover_step unitstep "sh -c 'printf recovered > tmp/heal_recovered.txt; exit 0'"
 if [ ! -f tmp/heal_recovered.txt ]; then
@@ -349,7 +353,13 @@ export SNAPSHOT_DIR="$REPO_ROOT/.snapshots_test"
 # Run end-sequence via bin/elvis-run
 sh "$REPO_ROOT/bin/elvis-run" end-sequence || { echo "FAIL: bin/elvis-run end-sequence failed"; fail=1; }
 # Check snapshot created
-snap_file=$(ls -1 "$SNAPSHOT_DIR" | grep '^snap-' | head -n1 || true)
+snap_file=""
+for file in "$SNAPSHOT_DIR"/snap-*; do
+    if [ -f "$file" ]; then
+        snap_file="${file##*/}"
+        break
+    fi
+done
 [ -n "$snap_file" ] || { echo "FAIL: end-sequence did not create snapshot"; fail=1; }
 # Check tmp cleaned (ignore step status files created by safe_run)
 non_status="$(find tmp -maxdepth 1 -mindepth 1 ! -name '*.status' -print -quit 2>/dev/null || true)"

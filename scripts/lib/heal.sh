@@ -4,7 +4,7 @@
 # Functions: attempt_recover_step <step-name> <cmd-to-rerun...>
 #            preserve_failed_artifacts <step-name>
 
-set -euo pipefail
+set -eu
 
 preserve_failed_artifacts() {
   step_name="$1"
@@ -15,7 +15,7 @@ preserve_failed_artifacts() {
   tmpdir="tmp/failed-${step_name}-$ts"
   mkdir -p "$tmpdir"
   # Copy status, logs, and any tmp artifacts
-  cp -a tmp/${step_name}.status "$tmpdir/" 2>/dev/null || true
+  cp -a tmp/"${step_name}".status "$tmpdir/" 2>/dev/null || true
   cp -a logs/log.txt "$tmpdir/" 2>/dev/null || true
   # Create a tarball for later inspection
   tar -czf "$SNAP_DIR/failed/failed-${step_name}-$ts.tar.gz" -C "$tmpdir" . || true
@@ -27,7 +27,24 @@ preserve_failed_artifacts() {
 
 restore_latest_snapshot() {
   SNAP_DIR="${SNAPSHOT_DIR:-.snapshots}"
-  latest=$(ls -1 "$SNAP_DIR" 2>/dev/null | grep '^snap-' | tail -n1 || true)
+  # Find the lexicographically latest entry that starts with "snap-" without
+  # using ls | grep. This handles arbitrary filenames (including non-
+  # alphanumeric) and avoids parsing ls output.
+  latest=""
+  if [ -d "$SNAP_DIR" ]; then
+    for f in "$SNAP_DIR"/snap-*; do
+      [ -e "$f" ] || continue
+      name=${f##*/}
+      if [ -z "$latest" ]; then
+        latest="$name"
+      else
+        # pick lexicographically largest name (mimics ls | tail -n1)
+        if expr "$name" '>' "$latest" >/dev/null; then
+          latest="$name"
+        fi
+      fi
+    done
+  fi
   if [ -z "$latest" ]; then
     echo "HEAL: no snapshot available" >> logs/log.txt || true
     return 1
@@ -46,7 +63,7 @@ restore_latest_snapshot() {
 attempt_recover_step() {
   step_name="$1"
   shift || true
-  cmd="$@"
+  cmd="$*"
   echo "HEAL: attempt recovery for $step_name" >> logs/log.txt || true
 
   # preserve failed artifacts first

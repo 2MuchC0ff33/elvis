@@ -18,7 +18,7 @@ if [ $# -eq 0 ]; then
   else
     files="data/calllists companies_history.txt logs/log.txt tmp"
   fi
-  set -- $files
+  set -- "$files"
 fi
 
 archive_artifacts "$@"

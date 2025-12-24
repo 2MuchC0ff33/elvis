@@ -3,7 +3,7 @@
 # Provides: generate_summary [--out <file>] [--append]
 # Generates a short summary of the run and writes to summary file (default ./summary.txt)
 
-set -euo pipefail
+set -eu
 
 generate_summary() {
   out_file="${1:-summary.txt}"
@@ -24,7 +24,7 @@ generate_summary() {
   latest_snap=""
   archived_entries=0
   if [ -d "$SNAP_DIR" ]; then
-    latest_snap=$(ls -1 "$SNAP_DIR" | grep '^snap-' | tail -n1 || true)
+    latest_snap=$(for file in "$SNAP_DIR"/snap-*; do [ -f "$file" ] && printf '%s\n' "${file##*/}"; done | sort | tail -n1 || true)
     if [ -n "$latest_snap" ]; then
       archived_entries=$(tar -tzf "$SNAP_DIR/$latest_snap" 2>/dev/null | wc -l || echo 0)
     fi
@@ -33,7 +33,7 @@ generate_summary() {
   # Calllists count
   calllists_count=0
   if [ -d "data/calllists" ]; then
-    calllists_count=$(ls -1 data/calllists 2>/dev/null | wc -l || echo 0)
+    calllists_count=$(find data/calllists -maxdepth 1 -mindepth 1 2>/dev/null | wc -l || echo 0)
   fi
 
   # Log warnings count (grep WARN)
