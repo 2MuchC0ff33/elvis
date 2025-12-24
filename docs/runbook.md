@@ -40,9 +40,7 @@ provided each setting for auditability.
 
 - Keep seeds in `data/seeds/seeds.csv` with `seed_id` column. Example row:
 
-  seek_fifo_perth,"Perth,
-  WA",<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>
-
+  seek_fifo_perth,"Perth, WA",<https://www.seek.com.au/fifo-jobs/in-All-Perth-WA>
 - Per-seed overrides live in `configs/seek-pagination.ini` under `[overrides]`
   and are keyed by `seed_id` (example in the file comments).
 

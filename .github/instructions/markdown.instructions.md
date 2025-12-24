@@ -35,8 +35,7 @@ Follow these guidelines for formatting and structuring your markdown content:
   more strongly recommend for H5.
 - **Lists**: Use `-` for bullet points and `1.` for numbered lists. Indent
   nested lists with two spaces.
-- **Code Blocks**: Use triple backticks
-  (`) to create fenced code blocks. Specify the language after the opening backticks for syntax highlighting (e.g.,`csharp).
+- **Code Blocks**: Use triple backticks to create fenced code blocks. Specify the language after the opening backticks for syntax highlighting (e.g., `csharp`).
 - **Links**: Use `[link text](https://example.com)` for links. Ensure that the
   link text is descriptive and the URL is valid.
 - **Images**: Use `![alt text](https://example.com/image.jpg)` for images.
