@@ -135,8 +135,8 @@ process exits non-zero.
   creating your own `.env` file.
 
 - If rotating User-Agent is enabled (`UA_ROTATE=true`), provide
-    `configs/user_agents.txt` with one UA string per line and set `UA_LIST_PATH`
-    appropriately in `.env` or `project.conf`.
+  `configs/user_agents.txt` with one UA string per line and set `UA_LIST_PATH`
+  appropriately in `.env` or `project.conf`.
 
 - `project.conf` — canonical, non-secret operational defaults (key=value).
   Scripts should use this as the single source of truth for defaults.
@@ -380,7 +380,8 @@ Quick steps:
 1. Prepare `results.csv` with expected headers:
    `company_name,prospect_name,title,phone,email,location`.
 2. Run `scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit` to
-   create an editable copy and print instructions for manual enrichment (it does **not** open an editor automatically).
+   create an editable copy and print instructions for manual enrichment (it does
+   **not** open an editor automatically).
 3. After enrichment, run
    `scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
    to validate, dedupe and produce `data/calllists/calllist_YYYY-MM-DD.csv`.

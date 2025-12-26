@@ -531,12 +531,12 @@ cat > "$unit_tmp_gtd/seeds.csv" <<CSV
 seed_id,location,base_url
 test_seed,Test,https://example/jobs?keywords=test
 CSV
-cat > "$unit_tmp_gtd/mock_fetch_gtd.sh" <<'SH'
+cat > "$unit_tmp_gtd/mock_fetch_gtd.sh" <<SH
 #!/bin/sh
 # simple mock fetch that returns a page with NEXT once then final
-COUNTER_FILE="$PWD/mock_fetch_gtd.counter"
+COUNTER_FILE="$unit_tmp_gtd/mock_fetch_gtd.counter"
 count=1
-if [ -f "$COUNTER_FILE" ]; then
+if [ -f "\"$COUNTER_FILE\"" ]; then
   count=$(cat "$COUNTER_FILE" || echo 1)
 fi
 if [ "$count" -eq 1 ]; then
