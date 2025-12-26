@@ -9,6 +9,35 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 fail=0
 
+# Helper to save and restore environment variables per-test to avoid cross-test pollution
+save_vars() {
+  for v in "$@"; do
+    # POSIX-safe check and capture
+    if eval "[ \"\${${v}+set}\" = set ]"; then
+      # capture value into OLD_<VAR>
+      eval "OLD_${v}=\"\${${v}}\""
+      eval "OLDSET_${v}=1"
+    else
+      eval "OLDSET_${v}=0"
+    fi
+  done
+}
+
+restore_vars() {
+  for v in "$@"; do
+    # restore if previously set
+    if eval "[ \"\${OLDSET_${v}}\" = 1 ]"; then
+      eval "${v}=\"\${OLD_${v}}\""
+      eval "export ${v}"
+    else
+      eval "unset ${v} 2>/dev/null || true"
+    fi
+    # cleanup helpers
+    eval "unset OLD_${v} OLDSET_${v} 2>/dev/null || true"
+  done
+}
+
+
 # Test: load_env.sh (should not fail if .env missing)
 if ! sh "$REPO_ROOT/scripts/lib/load_env.sh"; then
   echo "FAIL: load_env.sh failed with missing .env" >&2
@@ -174,6 +203,8 @@ SH
 chmod +x "$unit_tmp_fetch/mock_curl.sh"
 # create a UA list
 printf 'UA-One\nUA-Two\n' > "$unit_tmp_fetch/uas.txt"
+# Save and restore env vars used by this test
+save_vars CURL_CMD UA_ROTATE UA_LIST_PATH
 export CURL_CMD="$unit_tmp_fetch/mock_curl.sh"
 export UA_ROTATE=true
 export UA_LIST_PATH="$unit_tmp_fetch/uas.txt"
@@ -185,6 +216,8 @@ if echo "$out" | grep -q -E 'User-Agent:.*UA-(One|Two)'; then
 else
   echo "FAIL: fetch.sh UA rotation didn't set header"; fail=1
 fi
+# Restore env
+restore_vars CURL_CMD UA_ROTATE UA_LIST_PATH
 
 # Unit test: fetch.sh backoff messages reflect BACKOFF_SEQUENCE
 echo "[TEST] fetch.sh: backoff sequence messages"
@@ -197,6 +230,8 @@ cat > "$unit_tmp_backoff/mock_curl_fail.sh" <<'SH'
 exit 1
 SH
 chmod +x "$unit_tmp_backoff/mock_curl_fail.sh"
+# Save and restore env vars used by this test
+save_vars CURL_CMD BACKOFF_SEQUENCE
 export CURL_CMD="$unit_tmp_backoff/mock_curl_fail.sh"
 export BACKOFF_SEQUENCE='1,2,3'
 # run fetch.sh with 3 retries and capture stderr
@@ -209,7 +244,8 @@ else
     echo "FAIL: fetch.sh backoff messages missing or incorrect"; fail=1
   fi
 fi
-unset CURL_CMD BACKOFF_SEQUENCE
+# Restore env
+restore_vars CURL_CMD BACKOFF_SEQUENCE
 rm -rf "$unit_tmp_backoff"
 
 # Unit test: fetch.sh robots.txt blocking
@@ -234,6 +270,8 @@ else
 fi
 SH
 chmod +x "$unit_tmp_robots/mock_curl_robots.sh"
+# Save and restore env vars used by this test
+save_vars CURL_CMD VERIFY_ROBOTS
 export CURL_CMD="$unit_tmp_robots/mock_curl_robots.sh"
 export VERIFY_ROBOTS=true
 # fetch a jobs URL - should be blocked (exit code 2)
@@ -242,6 +280,8 @@ if sh scripts/fetch.sh 'http://example/jobs' 1 2 > /dev/null 2>&1; then
 else
   echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
 fi
+# Restore env
+restore_vars CURL_CMD VERIFY_ROBOTS
 # Unit test: fetch.sh CAPTCHA detection (treats as failure and logs warning)
 echo "[TEST] fetch.sh: CAPTCHA detection"
 unit_tmp_captcha="$tmp/captcha_test"
@@ -253,6 +293,8 @@ cat > "$unit_tmp_captcha/mock_curl_captcha.sh" <<'SH'
 printf '<html><body><div class="g-recaptcha">please solve</div></body></html>'
 SH
 chmod +x "$unit_tmp_captcha/mock_curl_captcha.sh"
+# Save and restore env vars used by this test
+save_vars CURL_CMD
 export CURL_CMD="$unit_tmp_captcha/mock_curl_captcha.sh"
 # run fetch - expect it to fail and to warn about CAPTCHA
 if sh scripts/fetch.sh 'http://example/' 1 2 > "$unit_tmp_captcha/out" 2>&1; then
@@ -264,8 +306,8 @@ else
     echo "FAIL: fetch.sh did not warn about CAPTCHA"; fail=1
   fi
 fi
-# cleanup CAPTCHA test
-unset CURL_CMD
+# Restore env
+restore_vars CURL_CMD
 rm -rf "$unit_tmp_fetch" "$unit_tmp_robots" "$unit_tmp_captcha"
 
 echo "[TEST] paginate.sh: paginates and stops (mock)"
@@ -353,9 +395,13 @@ else
 fi
 SH
 chmod +x "$tmp/mock_fetch3.sh"
+# Save and restore env vars used by this test
+save_vars PAGE_NEXT_MARKER MAX_PAGES FETCH_SCRIPT
 export PAGE_NEXT_MARKER='data-automation="NEXT-MY"'
 MAX_PAGES=2 FETCH_SCRIPT="$tmp/mock_fetch3.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate3.out" || true
 grep -q 'first' "$tmp/paginate3.out" || { echo "FAIL: paginate did not process custom marker"; fail=1; }
+# Restore env
+restore_vars PAGE_NEXT_MARKER MAX_PAGES FETCH_SCRIPT
 rm -f "$tmp/mock_fetch3.sh" "$tmp/paginate3.out" /tmp/mock_fetch3_called_* || true
 
 # Unit test: archive_artifacts (archival)
@@ -367,9 +413,12 @@ mkdir -p "$unit_tmp_archive/subdir"
 printf 'hello' > "$unit_tmp_archive/file1.txt"
 printf 'world' > "$unit_tmp_archive/subdir/file2.txt"
 # Use an isolated snapshot dir
+save_vars SNAPSHOT_DIR
 export SNAPSHOT_DIR="$unit_tmp_archive/snapshots"
 # Run archive wrapper with explicit paths
 sh "$REPO_ROOT/scripts/archive.sh" "$unit_tmp_archive/file1.txt" "$unit_tmp_archive/subdir" || { echo "FAIL: archive.sh failed"; fail=1; }
+# Restore env
+restore_vars SNAPSHOT_DIR
 # Check snapshot created
 snap_file=$(find "$unit_tmp_archive/snapshots" -maxdepth 1 -name 'snap-*' -type f -print0 -quit | xargs -0 basename 2>/dev/null || true)
 if [ -z "$snap_file" ]; then
@@ -421,6 +470,8 @@ mkdir -p "$unit_tmp_summ/data/calllists"
 printf 'company\n' > "$unit_tmp_summ/data/calllists/calllist_2025-12-24.csv"
 mkdir -p "$unit_tmp_summ/logs"
 printf 'WARN: something happened\nINFO: ok\n' > "$unit_tmp_summ/logs/log.txt"
+# Save and restore SNAPSHOT_DIR for this test
+save_vars SNAPSHOT_DIR
 export SNAPSHOT_DIR="$unit_tmp_summ/snapshots"
 # point project dirs to our test directories for summarise to see
 # copy calllists and logs into repo-relative locations
@@ -429,6 +480,8 @@ cp -r "$unit_tmp_summ/data" .
 cp -r "$unit_tmp_summ/logs" .
 # run summarise
 sh "$REPO_ROOT/scripts/summarise.sh" --out "$unit_tmp_summ/summary.txt" || { echo "FAIL: summarise.sh failed"; fail=1; }
+# Restore SNAPSHOT_DIR
+restore_vars SNAPSHOT_DIR
 # Check file exists and has expected fields
 if [ ! -f "$unit_tmp_summ/summary.txt" ]; then
   echo "FAIL: summary.txt not created"; fail=1
@@ -484,6 +537,7 @@ mkdir -p "$unit_heal/.snapshots"
 ( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
 # ensure SNAPSHOT_DIR points to the test snapshots
 # Ensure SNAPSHOT_DIR points to the test snapshots
+save_vars SNAPSHOT_DIR
 export SNAPSHOT_DIR="$unit_heal/.snapshots"
 # shellcheck disable=SC1091
 . "$REPO_ROOT/scripts/lib/heal.sh"
@@ -501,6 +555,8 @@ restore_dir=$(restore_latest_snapshot)
 [ -d "$restore_dir" ] || { echo "FAIL: restore_latest_snapshot did not create dir"; fail=1; }
 [ -f "$restore_dir/data/seed.txt" ] || { echo "FAIL: restore_latest_snapshot missing file"; fail=1; }
 rm -rf "$unit_heal" "$SNAPSHOT_DIR" tmp
+# Restore SNAPSHOT_DIR
+restore_vars SNAPSHOT_DIR
 
 # Unit test: attempt_recover_step (re-run success)
 echo "[TEST] attempt_recover_step: runs provided recovery command and logs success"
@@ -558,6 +614,8 @@ chmod +x "$unit_tmp_gtd/mock_fetch_gtd.sh"
 echo "[DEBUG] Made mock_fetch_gtd.sh executable"
 # Ensure counter starts at 1 for deterministic behaviour (first fetch returns page1)
 printf '1' > "$unit_tmp_gtd/mock_fetch_gtd.counter"
+# Save and restore FETCH_SCRIPT and PAGE_NEXT_MARKER
+save_vars FETCH_SCRIPT PAGE_NEXT_MARKER
 # Run the workflow with FETCH_SCRIPT override
 export FETCH_SCRIPT="$unit_tmp_gtd/mock_fetch_gtd.sh"
 # Ensure PAGE_NEXT_MARKER is the default for this integration test (tests may override it earlier)
@@ -565,6 +623,8 @@ unset PAGE_NEXT_MARKER || true
 echo "[DEBUG] About to run get_transaction_data.sh with seeds: $unit_tmp_gtd/seeds.csv"
 sh scripts/get_transaction_data.sh "$unit_tmp_gtd/seeds.csv" || { echo "FAIL: get_transaction_data.sh failed"; fail=1; }
 echo "[DEBUG] Finished running get_transaction_data.sh"
+# Restore env
+restore_vars FETCH_SCRIPT PAGE_NEXT_MARKER
 # Check output saved
 outfile="tmp/test_seed.htmls"
 if [ -f "$outfile" ]; then
@@ -599,6 +659,8 @@ printf 'WARN: test warning\n' > logs/log.txt
 # create tmp files to be cleaned
 mkdir -p tmp
 printf 'temp' > tmp/tempfile.txt
+# Save and restore SNAPSHOT_DIR for this test
+save_vars SNAPSHOT_DIR
 export SNAPSHOT_DIR="$REPO_ROOT/.snapshots_test"
 # Run end-sequence via bin/elvis-run
 sh "$REPO_ROOT/bin/elvis-run" end-sequence || { echo "FAIL: bin/elvis-run end-sequence failed"; fail=1; }
@@ -630,6 +692,8 @@ if [ -d "$unit_tmp_end/logs.bak" ]; then
 fi
 # cleanup snapshot test dir
 rm -rf "$unit_tmp_end" .snapshots_test
+# Restore SNAPSHOT_DIR
+restore_vars SNAPSHOT_DIR
 unit_tmp_validate="$tmp/validate_test"
 mkdir -p "$unit_tmp_validate"
 cat > "$unit_tmp_validate/input.csv" <<CSV
