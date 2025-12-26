@@ -36,10 +36,10 @@ chmod 644 "$OUT"
 echo "Prepared enrichment file: $OUT"
 
 if [ "$EDIT" = true ]; then
-  # Open in editor for manual enrichment
-  : "Opening $OUT in editor..."
-  ${EDITOR:-vi} "$OUT"
-  echo "Edit complete. Please re-run validation: scripts/validate.sh $OUT --out validated.csv"
+  # Non-blocking: print clear instructions for manual enrichment instead of launching editor
+  echo "Prepared enrichment file for manual editing: $OUT"
+  echo "To edit, run: ${EDITOR:-vi} \"$OUT\""
+  echo "After editing, re-run validation: sh scripts/validate.sh $OUT --out validated.csv"
 fi
 
 exit 0

@@ -55,7 +55,11 @@ archive_artifacts() {
 
   # Create tarball (preserve file ownership and permissions as much as possible)
   # Use positional parameters to expand multiple paths safely in POSIX sh
-  set -- $to_archive
+  # Build positional parameters explicitly to avoid word-splitting/globbing issues
+  set --
+  for p in $to_archive; do
+    set -- "$@" "$p"
+  done
   tar -czf "$snapshot_path" "$@"
 
   # Compute checksum using available tool

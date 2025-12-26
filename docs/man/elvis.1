@@ -44,7 +44,7 @@ Run the full transaction data workflow: normalise, split, detect pagination, and
 Show help and usage for all init scripts.
 .TP
 .B set-status
-Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging.
+Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging. The enrichment step creates an editable `tmp/enriched.csv` and prints instructions for manual editing; it does not open an editor automatically.
 .TP
 .B end-sequence
 Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.

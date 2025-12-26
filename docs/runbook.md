@@ -380,7 +380,7 @@ Quick steps:
 1. Prepare `results.csv` with expected headers:
    `company_name,prospect_name,title,phone,email,location`.
 2. Run `scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit` to
-   create an editable copy and open it in `$EDITOR` for manual enrichment.
+   create an editable copy and print instructions for manual enrichment (it does **not** open an editor automatically).
 3. After enrichment, run
    `scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
    to validate, dedupe and produce `data/calllists/calllist_YYYY-MM-DD.csv`.

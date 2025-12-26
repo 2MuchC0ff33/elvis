@@ -186,6 +186,32 @@ else
   echo "FAIL: fetch.sh UA rotation didn't set header"; fail=1
 fi
 
+# Unit test: fetch.sh backoff messages reflect BACKOFF_SEQUENCE
+echo "[TEST] fetch.sh: backoff sequence messages"
+unit_tmp_backoff="$tmp/backoff_test"
+rm -rf "$unit_tmp_backoff"
+mkdir -p "$unit_tmp_backoff"
+cat > "$unit_tmp_backoff/mock_curl_fail.sh" <<'SH'
+#!/bin/sh
+# Always fail to simulate network outage
+exit 1
+SH
+chmod +x "$unit_tmp_backoff/mock_curl_fail.sh"
+export CURL_CMD="$unit_tmp_backoff/mock_curl_fail.sh"
+export BACKOFF_SEQUENCE='1,2,3'
+# run fetch.sh with 3 retries and capture stderr
+if sh scripts/fetch.sh 'http://example/' 3 1 2>"$unit_tmp_backoff/out"; then
+  echo "FAIL: fetch.sh should have failed"; fail=1
+else
+  if grep -q 'sleeping 1 s' "$unit_tmp_backoff/out" && grep -q 'sleeping 2 s' "$unit_tmp_backoff/out"; then
+    echo "PASS: fetch.sh printed backoff sleeping messages"
+  else
+    echo "FAIL: fetch.sh backoff messages missing or incorrect"; fail=1
+  fi
+fi
+unset CURL_CMD BACKOFF_SEQUENCE
+rm -rf "$unit_tmp_backoff"
+
 # Unit test: fetch.sh robots.txt blocking
 echo "[TEST] fetch.sh: robots.txt block behaviour"
 unit_tmp_robots="$tmp/robots_test"
@@ -216,9 +242,31 @@ if sh scripts/fetch.sh 'http://example/jobs' 1 2 > /dev/null 2>&1; then
 else
   echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
 fi
-# cleanup
-unset CURL_CMD UA_ROTATE UA_LIST_PATH VERIFY_ROBOTS
-rm -rf "$unit_tmp_fetch" "$unit_tmp_robots"
+# Unit test: fetch.sh CAPTCHA detection (treats as failure and logs warning)
+echo "[TEST] fetch.sh: CAPTCHA detection"
+unit_tmp_captcha="$tmp/captcha_test"
+rm -rf "$unit_tmp_captcha"
+mkdir -p "$unit_tmp_captcha"
+cat > "$unit_tmp_captcha/mock_curl_captcha.sh" <<'SH'
+#!/bin/sh
+# mock curl that returns a page containing g-recaptcha marker
+printf '<html><body><div class="g-recaptcha">please solve</div></body></html>'
+SH
+chmod +x "$unit_tmp_captcha/mock_curl_captcha.sh"
+export CURL_CMD="$unit_tmp_captcha/mock_curl_captcha.sh"
+# run fetch - expect it to fail and to warn about CAPTCHA
+if sh scripts/fetch.sh 'http://example/' 1 2 > "$unit_tmp_captcha/out" 2>&1; then
+  echo "FAIL: fetch.sh should fail on CAPTCHA"; fail=1
+else
+  if grep -q -i 'captcha' "$unit_tmp_captcha/out"; then
+    echo "PASS: fetch.sh detected CAPTCHA and failed"
+  else
+    echo "FAIL: fetch.sh did not warn about CAPTCHA"; fail=1
+  fi
+fi
+# cleanup CAPTCHA test
+unset CURL_CMD
+rm -rf "$unit_tmp_fetch" "$unit_tmp_robots" "$unit_tmp_captcha"
 
 echo "[TEST] paginate.sh: paginates and stops (mock)"
 cat > "$tmp/mock.html" <<EOF
@@ -306,7 +354,7 @@ fi
 SH
 chmod +x "$tmp/mock_fetch3.sh"
 export PAGE_NEXT_MARKER='data-automation="NEXT-MY"'
-FETCH_SCRIPT="$tmp/mock_fetch3.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate3.out" || true
+MAX_PAGES=2 FETCH_SCRIPT="$tmp/mock_fetch3.sh" sh "$tmp/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/paginate3.out" || true
 grep -q 'first' "$tmp/paginate3.out" || { echo "FAIL: paginate did not process custom marker"; fail=1; }
 rm -f "$tmp/mock_fetch3.sh" "$tmp/paginate3.out" /tmp/mock_fetch3_called_* || true
 
@@ -473,6 +521,48 @@ rm -rf tmp logs || true
 
 # cleanup
 rm -rf "$unit_tmp_summ" data logs
+
+# Integration test: get_transaction_data end-to-end with mock fetch
+echo "[TEST] get_transaction_data: end-to-end with mock fetch"
+unit_tmp_gtd="$tmp/gtd_test"
+rm -rf "$unit_tmp_gtd"
+mkdir -p "$unit_tmp_gtd"
+cat > "$unit_tmp_gtd/seeds.csv" <<CSV
+seed_id,location,base_url
+test_seed,Test,https://example/jobs?keywords=test
+CSV
+cat > "$unit_tmp_gtd/mock_fetch_gtd.sh" <<'SH'
+#!/bin/sh
+# simple mock fetch that returns a page with NEXT once then final
+COUNTER_FILE="$PWD/mock_fetch_gtd.counter"
+count=1
+if [ -f "$COUNTER_FILE" ]; then
+  count=$(cat "$COUNTER_FILE" || echo 1)
+fi
+if [ "$count" -eq 1 ]; then
+  printf '<html><body>page1<span data-automation="page-next"></span></body></html>'
+else
+  printf '<html><body>page2</body></html>'
+fi
+count=$((count+1))
+printf '%s' "$count" > "$COUNTER_FILE"
+SH
+chmod +x "$unit_tmp_gtd/mock_fetch_gtd.sh"
+# Run the workflow with FETCH_SCRIPT override
+export FETCH_SCRIPT="$unit_tmp_gtd/mock_fetch_gtd.sh"
+sh scripts/get_transaction_data.sh "$unit_tmp_gtd/seeds.csv" || { echo "FAIL: get_transaction_data.sh failed"; fail=1; }
+# Check output saved
+outfile="tmp/test_seed.htmls"
+if [ -f "$outfile" ]; then
+  grep -q 'page1' "$outfile" || { echo "FAIL: page1 missing from $outfile"; fail=1; }
+  grep -q 'page2' "$outfile" || { echo "FAIL: page2 missing from $outfile"; fail=1; }
+  echo "PASS: get_transaction_data saved paginated HTML";
+else
+  echo "FAIL: get_transaction_data did not produce $outfile"; fail=1;
+fi
+# Cleanup
+unset FETCH_SCRIPT
+rm -rf "$unit_tmp_gtd"
 
 # Integration test: end-sequence orchestrator
 echo "[TEST] end-sequence: full integration (archive, cleanup, summarise)"
