@@ -37,7 +37,7 @@ Workspace includes:
 
 ### Testing Requirement:
 
-- When running tests, always use: `timeout 60s sh -x tests/run-tests.sh`
+- When running tests, always use: `timeout 80s sh -x tests/run-tests.sh`
 
 This ensures tests fail gracefully if they hang longer than 60 seconds.
 

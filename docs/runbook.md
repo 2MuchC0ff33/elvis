@@ -14,6 +14,8 @@ logic and pseudocode in README.md.
 1. **Normalise seeds.csv**
 
 - Cleans whitespace, removes BOM, and ensures consistent CSV format.
+- Supports quoted CSV fields (for example: `"Perth, WA"`) so locations may
+  contain commas without breaking parsing.
 - Uses:
   `awk -f scripts/lib/normalize.awk data/seeds/seeds.csv > tmp/seeds.normalized.csv`
 

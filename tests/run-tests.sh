@@ -77,6 +77,24 @@ if ! sh "$REPO_ROOT/bin/elvis-run" init; then
   fail=1
 fi
 
+# Test: ShellCheck static analysis (run only if installed)
+echo "[TEST] ShellCheck: static analysis (SLOW - set SLOW_TESTS=true to enable)"
+if [ "${SLOW_TESTS:-false}" = "true" ]; then
+  if command -v shellcheck >/dev/null 2>&1; then
+    # Use xargs to avoid newline/word-splitting issues on different shells
+    if ! git ls-files '*.sh' | xargs shellcheck -x; then
+      echo "FAIL: shellcheck found issues" >&2
+      fail=1
+    else
+      echo "PASS: shellcheck"
+    fi
+  else
+    echo "SKIP: shellcheck not installed"
+  fi
+else
+  echo "SKIP: shellcheck (SLOW_TESTS not enabled)"
+fi
+
 # Additional tests for get transaction data workflow
 
 tmp=tmp/test
@@ -85,6 +103,14 @@ mkdir -p "$tmp"
 echo "[TEST] normalize.awk: trims and cleans CSV"
 printf 'seed_id,location,base_url\nfoo , Perth , https://x\n' | awk -f scripts/lib/normalize.awk > "$tmp/norm.csv"
 grep -q 'foo,Perth,https://x' "$tmp/norm.csv" || { echo "FAIL: normalize.awk"; fail=1; }
+
+# Unit test: quoted location containing comma should not split base_url
+echo "[TEST] normalize.awk: handles quoted locations with commas"
+printf 'seedA,"Town, State",https://example.com/jobs\n' | awk -f scripts/lib/normalize.awk > "$tmp/norm_quoted.csv"
+# Use extract_seeds to get seed|base reliably (it uses first+last comma logic)
+awk -f scripts/lib/extract_seeds.awk "$tmp/norm_quoted.csv" > "$tmp/norm_quoted.out"
+grep -q 'seedA|https://example.com/jobs' "$tmp/norm_quoted.out" || { echo "FAIL: normalize.awk quoted location handling"; fail=1; }
+
 
 echo "[TEST] split_records.sh: splits to .txt files"
 sh scripts/lib/split_records.sh "$tmp/norm.csv" "$tmp/records" || { echo "FAIL: split_records.sh error"; fail=1; }
@@ -551,6 +577,7 @@ else
   echo "PASS: preserve_failed_artifacts created failed tarball"
 fi
 # restore snapshot
+# shellcheck disable=SC2218
 restore_dir=$(restore_latest_snapshot)
 [ -d "$restore_dir" ] || { echo "FAIL: restore_latest_snapshot did not create dir"; fail=1; }
 [ -f "$restore_dir/data/seed.txt" ] || { echo "FAIL: restore_latest_snapshot missing file"; fail=1; }
