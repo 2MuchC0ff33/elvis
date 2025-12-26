@@ -106,7 +106,7 @@ grep -q 'foo,Perth,https://x' "$tmp/norm.csv" || { echo "FAIL: normalize.awk"; f
 
 # Unit test: quoted location containing comma should not split base_url
 echo "[TEST] normalize.awk: handles quoted locations with commas"
-printf 'seedA,"Town, State",https://example.com/jobs\n' | awk -f scripts/lib/normalize.awk > "$tmp/norm_quoted.csv"
+printf 'seed_id,location,base_url\nseedA,"Town, State",https://example.com/jobs\n' | awk -f scripts/lib/normalize.awk > "$tmp/norm_quoted.csv"
 # Use extract_seeds to get seed|base reliably (it uses first+last comma logic)
 awk -f scripts/lib/extract_seeds.awk "$tmp/norm_quoted.csv" > "$tmp/norm_quoted.out"
 grep -q 'seedA|https://example.com/jobs' "$tmp/norm_quoted.out" || { echo "FAIL: normalize.awk quoted location handling"; fail=1; }
@@ -581,7 +581,7 @@ fi
 restore_dir=$(restore_latest_snapshot)
 [ -d "$restore_dir" ] || { echo "FAIL: restore_latest_snapshot did not create dir"; fail=1; }
 [ -f "$restore_dir/data/seed.txt" ] || { echo "FAIL: restore_latest_snapshot missing file"; fail=1; }
-rm -rf "$unit_heal" "$SNAPSHOT_DIR" tmp
+rm -rf "$unit_heal" "$SNAPSHOT_DIR" tmp || true
 # Restore SNAPSHOT_DIR
 restore_vars SNAPSHOT_DIR
 
