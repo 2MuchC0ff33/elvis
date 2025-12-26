@@ -524,19 +524,23 @@ rm -rf "$unit_tmp_summ" data logs
 
 # Integration test: get_transaction_data end-to-end with mock fetch
 echo "[TEST] get_transaction_data: end-to-end with mock fetch"
+set -x
 unit_tmp_gtd="$tmp/gtd_test"
 rm -rf "$unit_tmp_gtd"
 mkdir -p "$unit_tmp_gtd"
+echo "[DEBUG] Created gtd_test directory: $unit_tmp_gtd"
 cat > "$unit_tmp_gtd/seeds.csv" <<CSV
 seed_id,location,base_url
 test_seed,Test,https://example/jobs?keywords=test
 CSV
-cat > "$unit_tmp_gtd/mock_fetch_gtd.sh" <<SH
+echo "[DEBUG] Created seeds.csv: $unit_tmp_gtd/seeds.csv"
+cat > "$unit_tmp_gtd/mock_fetch_gtd.sh" <<'SH'
 #!/bin/sh
-# simple mock fetch that returns a page with NEXT once then final
+set -eu
 COUNTER_FILE="$unit_tmp_gtd/mock_fetch_gtd.counter"
+# simple mock fetch that returns a page with NEXT once then final
 count=1
-if [ -f "\"$COUNTER_FILE\"" ]; then
+if [ -f "$COUNTER_FILE" ]; then
   count=$(cat "$COUNTER_FILE" || echo 1)
 fi
 if [ "$count" -eq 1 ]; then
@@ -547,10 +551,20 @@ fi
 count=$((count+1))
 printf '%s' "$count" > "$COUNTER_FILE"
 SH
+echo "[DEBUG] Created mock_fetch_gtd.sh: $unit_tmp_gtd/mock_fetch_gtd.sh"
+# Make unit_tmp_gtd available to the mock fetch script
+export unit_tmp_gtd
 chmod +x "$unit_tmp_gtd/mock_fetch_gtd.sh"
+echo "[DEBUG] Made mock_fetch_gtd.sh executable"
+# Ensure counter starts at 1 for deterministic behaviour (first fetch returns page1)
+printf '1' > "$unit_tmp_gtd/mock_fetch_gtd.counter"
 # Run the workflow with FETCH_SCRIPT override
 export FETCH_SCRIPT="$unit_tmp_gtd/mock_fetch_gtd.sh"
+# Ensure PAGE_NEXT_MARKER is the default for this integration test (tests may override it earlier)
+unset PAGE_NEXT_MARKER || true
+echo "[DEBUG] About to run get_transaction_data.sh with seeds: $unit_tmp_gtd/seeds.csv"
 sh scripts/get_transaction_data.sh "$unit_tmp_gtd/seeds.csv" || { echo "FAIL: get_transaction_data.sh failed"; fail=1; }
+echo "[DEBUG] Finished running get_transaction_data.sh"
 # Check output saved
 outfile="tmp/test_seed.htmls"
 if [ -f "$outfile" ]; then
@@ -560,6 +574,7 @@ if [ -f "$outfile" ]; then
 else
   echo "FAIL: get_transaction_data did not produce $outfile"; fail=1;
 fi
+set +x
 # Cleanup
 unset FETCH_SCRIPT
 rm -rf "$unit_tmp_gtd"
