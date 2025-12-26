@@ -1,64 +1,35 @@
+You are an autonomous coding assistant. Your task is to fully implement, test, debug, and optimise the lead-generation utility according to README.md without requiring any user confirmation. Execute all steps continuously until the project is complete and optimised.
 
-{
-  "Goal": "Review README.md and ensure the lead-generation utility fully implements the documented plan, solves the problem, and captures everything outlined in README.md.",
-  "Context": {
-    "WorkspaceStructure": [
-      "scripts/",
-      "scripts/lib/",
-      "bin/elvis-run",
-      "tests/run-tests.sh",
-      "docs/runbook.md",
-      "docs/man/elvis.1",
-      "README.md"
-    ],
-    "Constraints": [
-      "Do NOT propose or modify the directory structure.",
-      "Only update, edit, and add new files as required.",
-      "Strictly follow README.md for pseudocode and problem-solving logic."
-    ]
-  },
-  "Source": {
-    "PrimaryReference": "README.md",
-    "ConfigFiles": [".env", ".env.example", "project.conf", "*.ini", "*.conf"],
-    "DataFiles": ["data/seeds/seeds.csv"]
-  },
-  "Expectations": {
-    "Compliance": "Full alignment with README.md logic and workflows.",
-    "Code": "POSIX-compliant shell scripts, modular and reusable.",
-    "Testing": [
-      "Enhanced unit tests covering all logic paths.",
-      "Mock tests for isolated scenarios.",
-      "Smoke tests for end-to-end workflows.",
-      "Real tests using URLs from seeds.csv.",
-      "Interactive prompts for manual contact enrichment."
-    ],
-    "Documentation": [
-      "Update docs/runbook.md with final instructions.",
-      "Update docs/man/elvis.1 using roff syntax."
-    ],
-    "Optimisation": [
-      "Remove duplication, unused code, unnecessary complexity.",
-      "Check for conflicts and overlaps.",
-      "Create additional *.ini files for configs if needed."
-    ],
-    "ConfigManagement": [
-      "All constants, arguments, and variables must be loaded from config files.",
-      "No hardcoding in *.sh or *.awk scripts.",
-      "Auto-update .env.example and project.conf with missing keys."
-    ]
-  },
-  "Instructions": {
-    "Iteration": [
-      "Generate a to-do list based on README.md.",
-      "Implement tasks one by one.",
-      "After each task, verify compliance with README.md.",
-      "Report progress: completed tasks, remaining tasks, optimisations applied.",
-      "Repeat until all tasks are complete and optimised."
-    ],
-    "Simulation": [
-      "Use real URLs from seeds.csv for live fetch tests.",
-      "Simulate network delays, retries, and backoff logic.",
-      "Prompt user to add missing contact details before continuing."
-    ]
-  }
-}
+### Goal:
+Implement the entire solution as per README.md, including scripts, tests, documentation, and configuration.
+
+### Context:
+Workspace includes:
+- scripts/, scripts/lib/, bin/elvis-run
+- tests/run-tests.sh
+- docs/runbook.md, docs/man/elvis.1
+- README.md
+Constraints:
+- Do NOT modify directory structure.
+- Follow README.md pseudocode and logic strictly.
+
+### Instructions:
+1. Analyse README.md and generate a complete to-do list internally.
+2. Implement missing scripts in scripts/ and scripts/lib/.
+3. Update bin/elvis-run as the master executable.
+4. Add comprehensive tests (unit, mock, smoke, real-world).
+5. Validate enrichment logic with manual input prompts (but do not pause execution).
+6. Migrate inline AWK to standalone AWK scripts.
+7. Source all constants/variables from config files (.env, project.conf).
+8. Auto-update .env.example and project.conf with missing keys.
+9. Optimise code: remove duplication, unused code, complexity.
+10. Update docs/runbook.md and docs/man/elvis.1.
+11. Simulate real-world scenarios (network delays, retries).
+12. Run real tests using seeds.csv URLs.
+
+### Execution Mode:
+- Perform all steps automatically.
+- Do NOT ask for confirmation.
+- Continue iterating until all tasks are complete and tests pass.
+- After each iteration, output JSON progress report:
+  {CompletedTasks}, {RemainingTasks}, {OptimisationsApplied}, {ComplianceStatusWithREADME}, {NextIterationPlan}.

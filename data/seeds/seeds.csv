@@ -1,0 +1,5 @@
+seed_id,location,base_url
+seek_fifo_perth,"Perth, WA",https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+seek_fifo_darwin,"Darwin, NT",https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT
+seek_admin_perth,"Perth, WA",https://www.seek.com.au/jobs?keywords=admin&where=Perth%2C+WA
+seek_swdev_perth,"Perth, WA",https://www.seek.com.au/software-developer-jobs/in-Perth-WA
