@@ -5,12 +5,13 @@
 set -eu
 
 show_help() {
-  echo "Usage: $0 init | get-transaction-data | set-status | end-sequence | choose-dork | help"
+  echo "Usage: $0 init | get-transaction-data | set-status | end-sequence | choose-dork | update-config | help"
   echo "  init                  Run initialisation sequence (load env, config, pagination, validate, log)"
   echo "  get-transaction-data  Run transaction data workflow (seeds, normalise, split, pagination, fetch)"
   echo "  set-status            Run the 'set status' workflow for results.csv (enrich -> validate -> dedupe -> output)"
   echo "  end-sequence          Run the end-sequence workflow: archive, cleanup, summarise"
   echo "  choose-dork           Interactive: select a Google dork template and open in browser"
+  echo "  update-config         Synchronise keys between project.conf and .env.example"
   echo "  help                  Show this help"
   exit 0
 }
@@ -91,6 +92,10 @@ case "${1:-}" in
   choose-dork)
     shift
     exec "$(dirname "$0")/../scripts/choose_dork.sh" "$@"
+    ;;
+  update-config)
+    shift
+    exec "$(dirname "$0")/../scripts/update_config_examples.sh" "$@"
     ;;
   *)
     show_help

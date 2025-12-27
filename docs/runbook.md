@@ -48,7 +48,13 @@ logic and pseudocode in README.md.
 - Safety limits and delays are configurable:
   - `DELAY_MIN` / `DELAY_MAX` — per-request random delay range (seconds)
   - `MAX_PAGES` / `MAX_OFFSET` — safety stop limits to avoid runaway loops
+  - `SLEEP_CMD` — command used for sleeping (`sleep` by default); can be
+    overridden in tests to avoid long waits
 - Uses: `sh scripts/lib/paginate.sh <base_url> <model>`
+
+Note: real-network integration tests are optional and disabled by default. To
+run them set `REAL_TESTS=true` in your environment before running the test
+suite; the test runner will skip network tests unless explicitly enabled.
 
 1. **Orchestration**
 

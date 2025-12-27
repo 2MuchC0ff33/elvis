@@ -32,6 +32,16 @@ Displays help and usage for all init scripts.
 .TP
 .B elvis-run init
 Runs all init steps in order.
+.SH MAINTENANCE
+.TP
+.B update_config_examples.sh
+Synchronises keys between `project.conf` and `.env.example` by adding missing keys with placeholder values. Useful to keep examples and defaults aligned across environments.
+.TP
+.B SLEEP_CMD (testing)
+`SLEEP_CMD` is respected by fetch and pagination scripts; set it to a short stub or a recorder during tests to avoid long sleeps (e.g., `SLEEP_CMD=./tests/mock_sleep.sh`).
+.TP
+.B REAL_TESTS (integration)
+Enable optional real-network integration tests by setting `REAL_TESTS=true` when running the test suite; tests are skipped by default and only run when explicitly enabled.
 .SH OPTIONS
 .TP
 .B init

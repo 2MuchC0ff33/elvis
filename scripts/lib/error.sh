@@ -70,9 +70,10 @@ retry_with_backoff() {
     sleep_time=$(echo "$backoff_seq" | awk -v a=$attempt '{n=split($0,s," "); if(a<=n) print s[a]; else print s[n]}')
     # add small jitter
     jitter=$(awk 'BEGIN{srand(); print int(rand()*3)}')
+    SLEEP_CMD="${SLEEP_CMD:-sleep}"
     sleep_time=$(( sleep_time + jitter ))
     echo "WARN: attempt $attempt failed; sleeping $sleep_time s before retry" >> logs/log.txt || true
-    sleep "$sleep_time"
+    $SLEEP_CMD "$sleep_time"
     attempt=$((attempt + 1))
   done
   return 1

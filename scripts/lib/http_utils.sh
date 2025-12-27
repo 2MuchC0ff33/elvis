@@ -81,17 +81,19 @@ EOF
     if response=$($CURL_CMD -sS --max-time "$timeout" -H "User-Agent: $ua_header" "$url" 2>/dev/null); then
       if is_captcha "$response"; then
         echo "WARN: CAPTCHA or human check detected for $url" >&2
+        SLEEP_CMD="${SLEEP_CMD:-sleep}"
         sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
         echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
-        sleep "$sleep_time"
+        $SLEEP_CMD "$sleep_time"
         continue
       fi
       printf '%s' "$response"
       return 0
     fi
+    SLEEP_CMD="${SLEEP_CMD:-sleep}"
     sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
     echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
-    sleep "$sleep_time"
+    $SLEEP_CMD "$sleep_time"
   done
   echo "ERROR: fetch failed after $retries attempts: $url" >&2
   return 1

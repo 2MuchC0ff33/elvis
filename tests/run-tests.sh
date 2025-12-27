@@ -798,6 +798,57 @@ count=$(tail -n +2 "$unit_tmp/out.csv" | awk -F, '$1=="Acme Pty Ltd"{c++} END{pr
 # Check history appended
 grep -q 'NewCo' "$unit_tmp/history.txt" || { echo "FAIL: NewCo not appended to history"; fail=1; }
 
+# Optional real-network integration test (enable with REAL_TESTS=true)
+if [ "${REAL_TESTS:-false}" = "true" ]; then
+  echo "[TEST] real-network-integration: get_transaction_data with seeds"
+  SEED_SRC="$REPO_ROOT/examples/sample_seeds.csv"
+  if [ -f "$SEED_SRC" ]; then
+    echo "Using sample seeds for real-network test"
+    mkdir -p "$REPO_ROOT/data/seeds"
+    # use only the header + first 2 seeds to keep run short
+    (head -n 1 "$SEED_SRC" && head -n 3 "$SEED_SRC" | tail -n +2 | head -n 2) > "$REPO_ROOT/data/seeds/seeds.csv"
+    if ! sh scripts/get_transaction_data.sh "$REPO_ROOT/data/seeds/seeds.csv"; then
+      echo "FAIL: real get_transaction_data failed"; fail=1
+    else
+      echo "PASS: real get_transaction_data completed"
+    fi
+    rm -f "$REPO_ROOT/data/seeds/seeds.csv"
+  else
+    echo "SKIP: real-network test (no sample seeds)"
+  fi
+fi
+
+# Unit test: update_config_examples.sh (synchronise keys between .env.example and project.conf)
+echo "[TEST] update_config_examples.sh: synchronises keys"
+cp .env.example .env.example.bak
+cp project.conf project.conf.bak
+if ! sh scripts/update_config_examples.sh >/dev/null 2>&1; then
+  echo "FAIL: update_config_examples.sh failed"; fail=1
+fi
+# extract keys
+awk -F= '/^[A-Z0-9_]+=/ {print $1}' .env.example | sort -u > /tmp/env_keys.$$ || true
+awk -F= '/^[A-Z0-9_]+=/ {print $1}' project.conf | sort -u > /tmp/conf_keys.$$ || true
+if ! diff -u /tmp/env_keys.$$ /tmp/conf_keys.$$ > /tmp/_diff.$$ 2>/dev/null; then
+  echo "FAIL: config examples do not match keys" >&2
+  echo "Diff:" >&2
+  sed -n '1,200p' /tmp/_diff.$$ >&2 || true
+  fail=1
+else
+  echo "PASS: update_config_examples synchronised keys"
+fi
+# Restore original files
+mv .env.example.bak .env.example
+mv project.conf.bak project.conf
+rm -f /tmp/env_keys.$$ /tmp/conf_keys.$$ /tmp/_diff.$$ || true
+
+# Unit test: elvis-run update-config wrapper
+echo "[TEST] elvis-run update-config: wrapper to scripts/update_config_examples.sh"
+if ! sh bin/elvis-run update-config >/dev/null 2>&1; then
+  echo "FAIL: elvis-run update-config failed"; fail=1
+else
+  echo "PASS: elvis-run update-config wrapper ok"
+fi
+
 # Clean up unit test temp
 rm -rf "$unit_tmp"
 

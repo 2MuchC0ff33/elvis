@@ -93,17 +93,19 @@ for attempt in $(seq 1 "$retries"); do
     if is_captcha "$response"; then
       echo "WARN: CAPTCHA or human check detected for $url" >&2
       # treat as fetch failure so caller can decide to skip the route
+      SLEEP_CMD="${SLEEP_CMD:-sleep}"
       sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
       echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
-      sleep "$sleep_time"
+      $SLEEP_CMD "$sleep_time"
       continue
     fi
     echo "$response"
     exit 0
   fi
+  SLEEP_CMD="${SLEEP_CMD:-sleep}"
   sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
   echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
-  sleep "$sleep_time"
+  $SLEEP_CMD "$sleep_time"
 done
 echo "ERROR: fetch failed after $retries attempts: $url" >&2
 exit 1
