@@ -33,8 +33,26 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ ! -f "$INPUT" ]; then
-  echo "ERROR: input file not found: $INPUT" >&2
-  exit 2
+  echo "INFO: input file $INPUT not found; attempting to auto-generate from tmp/*.htmls"
+  htmls_found=false
+  for f in tmp/*.htmls; do
+    [ -f "$f" ] || continue
+    if [ "$htmls_found" = false ]; then
+      echo "Parsing $f -> $INPUT"
+      sh scripts/parse.sh "$f" --out "$INPUT"
+      htmls_found=true
+    else
+      echo "Appending parse of $f"
+      tmp_out=$(mktemp /tmp/elvis_parse.XXXXXX)
+      sh scripts/parse.sh "$f" --out "$tmp_out"
+      tail -n +2 "$tmp_out" >> "$INPUT"
+      rm -f "$tmp_out"
+    fi
+  done
+  if [ "$htmls_found" = false ]; then
+    echo "ERROR: input file not found: $INPUT" >&2
+    exit 2
+  fi
 fi
 
 mkdir -p "$OUT_DIR" tmp
