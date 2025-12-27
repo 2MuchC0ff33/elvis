@@ -671,7 +671,9 @@ Notes & policy
 ## Project Structure
 
 <!-- AUTO-GENERATED-PROJECT-TREE:START -->
-A generated project scaffold (updated by `scripts/update_readme.sh`) — do not edit manually.
+
+A generated project scaffold (updated by `scripts/update_readme.sh`) — do not
+edit manually.
 
 ```mermaid
 flowchart TB
@@ -778,6 +780,7 @@ flowchart TB
 ```
 
 <!-- AUTO-GENERATED-PROJECT-TREE:END -->
+
 ### Commands
 
 - `bin/elvis-run` — master orchestrator (see `bin/elvis-run help`)
