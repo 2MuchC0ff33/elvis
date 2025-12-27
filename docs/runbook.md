@@ -100,16 +100,20 @@ Local testing & debugging
 How to triage fetch & logging
 
 - Check recent fetch events:
-  - `grep '403' logs/network.log`  # find 403 events
-  - `grep 'ROBOTSBLOCK' logs/network.log`  # find robots blocks and rules
+  - `grep '403' logs/network.log` # find 403 events
+  - `grep 'ROBOTSBLOCK' logs/network.log` # find robots blocks and rules
 - See run-level warnings:
   - `tail -n 200 logs/log.txt | grep -E 'WARN|ERROR'`
 - Reproduce safely (local mock):
-  - `sh tests/test_fetch_behaviour.sh` or `FETCH_SCRIPT=./tests/test_fetch_behaviour.sh sh scripts/lib/paginate.sh '<seed>' PAG_START`
+  - `sh tests/test_fetch_behaviour.sh` or
+    `FETCH_SCRIPT=./tests/test_fetch_behaviour.sh sh scripts/lib/paginate.sh '<seed>' PAG_START`
 - Recover & collect artifacts:
-  - If `tmp/last_failed.status` exists, run `ls -l .snapshots/failed/` and examine the latest tarball for debugging artifacts.
+  - If `tmp/last_failed.status` exists, run `ls -l .snapshots/failed/` and
+    examine the latest tarball for debugging artifacts.
 - Log rotation & retention:
-  - Rotate logs weekly (policy TBD); use `scripts/summarise.sh` or `bin/elvis-run end-sequence --dry-run` as part of your archival/cron workflow.
+  - Rotate logs weekly (policy TBD); use `scripts/summarise.sh` or
+    `bin/elvis-run end-sequence --dry-run` as part of your archival/cron
+    workflow. For automated rotation and retention, use `scripts/log_rotate.sh --keep-weeks 4` (schedule in cron).
 
 Note: real-network integration tests are optional and disabled by default. To
 run them set `REAL_TESTS=true` in your environment before running the test
