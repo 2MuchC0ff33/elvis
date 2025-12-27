@@ -50,10 +50,45 @@ while :; do
 
   echo "$html"
 
-  # Stop if no Next marker
-  if ! printf '%s' "$html" | grep -q "$PAGE_NEXT_MARKER"; then
-    break
+  # Try to detect pagination by scanning job IDs in SEEK JSON as a robust fallback
+  # Create a temporary seen-id file (unique per invocation)
+  seen_file=$(mktemp 2>/dev/null || printf "/tmp/seek_seen_$$_tmp")
+  # Ensure file is removed on exit
+  trap 'rm -f "$seen_file"' EXIT
+  # Extract jobIds list from embedded JSON, fallback to scanning "id":"<num>" occurrences
+  ids=$(printf '%s' "$html" | sed -n 's/.*"jobIds"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' | tr -d '"' | tr ',' ' ')
+  if [ -z "$ids" ]; then
+    ids=$(printf '%s' "$html" | grep -oE '"id"[[:space:]]*:[[:space:]]*"[0-9]+"' | grep -oE '[0-9]+' | tr '\n' ' ')
   fi
+  new_found=0
+  if [ -n "$ids" ]; then
+    for id in $ids; do
+      if ! grep -q -F "${id}" "$seen_file" 2>/dev/null; then
+        new_found=1
+        printf '%s\n' "$id" >> "$seen_file"
+      fi
+    done
+  fi
+
+  # Stop conditions:
+  # 1) If a Next marker is absent AND no jobIds were detected -> stop
+  # 2) If jobIds were detected but none are new (we've reached already-seen results) -> stop
+  if ! printf '%s' "$html" | grep -q "$PAGE_NEXT_MARKER"; then
+    if [ -z "$ids" ]; then
+      break
+    fi
+    if [ "$new_found" -eq 0 ]; then
+      break
+    fi
+  else
+    # If Next marker exists but ids present and none new, stop to avoid loops
+    if [ -n "$ids" ] && [ "$new_found" -eq 0 ]; then
+      break
+    fi
+  fi
+
+  # Remove trap and seen_file when we exit loop normally (will be removed by next iteration or on script exit)
+  rm -f "$seen_file" || true
 
   # Safety checks
   if [ "$model" = "PAG_START" ]; then

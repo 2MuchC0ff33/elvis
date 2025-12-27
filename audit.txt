@@ -2,3 +2,5 @@
 2025-12-27T04:14:32Z | input=tmp/test/calllists/calllist_2025-12-27.csv | total=2 | set-status run (low leads)
 2025-12-27T05:34:58Z | input=data/calllists/calllist_2025-12-27.csv | total=0 | set-status run (low leads)
 2025-12-27T05:37:51Z | input=data/calllists/calllist_2025-12-27.csv | total=0 | set-status run (low leads)
+2025-12-27T06:28:05Z | input=data/calllists/calllist_2025-12-27.csv | total=0 | set-status run (low leads)
+2025-12-27T06:30:16Z | input=data/calllists/calllist_2025-12-27.csv | total=16 | set-status run (low leads)

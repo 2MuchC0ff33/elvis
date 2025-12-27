@@ -30,68 +30,29 @@ if [ -z "$OUT" ]; then
   exit 2
 fi
 
-# Write header (add summary and job_id fields)
-printf 'company_name,prospect_name,title,phone,email,location,summary,job_id\n' > "$OUT"
+# Write header (only company_name and location)
+printf 'company_name,location\n' > "$OUT"
 
-# Use external AWK parser for extraction
-awk -f "$(dirname "$0")/lib/parser.awk" "$INPUT" >> "$OUT"
 
-# Always run JSON extractor as well to handle modern site structures; merge and dedupe by job_id
+# Run JSON extractor and emit company,location rows (filter classification-only rows)
 json_tmp="${OUT}.json.tmp"
-merged_tmp="${OUT}.merged.tmp"
-rm -f "$json_tmp" "$merged_tmp"
+rm -f "$json_tmp"
 if awk -f "$(dirname "$0")/lib/parse_seek_json3.awk" "$INPUT" > "$json_tmp" 2>/dev/null; then
   if [ -s "$json_tmp" ]; then
-    # Merge: preserve header, then unique by last field (job_id)
-    tail -n +2 "$OUT" > "${OUT}.awkrows.tmp" || true
-    tail -n +1 "$json_tmp" > "${OUT}.jsonrows.tmp" || true
-    # Combine and unique by job_id (last comma-separated field), prefer JSON extractor (jsonrows first)
-    # Prefer rows where company_name does NOT start with "subClassification:" and where title is present
-    (cat "${OUT}.jsonrows.tmp" "${OUT}.awkrows.tmp" | \
-      awk '
-        {
-          line = $0
-          # extract job_id as trailing numeric field (handles commas inside quoted fields)
-          if (match(line, /,([0-9]+)[[:space:]]*$/, m)) {
-            id = m[1]
-          } else {
-            next
-          }
-          if (!seen[id]++) {
-            order[++n]=id
-            best[id]=line
-            has_sub[id]=(line ~ /^subClassification:/)
-            # extract title field (3rd field) naive: allow for quoted fields by taking between first two commas and the third comma
-            title=""
-            if (match(line, /^[^,]*,[^,]*,(("[^"]*"|[^,]*)).*/, t)) {
-              title = t[1]
-            }
-            has_title[id] = (title != "")
-          } else {
-            # if existing is subClassification and this one is better, replace
-            if (has_sub[id] && (line !~ /^subClassification:/)) {
-              best[id]=line; has_sub[id]=0
-              if (!has_title[id] && match(line, /^[^,]*,[^,]*,(("[^"]*"|[^,]*)).*/, t2)) { if (t2[1]!="") has_title[id]=1 }
-            } else if (!has_sub[id] && !has_title[id] && match(line, /^[^,]*,[^,]*,(("[^"]*"|[^,]*)).*/, t3)) {
-              if (t3[1] != "") { best[id]=line; has_title[id]=1 }
-            }
-          }
-        }
-        END { for (i=1;i<=n;i++) print best[order[i]] }
-      '
-    ) > "$merged_tmp" || true
-    # Write header and merged unique rows
-    printf 'company_name,prospect_name,title,phone,email,location,summary,job_id
-' > "$OUT"
-    cat "$merged_tmp" >> "$OUT" || true
-    rm -f "${OUT}.awkrows.tmp" "${OUT}.jsonrows.tmp" "$json_tmp" "$merged_tmp"
+    # Filter out classification-only lines and dedupe exact lines (preserve first occurrence)
+    awk '!/^subClassification:/{ if (!seen[$0]++) print }' "$json_tmp" >> "$OUT"
+    rm -f "$json_tmp"
   else
     rm -f "$json_tmp"
+    # Fallback: use legacy HTML parser and extract company & location (fields 1 & 6)
+    awk -f "$(dirname "$0")/lib/parser.awk" "$INPUT" > "${OUT}.awk_full.tmp" || true
+    tail -n +2 "${OUT}.awk_full.tmp" | awk -F',' '{print $1","$6}' | awk '!seen[$0]++' >> "$OUT" || true
+    rm -f "${OUT}.awk_full.tmp"
   fi
 else
-  # If AWK extractor failed, fall back to Python if available
+  # AWK extractor failed; try Python fallback (if available)
   if command -v python3 >/dev/null 2>&1; then
-    python3 "$(dirname "$0")/lib/parse_seek_json.py" "$INPUT" >> "$OUT" || true
+    python3 "$(dirname "$0")/lib/parse_seek_json.py" "$INPUT" | awk -F',' '{print $1","$6}' >> "$OUT" || true
   else
     echo "WARN: JSON extractor not available (no AWK or Python)" >&2
   fi

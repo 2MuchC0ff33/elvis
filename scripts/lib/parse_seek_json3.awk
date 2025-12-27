@@ -71,9 +71,13 @@ BEGIN { OFS = "," }
       title = sanitize(title)
       location = sanitize(location)
       summary = sanitize(summary)
+      # emit only company and location (CSV) and skip subClassification-only companies
       if (job_id != "") {
-        # assemble output record and remove any remaining newlines to ensure a single physical line
-        out = q(company) OFS "" OFS q(title) OFS "" OFS "" OFS q(location) OFS q(summary) OFS q(job_id)
+        if (company ~ /^subClassification:/) {
+          # skip noisy classification rows
+          next
+        }
+        out = q(company) OFS q(location)
         gsub(/\r/, " ", out)
         gsub(/\n/, " ", out)
         print out
