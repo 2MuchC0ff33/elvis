@@ -5,7 +5,7 @@
 set -eu
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-tmp="$(mktemp -d 2>/dev/null || mktemp -d -t parsetest)"
+tmp="$(mktemp -d "${REPO_ROOT}/tmp/parsetest.XXXX" 2>/dev/null || mktemp -d -t parsetest)"
 trap 'rm -rf "$tmp"' EXIT
 
 cat > "$tmp/mock.htmls" <<HTML

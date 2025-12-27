@@ -31,10 +31,17 @@ printf 'UA-One\nUA-Two\n' > "$tmp/uas.txt"
 old_CURL_CMD="${CURL_CMD:-}"
 old_UA_ROTATE="${UA_ROTATE:-}"
 old_UA_LIST_PATH="${UA_LIST_PATH:-}"
+# set minimal fetch-related env so fetch.sh won't error
+export BACKOFF_SEQUENCE='5,20,60'
 export CURL_CMD="$tmp/mock_curl.sh"
 export UA_ROTATE=true
 export UA_LIST_PATH="$tmp/uas.txt"
-
+export RETRY_ON_403=true
+export EXTRA_403_RETRIES=1
+export ACCEPT_HEADER='text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+export ACCEPT_LANGUAGE='en-AU,en;q=0.9'
+export NETWORK_LOG="$tmp/network.log"
+export CAPTCHA_PATTERNS='captcha|recaptcha|g-recaptcha'
 out=$(sh "$REPO_ROOT/scripts/fetch.sh" 'http://example/' 1 2 2>/dev/null || true)
 if echo "$out" | grep -q -E 'User-Agent:.*UA-(One|Two)'; then
   echo "PASS: fetch UA rotation"
@@ -51,10 +58,10 @@ if [ -f "$FLAG" ]; then count=$(cat "$FLAG") fi
 count=$((count+1))
 printf '%d' "$count" > "$FLAG"
 if [ "$count" -eq 1 ]; then
-  printf 'BODY\n---HTTP-STATUS:403'
+  printf 'BODY\n---HTTP-STATUS:403\n'
   exit 0
 else
-  printf 'BODY\n---HTTP-STATUS:200'
+  printf 'BODY\n---HTTP-STATUS:200\n'
   exit 0
 fi
 SH

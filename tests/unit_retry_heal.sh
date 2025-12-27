@@ -28,7 +28,7 @@ echo "PASS: retry_with_backoff recovered"
 unit_heal="$tmp/heal_test"
 mkdir -p "$unit_heal/data"
 printf 'hello' > "$unit_heal/data/seed.txt"
-( cd "$unit_heal" && tar -czf .snapshots/snap-test2.tar.gz data )
+mkdir -p "$unit_heal/.snapshots" && tar -czf "$unit_heal/.snapshots/snap-test2.tar.gz" -C "$unit_heal" data
 export SNAPSHOT_DIR="$unit_heal/.snapshots"
 . "$REPO_ROOT/scripts/lib/heal.sh"
 mkdir -p tmp

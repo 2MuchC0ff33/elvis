@@ -45,9 +45,8 @@ if awk -f "$(dirname "$0")/lib/parse_seek_json3.awk" "$INPUT" > "$json_tmp" 2>/d
   else
     rm -f "$json_tmp"
     # Fallback: use legacy HTML parser and extract company & location (fields 1 & 6)
-    awk -f "$(dirname "$0")/lib/parser.awk" "$INPUT" > "${OUT}.awk_full.tmp" || true
-    tail -n +2 "${OUT}.awk_full.tmp" | awk -F',' '{print $1","$6}' | awk '!seen[$0]++' >> "$OUT" || true
-    rm -f "${OUT}.awk_full.tmp"
+    # Note: parser.awk does not emit a header so do not strip lines with tail -n +2
+    awk -f "$(dirname "$0")/lib/parser.awk" "$INPUT" | awk -F',' '{print $1","$6}' | awk '!seen[$0]++' >> "$OUT" || true
   fi
 else
   # AWK extractor failed; try Python fallback (if available)

@@ -24,6 +24,7 @@ on_err() {
   ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   echo "ERROR: step failed (rc=$rc) at $ts" >> logs/log.txt || true
   # write a failure marker for operator inspection
+  mkdir -p tmp || true
   echo "failed:$rc:$ts" > "tmp/last_failed.status" || true
 }
 

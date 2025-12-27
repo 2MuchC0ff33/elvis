@@ -25,9 +25,18 @@ fi
 SH
 chmod +x "$unit_tmp_robots/mock_curl_robots.sh"
 # save env
-_old_CURL_CMD="$CURL_CMD" || true
-_old_VERIFY_ROBOTS="$VERIFY_ROBOTS" || true
+_old_CURL_CMD="${CURL_CMD:-}"
+_old_VERIFY_ROBOTS="${VERIFY_ROBOTS:-}"
+export BACKOFF_SEQUENCE='5,20,60'
 export CURL_CMD="$unit_tmp_robots/mock_curl_robots.sh"
+export UA_ROTATE=true
+export UA_LIST_PATH="$unit_tmp_robots/uas.txt"
+export RETRY_ON_403=true
+export EXTRA_403_RETRIES=1
+export ACCEPT_HEADER='text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+export ACCEPT_LANGUAGE='en-AU,en;q=0.9'
+export NETWORK_LOG="$REPO_ROOT/logs/network.log"
+export CAPTCHA_PATTERNS='captcha|recaptcha|g-recaptcha'
 export VERIFY_ROBOTS=true
 # run and expect non-zero / blocked (exit code 2)
 if sh "$REPO_ROOT/scripts/fetch.sh" 'http://example/jobs' 1 2 > /dev/null 2>&1; then
@@ -73,9 +82,9 @@ else
 fi
 SH
 chmod +x "$unit_tmp_403/mock_curl_403.sh"
-_old_CURL_CMD="$CURL_CMD" || true
-_old_RETRY_ON_403="$RETRY_ON_403" || true
-_old_EXTRA_403_RETRIES="$EXTRA_403_RETRIES" || true
+_old_CURL_CMD="${CURL_CMD:-}"
+_old_RETRY_ON_403="${RETRY_ON_403:-}"
+_old_EXTRA_403_RETRIES="${EXTRA_403_RETRIES:-}"
 export CURL_CMD="$unit_tmp_403/mock_curl_403.sh"
 export RETRY_ON_403=true
 export EXTRA_403_RETRIES=1

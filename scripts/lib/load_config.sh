@@ -25,7 +25,11 @@ while IFS='=' read -r key val; do
       val=$(printf '%s' "$val" | sed -E "s/[[:space:]]*#.*$//")
       # trim leading/trailing whitespace
       val=$(printf '%s' "$val" | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      export "$key"="$val" ;;
+      # only export if variable not already set in environment
+      eval cur="\${$key:-}"
+      if [ -z "${cur}" ]; then
+        export "$key"="$val"
+      fi ;;
   esac
 done < "$tmp_conf"
 rm -f "$tmp_conf"

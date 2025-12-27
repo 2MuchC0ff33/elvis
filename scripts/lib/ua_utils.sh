@@ -32,13 +32,11 @@ choose_ua() {
   # Skip known crawler/bot signatures unless ALLOW_BOTS=true
   awk -v allow_bots="${ALLOW_BOTS:-false}" 'function ltrim(s){sub(/^[ \t\r\n]+/,"",s);return s} function rtrim(s){sub(/[ \t\r\n]+$/,"",s);return s} {
       line=$0
-      # strip surrounding quotes
-      gsub(/^\s*[\"\' ]+/, "", line)
-      gsub(/[\"\' ]+\s*$/, "", line)
-      line = ltrim(rtrim(line))
+      # strip surrounding whitespace and quotes (single or double) using safe char class
+      gsub(/^[[:space:]\047\"]+|[[:space:]\047\"]+$/,"",line)
       if (line == "") next
       low = tolower(line)
       if (allow_bots != "true" && low ~ /(googlebot|bingbot|slurp|facebookbot|bot\/|crawler|spider|yahooseeker)/) next
       print line
-    }' "$UA_LIST_PATH" | awk -f "$(dirname "$0")/pick_random.awk"
+    }' "$UA_LIST_PATH" | awk -f "$(dirname "$0")/lib/pick_random.awk"
 }

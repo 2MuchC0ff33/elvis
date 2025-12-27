@@ -34,6 +34,12 @@ SH
 chmod +x "$tmp/mock_sleep.sh"
 export DELAY_MIN=2
 export DELAY_MAX=2
+# ensure PAGE_NEXT_MARKER is set for tests
+export PAGE_NEXT_MARKER='data-automation="page-next"'
+# ensure OFFSET_STEP is set (Seek default)
+export OFFSET_STEP=22
+# ensure MAX_PAGES set for safety
+export MAX_PAGES=5
 # override FETCH_SCRIPT and SLEEP_CMD
 FETCH_SCRIPT="$tmp/mock_fetch2.sh" SLEEP_CMD="$tmp/mock_sleep.sh" sh "$REPO_ROOT/scripts/lib/paginate.sh" 'http://x' 'PAG_PAGE' > "$tmp/pag.out" || true
 sleep_file_search=$(find . -maxdepth 2 -name 'mock_sleep.called' -print -quit || true)

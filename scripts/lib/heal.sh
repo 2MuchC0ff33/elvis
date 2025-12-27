@@ -52,7 +52,12 @@ restore_latest_snapshot() {
   ts=$(date -u +%Y%m%dT%H%M%SZ)
   tmp_restore="tmp/restore-$ts"
   mkdir -p "$tmp_restore"
-  tar -xzf "$SNAP_DIR/$latest" -C "$tmp_restore" || return 1
+  # support both absolute/relative names in $latest
+  snapshot_path="$SNAP_DIR/$latest"
+  if [ ! -f "$snapshot_path" ] && [ -f "$latest" ]; then
+    snapshot_path="$latest"
+  fi
+  tar -xzf "$snapshot_path" -C "$tmp_restore" || return 1
   echo "HEAL: restored snapshot $latest into $tmp_restore" >> logs/log.txt || true
   # return the restore dir path
   printf "%s" "$tmp_restore"

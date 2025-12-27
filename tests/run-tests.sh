@@ -40,8 +40,13 @@ for t in $TEST_FILES; do
   while [ $attempt -le $max_attempts ]; do
     echo "Attempt $attempt: timeout=${base_timeout}s"
     if [ "$HAS_TIMEOUT" -eq 1 ]; then
-      if timeout ${base_timeout}s sh "$test_path"; then ok=1; break; fi
-      rc=$?
+      # run using timeout and capture exit code (avoid `set -e` early exit)
+      if timeout ${base_timeout}s sh "$test_path"; then
+        rc=0
+      else
+        rc=$?
+      fi
+      if [ $rc -eq 0 ]; then ok=1; break; fi
       if [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
         echo "Timed out (rc=$rc). Increasing timeout and retrying"
         base_timeout=$((base_timeout*2))
@@ -52,7 +57,9 @@ for t in $TEST_FILES; do
         break
       fi
     else
-      if sh "$test_path"; then ok=1; break; else echo "Test failed (no timeout tool)"; break; fi
+      sh "$test_path"
+      rc=$?
+      if [ $rc -eq 0 ]; then ok=1; break; else echo "Test failed (rc=$rc)"; break; fi
     fi
   done
 

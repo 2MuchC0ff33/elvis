@@ -12,7 +12,8 @@ unit_tmp_dir="$(mktemp -d)"
 cat > "$unit_tmp_dir/fail_script.sh" <<'SH'
 #!/bin/sh
 # fail_script.sh
-. "$(cd "$(dirname "$0")/.." && pwd)/scripts/lib/error.sh"
+# Source error helpers from repository absolute path
+. "$REPO_ROOT/scripts/lib/error.sh"
 # Install trap that will call on_err on exit
 trap 'on_err' EXIT
 # Simulate failure

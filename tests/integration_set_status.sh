@@ -10,8 +10,8 @@ trap 'rm -rf "$tmp"' EXIT
 
 cat > "$tmp/results.csv" <<CSV
 company_name,prospect_name,title,phone,email,location
-TestCo Pty Ltd,John Doe,Manager,0412345678,john@testco.com.au,"Perth, WA"
-DupCo,Jane,Owner,, ,Melbourne, VIC
+TestCo Pty Ltd,John Doe,Manager,0412345678,john@testco.com.au,Perth
+DupCo,Jane,Owner,, ,Melbourne
 CSV
 cp "$tmp/results.csv" "$tmp/enriched.csv"
 

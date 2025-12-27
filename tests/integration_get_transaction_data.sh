@@ -31,6 +31,9 @@ export FETCH_SCRIPT="$tmp/mock_fetch_gtd.sh"
 # Ensure counter starts
 printf '1' > "$tmp/mock_fetch_gtd.counter"
 # Run workflow
+export PAGE_NEXT_MARKER='data-automation="page-next"'
+export OFFSET_STEP=22
+export MAX_PAGES=5
 sh "$REPO_ROOT/scripts/get_transaction_data.sh" "$tmp/seeds.csv" || { echo "FAIL: get_transaction_data.sh failed" >&2; exit 1; }
 outfile="tmp/test_seed.htmls"
 if [ -f "$outfile" ]; then

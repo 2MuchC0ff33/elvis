@@ -7,7 +7,7 @@
 set -eu
 # Load environment overrides and project config if available
 if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh"; fi
-if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then . "$(dirname "$0")/lib/load_config.sh" "$(cd "$(dirname "$0")/.." && pwd)/project.conf"; fi
 # Load optional fetch-specific INI (configs/fetch.ini) to set fetch defaults if unset
 if [ -f "$(dirname "$0")/lib/load_fetch_config.sh" ]; then . "$(dirname "$0")/lib/load_fetch_config.sh" "$(cd "$(dirname "$0")/.." && pwd)/configs/fetch.ini" || true; fi
 # Load seek pagination config if present
