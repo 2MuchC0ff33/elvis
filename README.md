@@ -568,6 +568,23 @@ Record enough context to investigate issues and site changes:
 - Number of valid output rows emitted
 - Warnings and errors (timeouts, retries, fallback “Next” detection)
 
+**Network & Failure Artefacts**
+
+- **NETWORK_LOG** (default: `logs/network.log`) records fetch attempts as tab-delimited rows: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES`. Example: `2025-12-09T09:31:07Z\thttps://example/jobs\t1\t403\t12345`.
+- Special entries for quick triage:
+  - `403-retry` — when HTTP 403 triggers additional retries (useful to track UA rotation effects).
+  - `ROBOTSBLOCK` — recorded when `robots.txt` disallows the route; includes the first matching Disallow rule for auditability.
+- Failure marker and preserved artifacts:
+  - `tmp/last_failed.status` is written when the `on_err` handler runs; use this as a first check for recent failures.
+  - `.snapshots/failed/` contains preserved artifacts when auto-heal/preserve is used (see `scripts/lib/heal.sh`).
+
+**Troubleshooting a failed fetch**
+
+- Inspect `logs/network.log` for `403` or `ROBOTSBLOCK` entries and check the bytes/status recorded.
+- Check `logs/log.txt` for `WARN`/`ERROR` lines and `tmp/last_failed.status` for a failure marker.
+- To reproduce safely and quickly, use the test fetch stub: `sh tests/test_fetch_behaviour.sh` or set `FETCH_SCRIPT` to a mock and override `SLEEP_CMD` to avoid long sleeps.
+- Use `LOG_LEVEL=DEBUG` for verbose logs and try rotating UA (`UA_LIST_PATH`) or tuning `BACKOFF_SEQUENCE`/`EXTRA_403_RETRIES`.
+
 #### Weekly rotation
 
 - Rotate logs weekly (policy TBD).

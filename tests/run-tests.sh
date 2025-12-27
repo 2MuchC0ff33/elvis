@@ -390,6 +390,14 @@ if ! sh "$REPO_ROOT/tests/test_fetch_behaviour.sh"; then
   echo "FAIL: fetch behaviour tests failed"; fail=1
 fi
 
+# Small tests for logging and error handling
+if ! sh "$REPO_ROOT/tests/test_on_err_writes_status.sh"; then
+  echo "FAIL: error handler test failed"; fail=1
+fi
+if ! sh "$REPO_ROOT/tests/test_end_sequence_dry_run.sh"; then
+  echo "FAIL: end-sequence dry-run smoke test failed"; fail=1
+fi
+
 echo "[TEST] paginate.sh: paginates and stops (mock)"
 cat > "$tmp/mock.html" <<EOF
 <html><body>page1<span data-automation=\"page-next\"></span></body></html>

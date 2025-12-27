@@ -107,6 +107,8 @@ When `true`, requests are checked against `robots.txt` (default: `true`). If a r
 .TP
 .B NETWORK_LOG
 Path to the network log that records fetch attempts as tab-separated fields: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES` (default: `logs/network.log`).
+
+Special diagnostic entries include `403-retry` (retry attempts caused by HTTP 403 events) and `ROBOTSBLOCK` (when `robots.txt` blocks a route; the logged entry includes the matching Disallow prefix for auditability). Use the log to inspect per-request bytes and status codes for fast triage.
 .TP
 .B SLEEP_CMD / FETCH_SCRIPT
 Test hooks: set `SLEEP_CMD` to a short stub in tests to avoid long sleeps; set `FETCH_SCRIPT` to a mock fetcher to reproduce fetch/pagination behaviours.
