@@ -4,6 +4,10 @@
 # Usage: set_status.sh [--input results.csv] [--enriched enriched.csv] [--out-dir data/calllists] [--dry-run] [--commit-history]
 
 set -eu
+# Load environment and project config if available (non-fatal)
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh" "$REPO_ROOT/.env"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh" "$REPO_ROOT/project.conf"; fi
 
 INPUT="results.csv"
 ENRICHED=""
@@ -65,6 +69,12 @@ echo "Produced calllist: $OUTFILE"
 
 # Check against MIN_LEADS and log a warning if below target
 MIN_LEADS="${MIN_LEADS:-25}"
+# strip inline comments and whitespace, fallback to 25 if invalid
+MIN_LEADS=$(printf '%s' "$MIN_LEADS" | sed -E 's/[[:space:]]*#.*$//' | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if ! printf '%s' "$MIN_LEADS" | grep -qE '^[0-9]+$'; then
+  MIN_LEADS=25
+fi
+
 total_rows=$(tail -n +2 "$OUTFILE" | wc -l | tr -d ' ')
 if [ "${total_rows:-0}" -lt "$MIN_LEADS" ]; then
   # ensure logs dir exists

@@ -13,11 +13,19 @@ if [ ! -f "$CONF_FILE" ]; then
 fi
 
 tmp_conf="$(mktemp)"
-grep -E '^[A-Z0-9_]+=.*' "$CONF_FILE" > "$tmp_conf"
+# Keep only simple key=value lines (ignore leading comment lines)
+grep -E '^[A-Z0-9_]+=' "$CONF_FILE" > "$tmp_conf"
+# Read and export, trimming whitespace and removing inline comments (after #)
 while IFS='=' read -r key val; do
   case "$key" in
     ''|\#*) continue ;;
-    *) export "$key"="$val" ;;
+    *)
+      # remove inline comments and trim whitespace from value
+      # remove everything from first unescaped # onward
+      val=$(printf '%s' "$val" | sed -E "s/[[:space:]]*#.*$//")
+      # trim leading/trailing whitespace
+      val=$(printf '%s' "$val" | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      export "$key"="$val" ;;
   esac
 done < "$tmp_conf"
 rm -f "$tmp_conf"

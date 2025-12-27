@@ -13,7 +13,7 @@ specification), [`docs/runbook.md`](../docs/runbook.md), and
   one contact (phone or email) by scraping public job listing pages (primary
   source: Seek Australia).
 - Key files and outputs:
-  - `seeds.txt` — seed listing URLs and dork templates (see `data/seeds/`)
+  - `seeds.csv` — seed listing URLs and dork templates (see `data/seeds/`)
   - `companies_history.txt` — one company name per line; used for
     case-insensitive historical dedupe (see [`is_dup_company`](../README.md))
   - `calllist_YYYY-MM-DD.csv` — daily output (overwritten each run)

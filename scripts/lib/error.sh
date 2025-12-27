@@ -69,7 +69,7 @@ retry_with_backoff() {
     # compute sleep time from sequence or last value
     sleep_time=$(echo "$backoff_seq" | awk -v a=$attempt '{n=split($0,s," "); if(a<=n) print s[a]; else print s[n]}')
     # add small jitter
-    jitter=$(awk 'BEGIN{srand(); print int(rand()*3)}')
+    jitter=$(awk -f scripts/lib/rand_int.awk -v MAX=3)
     SLEEP_CMD="${SLEEP_CMD:-sleep}"
     sleep_time=$(( sleep_time + jitter ))
     echo "WARN: attempt $attempt failed; sleeping $sleep_time s before retry" >> logs/log.txt || true

@@ -112,12 +112,12 @@ Referenced files:
 
 1. Orchestrator & helpers (skeleton → expand)
 
-- [X] Add `bin/elvis-run` launcher (branch: `feature/add-launcher`)
+- [x] Add `bin/elvis-run` launcher (branch: `feature/add-launcher`)
   - Small wrapper that calls `scripts/run.sh` and checks prerequisites.
   - Git: `git checkout -b feature/add-launcher`
   - Labels: `automation` | Project: `Project Elvis` | Milestone: `v1.0` | Issue:
     `#14` | Estimate: `~1h` | Tags: `#bin #launcher`
-- [X] Add `scripts/run.sh` skeleton (branch: `feature/add-run-sh`)
+- [x] Add `scripts/run.sh` skeleton (branch: `feature/add-run-sh`)
   - Read `data/seeds/seeds.csv`, create temp workspace, call fetch/parse/dedupe,
     output CSV to `data/calllists/calllist_YYYY-MM-DD.csv`.
   - Dependency: `data/seeds/seeds.csv` exists
@@ -125,7 +125,7 @@ Referenced files:
   - Git: `git checkout -b feature/add-run-sh`
   - Labels: `automation` | Project: `Project Elvis` | Milestone: `v1.0` | Issue:
     `#15` | Estimate: `~4h` | Tags: `#scripts #orchestrator`
-- [X] Add `scripts/lib/log.sh` logging utility (branch:
+- [x] Add `scripts/lib/log.sh` logging utility (branch:
       `feature/add-logging-lib`)
   - Functions: log_start, log_seed, log_end, log_warn, log_error; single-line
     run format per README.
@@ -135,7 +135,7 @@ Referenced files:
 
 1. Fetching & reliability
 
-- [X] Add `scripts/fetch.sh` implementing `fetch_with_backoff(url)` (branch:
+- [x] Add `scripts/fetch.sh` implementing `fetch_with_backoff(url)` (branch:
       `feature/add-fetch-sh`)
   - Respect timeouts, UA rotation, randomised delay, retries (5s→20s→60s).
     Record failures and skip on CAPTCHA.
@@ -143,7 +143,7 @@ Referenced files:
   - Git: `git checkout -b feature/add-fetch-sh`
   - Labels: `automation`, `reliability` | Project: `Project Elvis` | Milestone:
     `v1.0` | Issue: `#18` | Estimate: `~4h` | Tags: `#fetch #backoff`
-- [X] Add `scripts/lib/http_utils.sh` for UA pool & robots.txt check (branch:
+- [x] Add `scripts/lib/http_utils.sh` for UA pool & robots.txt check (branch:
       `feature/add-http-utils`)
   - Implement `allowed_by_robots(url)` helper.
   - Git: `git checkout -b feature/add-http-utils`
@@ -152,14 +152,14 @@ Referenced files:
 
 1. Parsing & extraction
 
-- [X] Add `scripts/parse.sh` implementing `parse_listings(html)` (branch:
+- [x] Add `scripts/parse.sh` implementing `parse_listings(html)` (branch:
       `feature/add-parse-sh`)
   - Use `awk`/`grep`/`sed` to split `</article>` and extract fields using
     `data-automation` markers per [README.md](README.md).
   - Git: `git checkout -b feature/add-parse-sh`
   - Labels: `automation`, `parsing` | Project: `Project Elvis` | Milestone:
     `v1.0` | Issue: `#19` | Estimate: `~6h` | Tags: `#parse #extract`
-- [X] Add unit-friendly parsing examples under `tests/fixtures/` (branch:
+- [x] Add unit-friendly parsing examples under `tests/fixtures/` (branch:
       `test/add-parse-fixtures`)
   - Git: `git checkout -b test/add-parse-fixtures`
   - Labels: `test` | Project: `Project Elvis` | Milestone: `v1.0` | Issue: `#20`
@@ -167,7 +167,7 @@ Referenced files:
 
 1. Deduplication & validation
 
-- [X] Add `scripts/dedupe.sh` to dedupe case-insensitively against today's set
+- [x] Add `scripts/dedupe.sh` to dedupe case-insensitively against today's set
       and `companies_history.txt` (branch: `feature/add-dedupe-sh`)
   - Follow PDL `is_dup_company` behavior described in [README.md](README.md).
     Ensure no normalisation except lowercase check.
@@ -175,7 +175,7 @@ Referenced files:
   - Git: `git checkout -b feature/add-dedupe-sh`
   - Labels: `automation` | Project: `Project Elvis` | Milestone: `v1.0` | Issue:
     `#21` | Estimate: `~3h` | Tags: `#dedupe`
-- [X] Add `scripts/validate.sh` to validate phone/email and phone normalisation
+- [x] Add `scripts/validate.sh` to validate phone/email and phone normalisation
       `+61` → `0` (branch: `feature/add-validate-sh`)
   - Implement email regex `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}` and
     phone digits-only rule.
@@ -185,18 +185,18 @@ Referenced files:
 
 1. Enrichment & markers (manual steps)
 
-- [X] Add `scripts/enrich.sh` which flags rows needing manual enrichment and
+- [x] Add `scripts/enrich.sh` which flags rows needing manual enrichment and
       offers dork templates (branch: `feature/add-enrich-sh`)
   - Produce an "enrich-needed" file/signal so an operator can add contact info.
   - Git: `git checkout -b feature/add-enrich-sh`
-- [X] Add interactive helper `scripts/choose_dork.sh` (branch:
+- [x] Add interactive helper `scripts/choose_dork.sh` (branch:
       `feature/add-dork-helper`)
-  - Uses `seeds.txt` or `dork_templates` and opens a browser with a query.
+  - Uses `seeds.csv` or `dork_templates` and opens a browser with a query.
   - Git: `git checkout -b feature/add-dork-helper`
 
 1. History & append helpers
 
-- [X] Add `scripts/history_append.sh` to append accepted `company_name` to
+- [x] Add `scripts/history_append.sh` to append accepted `company_name` to
       `companies_history.txt` (branch: `feature/add-history-append`)
   - Interactive confirmation and safe append (atomic write).
   - Git: `git checkout -b feature/add-history-append`
@@ -209,7 +209,7 @@ Referenced files:
   - Add guidance in `docs/runbook.md` for admin workflow. Leave empty initially
     (admin-managed).
   - Git: `git checkout -b admin/create-companies-history`
-- [ ] Verify and clean `seeds.txt` formatting and headers (branch:
+- [ ] Verify and clean `seeds.csv` formatting and headers (branch:
       `maintenance/standardise-seeds`)
   - Git: `git checkout -b maintenance/standardise-seeds`
 

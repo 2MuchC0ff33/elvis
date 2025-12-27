@@ -678,7 +678,7 @@ flowchart TB
     configs_root["project.conf (primary) / seek-pagination.ini"]
     license["LICENSE"]
     readme["README.md"]
-    seeds["seeds.txt"]
+    seeds["seeds.csv"]
     history["companies_history.txt"]
 
     subgraph BIN["bin/"]
@@ -738,7 +738,7 @@ flowchart TB
 ├── project.conf              # Primary configuration (non-secret operational defaults)
 ├── LICENSE                   # Project license
 ├── README.md                 # Project documentation (this file)
-├── seeds.txt                 # Seed URLs & dork templates
+├── seeds.csv                 # Seed URLs & dork templates
 ├── companies_history.txt     # Append-only company history (one name per line)
 ├── data/                     # Generated or curated data (see below)
 │
@@ -765,7 +765,7 @@ flowchart TB
 │
 ├── data/                     # Generated or curated data
 │   ├── calllists/            # calllist_YYYY-MM-DD.csv (daily outputs)
-│   └── seeds/                # curated seed templates (e.g., seeds.txt)
+│   └── seeds/                # curated seed templates (e.g., seeds.csv)
 │
 ├── logs/                     # Runtime logs and rotated archives (ignored)
 │   └── log.txt
@@ -848,7 +848,7 @@ sequenceDiagram
     participant Script
     participant Operator as Manual Operator
     Operator->>Script: Initiate Run
-    Script->>Script: Load seeds.txt
+    Script->>Script: Load seeds.csv
     Script->>Script: For each seed, detect pagination model
     Script->>Script: Fetch & parse each page/listing
     Script->>Script: Aggregate and dedupe by company
@@ -860,7 +860,7 @@ sequenceDiagram
     Script->>Script: Log summary, rotate logs
 ```
 
-1. **Load seeds:** Read `seeds.txt` (one URL per line).
+1. **Load seeds:** Read `seeds.csv` (one URL per line).
 2. **Route detection:** For each seed, pick pagination model (`start` vs
    `page`).
 3. **Paginate:**
@@ -1193,7 +1193,7 @@ is optional and only needed if Seek changes its technical approach.
 | Perth, WA (Mobilisation)   | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=mobilisation>   |
 | Perth, WA (Travel)         | <https://www.seek.com.au/fifo-jobs/in-All-Perth-WA?keywords=travel>         |
 | Darwin, NT                 | <https://www.seek.com.au/fifo-jobs/in-All-Darwin-NT>                        |
-| ...                        | ... (See seeds.txt for full list)                                           |
+| ...                        | ... (See seeds.csv for full list)                                           |
 
 See 'Filtered Seeds' below for a breadth-first coverage strategy using
 server-rendered URLs with pre-set filters.
@@ -1235,7 +1235,7 @@ automation for the search form while still covering the same search space.
 
 #### Workflow for seeds
 
-1. Maintain `seeds.txt` with 1 URL per line, each representing a filtered slice.
+1. Maintain `seeds.csv` with 1 URL per line, each representing a filtered slice.
 2. For each seed:
    - Detect route (Batch 1) → choose pagination strategy.
    - Crawl until "Next" vanishes (Batch 4).

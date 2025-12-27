@@ -5,6 +5,11 @@
 # Echoes response or exits nonzero
 
 set -eu
+# Load environment overrides and project config if available
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh"; fi
+if [ -f "$(dirname "$0")/lib/load_seek_pagination.sh" ]; then sh "$(dirname "$0")/lib/load_seek_pagination.sh"; fi
+
 url="$1"
 retries="${2:-3}"
 timeout="${3:-15}"
@@ -65,8 +70,8 @@ EOF
 # Select a User-Agent string
 choose_ua() {
   if [ "$UA_ROTATE" = "true" ] && [ -f "$UA_LIST_PATH" ]; then
-    # pick a random line robustly using awk
-    awk 'BEGIN{srand();} {a[NR]=$0} END{if(NR>0) print a[int(rand()*NR)+1]}' "$UA_LIST_PATH"
+    # pick a random line robustly using standalone AWK script
+    awk -f scripts/lib/pick_random.awk "$UA_LIST_PATH"
   elif [ -n "$USER_AGENT_OVERRIDE" ]; then
     printf '%s' "$USER_AGENT_OVERRIDE"
   else
@@ -88,7 +93,22 @@ for attempt in $(seq 1 "$retries"); do
     fi
   fi
   ua_header=$(choose_ua)
-  if response=$($CURL_CMD -sS --max-time "$timeout" -H "User-Agent: $ua_header" "$url" 2>/dev/null); then
+  # Defensive: ensure a user-agent is present
+  if [ -z "$ua_header" ]; then
+    ua_header="elvis/1.0 (+https://example.com)"
+  fi
+  # Capture response and HTTP status; log network events to ${NETWORK_LOG:-logs/network.log}
+  resp_and_code=$($CURL_CMD -sS -w "\n---HTTP-STATUS:%{http_code}" --max-time "$timeout" -H "User-Agent: $ua_header" "$url" 2>/dev/null || true)
+  # If curl produced a response (possibly with trailing status) then parse it
+  if [ -n "$resp_and_code" ]; then
+    http_code=$(printf '%s' "$resp_and_code" | sed -n 's/.*---HTTP-STATUS:\([0-9][0-9][0-9]\)$/\1/p' || true)
+    response=$(printf '%s' "$resp_and_code" | sed -e 's/\n---HTTP-STATUS:[0-9][0-9][0-9]$//')
+    # Log: timestamp, url, attempt, http_code, bytes
+    ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    bytes=$(printf '%s' "$response" | wc -c | tr -d ' ')
+    mkdir -p "$(dirname "${NETWORK_LOG:-logs/network.log}")"
+    printf '%s\t%s\t%d\t%s\t%d\n' "$ts" "$url" "$attempt" "${http_code:-0}" "$bytes" >> "${NETWORK_LOG:-logs/network.log}"
+
     # detect CAPTCHA signals and fail early
     if is_captcha "$response"; then
       echo "WARN: CAPTCHA or human check detected for $url" >&2
@@ -99,8 +119,24 @@ for attempt in $(seq 1 "$retries"); do
       $SLEEP_CMD "$sleep_time"
       continue
     fi
-    echo "$response"
-    exit 0
+
+    # If the status code was not provided by the curl wrapper (e.g. test mocks), treat non-empty response as success
+    if [ -z "$http_code" ]; then
+      printf '%s' "$response"
+      exit 0
+    fi
+    # Otherwise require explicit 2xx HTTP codes
+    if printf '%s' "$http_code" | grep -qE '^2[0-9][0-9]$'; then
+      printf '%s' "$response"
+      exit 0
+    else
+      echo "WARN: non-success HTTP code $http_code for $url" >&2
+      SLEEP_CMD="${SLEEP_CMD:-sleep}"
+      sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
+      echo "WARN: fetch failed (attempt $attempt), sleeping $sleep_time s..." >&2
+      $SLEEP_CMD "$sleep_time"
+      continue
+    fi
   fi
   SLEEP_CMD="${SLEEP_CMD:-sleep}"
   sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)

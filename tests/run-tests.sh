@@ -245,6 +245,34 @@ fi
 # Restore env
 restore_vars CURL_CMD UA_ROTATE UA_LIST_PATH
 
+# Unit tests for new standalone AWK helpers
+# pick_random.awk should return one of the lines in a small file
+unit_tmp_rand="$tmp/rand_test"
+rm -rf "$unit_tmp_rand"
+mkdir -p "$unit_tmp_rand"
+printf 'a\nb\nc\n' > "$unit_tmp_rand/lines.txt"
+out=$(awk -f scripts/lib/pick_random.awk "$unit_tmp_rand/lines.txt")
+if echo "a b c" | grep -qE "\b$out\b"; then
+  echo "PASS: pick_random.awk produced a valid line"
+else
+  echo "FAIL: pick_random.awk produced invalid line: $out"; fail=1
+fi
+# rand_fraction.awk should print a float in [0,1)
+outf=$(awk -f scripts/lib/rand_fraction.awk)
+if echo "$outf" | grep -qE '^0\.[0-9]+'; then
+  echo "PASS: rand_fraction.awk produced float $outf"
+else
+  echo "FAIL: rand_fraction.awk produced unexpected output: $outf"; fail=1
+fi
+# rand_int.awk should produce integer in [0,MAX)
+outi=$(awk -f scripts/lib/rand_int.awk -v MAX=3)
+if echo "$outi" | grep -qE '^[0-2]$'; then
+  echo "PASS: rand_int.awk produced integer $outi"
+else
+  echo "FAIL: rand_int.awk unexpected output: $outi"; fail=1
+fi
+rm -rf "$unit_tmp_rand"
+
 # Unit test: fetch.sh backoff messages reflect BACKOFF_SEQUENCE
 echo "[TEST] fetch.sh: backoff sequence messages"
 unit_tmp_backoff="$tmp/backoff_test"
@@ -662,6 +690,21 @@ else
   echo "FAIL: get_transaction_data did not produce $outfile"; fail=1;
 fi
 set +x
+# Optional real-network test (run only when REAL_TESTS=true to avoid network usage in CI)
+if [ "${REAL_TESTS:-false}" = "true" ]; then
+  echo "[TEST] REAL: get_transaction_data (small seed set)"
+  unit_tmp_real="$tmp/real_test"
+  rm -rf "$unit_tmp_real"
+  mkdir -p "$unit_tmp_real"
+  # take header + one seed to limit runtime
+  head -n2 "examples/sample_seeds.csv" > "$unit_tmp_real/seeds.csv"
+  if timeout 120s sh scripts/get_transaction_data.sh "$unit_tmp_real/seeds.csv"; then
+    echo "PASS: REAL get_transaction_data"
+  else
+    echo "FAIL: REAL get_transaction_data failed"; fail=1
+  fi
+  rm -rf "$unit_tmp_real"
+fi
 # Cleanup
 unset FETCH_SCRIPT
 rm -rf "$unit_tmp_gtd"
@@ -873,6 +916,8 @@ awk -F, 'BEGIN{OFS=FS} NR==1{print} NR==2{print} NR==3{$4="0412345678"; $5=""; p
 # Backup history and audit
 HIST_BACKUP="$tmp/companies_history.bak"
 cp -f companies_history.txt "$HIST_BACKUP"
+# Ensure a clean history for this test (avoid pre-existing entries affecting expectations)
+: > companies_history.txt
 AUDIT_BACKUP="$tmp/audit.bak"
 cp -f audit.txt "$AUDIT_BACKUP" 2>/dev/null || true
 

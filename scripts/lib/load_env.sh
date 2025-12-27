@@ -13,11 +13,16 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 tmp_env="$(mktemp)"
-grep -E '^[A-Z0-9_]+=.*' "$ENV_FILE" > "$tmp_env"
+# Keep only simple key=value lines (ignore leading comment lines)
+grep -E '^[A-Z0-9_]+=' "$ENV_FILE" > "$tmp_env"
 while IFS='=' read -r key val; do
   case "$key" in
     ''|\#*) continue ;;
-    *) export "$key"="$val" ;;
+    *)
+      # remove inline comments and trim whitespace from value
+      val=$(printf '%s' "$val" | sed -E "s/[[:space:]]*#.*$//")
+      val=$(printf '%s' "$val" | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      export "$key"="$val" ;;
   esac
 done < "$tmp_env"
 rm -f "$tmp_env"

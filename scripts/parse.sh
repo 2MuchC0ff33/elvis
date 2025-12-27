@@ -4,6 +4,10 @@
 # Usage: parse.sh input.htmls --out output.csv
 
 set -eu
+# Load environment and config if available (non-fatal)
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh" "$REPO_ROOT/.env"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh" "$REPO_ROOT/project.conf"; fi
 
 INPUT="$1"
 OUT=""

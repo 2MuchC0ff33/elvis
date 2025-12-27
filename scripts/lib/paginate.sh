@@ -72,7 +72,7 @@ while :; do
 
   # Randomised delay between requests
   # compute a random float between DELAY_MIN and DELAY_MAX
-  rand_fraction=$(awk 'BEGIN{srand(); print rand()}')
+  rand_fraction=$(awk -f scripts/lib/rand_fraction.awk)
   delay=$(awk -v min="$DELAY_MIN" -v max="$DELAY_MAX" -v r="$rand_fraction" 'BEGIN{printf "%.3f", min + (max-min)*r}')
   # Use SLEEP_CMD so tests can stub sleep
   $SLEEP_CMD "$delay"

@@ -9,6 +9,12 @@
 # shellcheck disable=SC2240,SC3053,SC3055,SC3054,SC1091
 
 set -eu
+# Load environment and project config if available (non-fatal)
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh" "$REPO_ROOT/.env"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh" "$REPO_ROOT/project.conf"; fi
+if [ -f "$(dirname "$0")/lib/load_seek_pagination.sh" ]; then sh "$(dirname "$0")/lib/load_seek_pagination.sh" "$REPO_ROOT/configs/seek-pagination.ini"; fi
+
 SEEDS_FILE="${1:-data/seeds/seeds.csv}"
 TMP_DIR="tmp"
 NORM_FILE="$TMP_DIR/seeds.normalized.csv"
