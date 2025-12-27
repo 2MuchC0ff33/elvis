@@ -1,9 +1,12 @@
 # parse_seek_json3.awk - more robust line-based extractor for SEEK embedded JSON
 # Outputs CSV: company_name,prospect_name,title,phone,email,location,summary,job_id
 function q(s) {
-  # double internal quotes and wrap in quotes if field contains comma, quote or newline
+  # double internal quotes
   gsub(/"/, "\"\"", s)
-  if (s ~ /[,"]|\n|\r/) s = "\"" s "\""
+  # empty fields should be explicit empty quoted "" for CSV consistency
+  if (s == "") return "\"\""
+  # if there are commas, quotes or control/newline chars, quote the field
+  if (s ~ /[,\"]|[\r\n]|[[:cntrl:]]/) s = "\"" s "\""
   return s
 }
 
@@ -14,6 +17,8 @@ function sanitize(s) {
   gsub(/\\n|\\r/, " ", s)
   gsub(/\n|\r/, " ", s)
   gsub(/\\t/, " ", s)
+  # remove control characters (safeguard against embedded control/newline bytes)
+  gsub(/[[:cntrl:]]+/, " ", s)
   # decode simple HTML entities
   gsub(/&amp;/, "&", s)
   # collapse whitespace
@@ -78,8 +83,11 @@ BEGIN { OFS = "," }
           next
         }
         out = q(company) OFS q(location)
-        gsub(/\r/, " ", out)
-        gsub(/\n/, " ", out)
+        # final safeguard: remove any control chars/newlines and collapse whitespace
+        gsub(/[[:cntrl:]]+/, " ", out)
+        gsub(/[[:space:]]+/, " ", out)
+        sub(/^[[:space:]]+/, "", out)
+        sub(/[[:space:]]+$/, "", out)
         print out
       }
     }

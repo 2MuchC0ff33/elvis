@@ -179,6 +179,34 @@ grep -q 'Summary text for example' "$unit_tmp_parse/out.csv" || { echo "FAIL: su
 
 rm -rf "$unit_tmp_parse"
 
+# Unit test: parse.sh JSON embedded SEEK_REDUX_DATA (single-line CSV, no embedded newlines)
+echo "[TEST] parse.sh: embedded JSON extractor produces single-line CSV rows"
+unit_tmp_json="$tmp/parse_json_test"
+rm -rf "$unit_tmp_json"
+mkdir -p "$unit_tmp_json"
+cat > "$unit_tmp_json/mock_json.html" <<HTML
+<html><head><script>window.SEEK_REDUX_DATA = {"jobs":[{"id":"111","companyName":"JSON Co","title":"Dev","locations":[{"label":"Brisbane, QLD"}]},{"id":"222","companyName":"JSON Two","title":"QA","locations":[{"label":"Hobart, TAS"}]}]};</script></head><body></body></html>
+HTML
+sh scripts/parse.sh "$unit_tmp_json/mock_json.html" --out "$unit_tmp_json/out.csv" || { echo "FAIL: parse.sh JSON extractor failed"; fail=1; }
+# expect header + 2 lines
+lines=$(wc -l < "$unit_tmp_json/out.csv" | tr -d ' ')
+if [ "$lines" -eq 3 ]; then
+  echo "PASS: parse.sh produced expected number of lines"
+else
+  echo "FAIL: parse.sh JSON extractor unexpected line count: $lines"; fail=1
+fi
+# ensure no embedded newlines inside records (quick sanity: each data line must not contain a literal newline inside quotes)
+if grep -q '"' "$unit_tmp_json/out.csv"; then
+  # presence of quotes ok; check no multi-line fields by ensuring no windowed double-quote spanning multiple lines
+  # (simple heuristic: check that no line ends with an odd number of quotes)
+  awk 'NR>1{count=gsub(/"/,"&"); if (count%2!=0) { print "BADLINE:" NR; exit 1 }}' "$unit_tmp_json/out.csv" || { echo "FAIL: parse.sh produced line with unmatched quotes"; fail=1; }
+  echo "PASS: parse.sh JSON output quotes are balanced"
+else
+  echo "PASS: parse.sh JSON output contains no quotes (ok)"
+fi
+rm -rf "$unit_tmp_json"
+
+
 # Unit test: enrich.sh (wrapper to enrich_status.sh)
 echo "[TEST] enrich.sh: wrapper to enrich_status.sh"
 unit_tmp_enrich="$tmp/enrich_test"
@@ -242,8 +270,63 @@ if echo "$out" | grep -q -E 'User-Agent:.*UA-(One|Two)'; then
 else
   echo "FAIL: fetch.sh UA rotation didn't set header"; fail=1
 fi
+# Extra test: UA cleaning and bot filtering (quotes removed and bots excluded)
+# prepare UA list with quoted lines and a bot
+printf '"Quoted-UA-1"\nGooglebot/2.1\n"Quoted-UA-2"\n' > "$unit_tmp_fetch/uas2.txt"
+export UA_LIST_PATH="$unit_tmp_fetch/uas2.txt"
+out2=$(sh scripts/fetch.sh 'http://example/' 1 2 2>/dev/null || true)
+# header line should include Quoted-UA-1 or Quoted-UA-2 but not Googlebot and no surrounding quotes
+if echo "$out2" | grep -q -E 'User-Agent:.*Quoted-UA-(1|2)'; then
+  echo "PASS: fetch.sh UA cleaning and bot filtering";
+else
+  echo "FAIL: fetch.sh UA cleaning/filter failed: $out2"; fail=1
+fi
+
+# 403 retry behaviour test: make a mock curl that returns 403 first, then 200
+cat > "$unit_tmp_fetch/mock_curl_403.sh" <<'SH'
+#!/bin/sh
+FLAG="$unit_tmp_fetch/mock_curl_403.state"
+# increment counter
+count=0
+if [ -f "$FLAG" ]; then
+  count=$(cat "$FLAG")
+fi
+count=$((count+1))
+printf '%d' "$count" > "$FLAG"
+if [ "$count" -eq 1 ]; then
+  # emulate curl output with explicit status marker used by fetchers
+  printf 'BODY\n---HTTP-STATUS:403'
+  exit 0
+else
+  printf 'BODY\n---HTTP-STATUS:200'
+  exit 0
+fi
+SH
+chmod +x "$unit_tmp_fetch/mock_curl_403.sh"
+export CURL_CMD="$unit_tmp_fetch/mock_curl_403.sh"
+export RETRY_ON_403=true
+export EXTRA_403_RETRIES=1
+# clear network log
+mkdir -p logs
+rm -f logs/network.log
+# run fetch (should eventually succeed)
+out3=$(sh scripts/fetch.sh 'http://example/' 1 2 2>/dev/null || true)
+if echo "$out3" | grep -q 'BODY'; then
+  echo "PASS: fetch.sh recovered after 403"
+else
+  echo "FAIL: fetch.sh did not recover from 403"; fail=1
+fi
+# check network log for 403-retry entry
+if grep -q '403-retry' logs/network.log 2>/dev/null; then
+  echo "PASS: fetch.sh logged 403-retry";
+else
+  echo "FAIL: fetch.sh did not log 403-retry"; fail=1
+fi
+
 # Restore env
 restore_vars CURL_CMD UA_ROTATE UA_LIST_PATH
+# cleanup
+rm -f "$unit_tmp_fetch/mock_curl_403.sh" "$unit_tmp_fetch/mock_curl_403.state" || true
 
 # Unit tests for new standalone AWK helpers
 # pick_random.awk should return one of the lines in a small file

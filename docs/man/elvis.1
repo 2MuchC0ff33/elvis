@@ -9,7 +9,7 @@ elvis \- initialise and run daily Australian sales lead call list generation
 .B elvis-run
 is the master orchestrator for the Elvis lead-generation utility. It supports modular initialisation and a full transaction data workflow for lead generation, strictly following the logic and pseudocode in README.md.
 .PP
-The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls.
+The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). Special-case HTTP 403 handling is configurable via `RETRY_ON_403` (default `true`) and `EXTRA_403_RETRIES` (default `2`) — when enabled the fetcher will rotate the User-Agent and attempt extra retries with backoff, and it sends browser-like headers (`Accept`, `Accept-Language`, `Referer`) and enables compressed transfer to reduce the chance of 403 responses. The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls.
 .SH INIT SEQUENCE
 .TP
 .B load_env.sh

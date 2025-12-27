@@ -336,8 +336,16 @@ To minimise disruptions and respect rate-limit expectations:
   - Up to 3 retries per URL
   - Backoff schedule: 5s → 20s → 60s
   - Stop after the 3rd failure; log the error and move on.
+  - Special-case HTTP 403: by default `RETRY_ON_403=true` and the fetcher will
+    add `EXTRA_403_RETRIES` (default `2`), rotate User-Agent, and retry with
+    backoff. The fetcher also sends browser-like headers (`Accept`,
+    `Accept-Language`, `Referer`) and enables compressed transfer to reduce the
+    chance of 403 responses. Set `RETRY_ON_403=false` to disable this behaviour.
 - **User-Agent rotation:** Cycle a vetted pool of UA strings; avoid suspicious
-  or outdated UAs.
+  or outdated UAs. By default the project will use `data/ua.txt` (if present) as
+  the UA list; set `UA_LIST_PATH` to override. Lines in the UA list are cleaned
+  (surrounding quotes removed, whitespace trimmed). Use `ALLOW_BOTS=true` to
+  allow known crawler UAs (not recommended).
 - Do not use proxies or offshore scraping APIs
 - **CAPTCHA detection:** If CAPTCHA text or known markers appear, log the event,
   skip this route, and **do not** attempt automated solving.
