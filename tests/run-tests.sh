@@ -541,6 +541,14 @@ grep -q 'first' "$tmp/paginate3.out" || { echo "FAIL: paginate did not process c
 restore_vars PAGE_NEXT_MARKER MAX_PAGES FETCH_SCRIPT
 rm -f "$tmp/mock_fetch3.sh" "$tmp/paginate3.out" /tmp/mock_fetch3_called_* || true
 
+# Unit test: prereqs (gawk, curl)
+echo "[TEST] prereqs: required runtime tools present"
+if sh tests/test_prereqs.sh ; then
+  echo "PASS: prereqs OK";
+else
+  echo "FAIL: prereqs missing"; fail=1;
+fi
+
 # Unit test: archive_artifacts (archival)
 echo "[TEST] archive_artifacts: creates snapshot, checksum and index"
 unit_tmp_archive="$tmp/archive_test"
@@ -791,6 +799,20 @@ fi
 # Cleanup
 unset FETCH_SCRIPT
 rm -rf "$unit_tmp_gtd"
+
+# Unit test: set_status: produces calllist CSV in specified out-dir
+if sh tests/test_calllist_output.sh ; then
+  echo "PASS: set_status produced calllist";
+else
+  echo "FAIL: set_status did not produce calllist"; fail=1;
+fi
+
+# Unit test: seeds geography check (all seeds should be .com.au domains)
+if sh tests/test_geography_seed_check.sh ; then
+  echo "PASS: seeds geography check OK";
+else
+  echo "FAIL: seeds geography check failed"; fail=1;
+fi
 
 # Integration test: end-sequence orchestrator
 echo "[TEST] end-sequence: full integration (archive, cleanup, summarise)"

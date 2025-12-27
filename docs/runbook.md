@@ -34,6 +34,10 @@ logic and pseudocode in README.md.
 
 - Iterates through each page for each seed, using exponential backoff on
   failures, via `scripts/lib/paginate.sh` and `scripts/fetch.sh`.
+- **Scope:** automatic scraping is limited to Seek listing pages (search/listing
+  pages only). Do **not** fetch job detail pages or automatically scrape search
+  engine result pages; Google/DuckDuckGo are for manual operator enrichment
+  only.
 - Fetch behaviour is configurable via environment variables and `project.conf`:
   - `BACKOFF_SEQUENCE` — comma-separated retry delays (default: `5,20,60`)
   - `FETCH_TIMEOUT` — curl timeout in seconds (default: `15`)
@@ -48,8 +52,12 @@ logic and pseudocode in README.md.
     retries with backoff; additional browser-like headers (`Accept`,
     `Accept-Language`, `Referer`) are sent to reduce 403 likelihood.
   - `VERIFY_ROBOTS` — when `true`, respect `robots.txt` and block disallowed
-    routes
+    routes. If a route is blocked the fetch will abort and be logged; review the
+    route before changing verification settings.
   - `CURL_CMD` — override the curl command (useful for tests)
+- **CAPTCHA handling:** if CAPTCHA/recaptcha markers appear in responses the
+  fetcher logs the event and skips the route; **do not** attempt automated
+  solving.
 - Pagination is route-aware: supports `PAG_START` (offset) and `PAG_PAGE` (page
   number) models. The `PAGE_NEXT_MARKER` environment variable (or Seek INI) sets
   the HTML marker used to detect the presence of a "Next" control.
@@ -59,6 +67,21 @@ logic and pseudocode in README.md.
   - `SLEEP_CMD` — command used for sleeping (`sleep` by default); can be
     overridden in tests to avoid long waits
 - Uses: `sh scripts/lib/paginate.sh <base_url> <model>`
+
+Local testing & debugging
+
+- Run the parser locally against saved HTML to validate selectors and
+  extraction: `sh scripts/parse.sh tmp/seed.htmls --out tmp/parsed.csv`
+- Run pagination with a mock fetcher and custom marker (examples used in
+  `tests/`):
+  `FETCH_SCRIPT=./tests/mock_fetch.sh PAGE_NEXT_MARKER='data-automation="page-next"' sh scripts/lib/paginate.sh 'http://example/jobs?keywords=test' PAG_START`
+- Tuning & troubleshooting tips:
+  - If pages stop early after a site change, check `PAGE_NEXT_MARKER` and the
+    job `data-automation` attributes in a saved page.
+  - If hitting 403 frequently, review `UA_LIST_PATH`/`UA_ROTATE`, inspect
+    `logs/network.log`, and consider adjusting
+    `RETRY_ON_403`/`EXTRA_403_RETRIES`.
+  - Use `FETCH_SCRIPT` to run deterministic unit tests that avoid network I/O.
 
 Note: real-network integration tests are optional and disabled by default. To
 run them set `REAL_TESTS=true` in your environment before running the test
@@ -83,11 +106,22 @@ suite; the test runner will skip network tests unless explicitly enabled.
   Google dork template and open it in the browser for manual enrichment.
 - Supports manual research for contact enrichment as described in the README.
 
+Enrichment workflow (example):
+
+1. Prepare an editable enrichment file:
+   `sh scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit`
+2. Manually add phone/email contacts to `tmp/enriched.csv`.
+3. Validate the enriched file:
+   `sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv`
+4. Finalise and (optionally) append accepted companies to history:
+   `sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
+
 #### Documentation maintenance (update_readme)
 
 - A small maintenance helper `scripts/update_readme.sh` regenerates the
-  auto-generated sections in `README.md` (the *Project tree* and *Commands*
-  sections) and is safe to run locally with `./scripts/update_readme.sh --dry-run`.
+  auto-generated sections in `README.md` (the _Project tree_ and _Commands_
+  sections) and is safe to run locally with
+  `./scripts/update_readme.sh --dry-run`.
 - A scheduled workflow `.github/workflows/update-readme.yml` runs weekly and on
   pushes to `scripts/**`. The workflow runs the update script and opens an
   automated pull request with any changes (uses
@@ -99,13 +133,21 @@ suite; the test runner will skip network tests unless explicitly enabled.
 ### Environment setup (local, staging, production)
 
 - Prerequisites (POSIX-like environment required; Cygwin or WSL on Windows):
-  - `sh`, `awk`, `sed`, `grep`, `curl`, `tar`, `sha1sum` (or `sha1`), `git`.
+
+  - `sh`, `curl`, `coreutils` (`cp`, `mv`, `find`, `tar`), `gawk` (preferred),
+    `sed`, `grep`, `git`.
   - Optional: `shellcheck` for linting, `nroff`/`groff` for manpage rendering.
-  - Recommended (Debian/Ubuntu): `sudo apt install curl coreutils git shellcheck`
+  - Recommended (Debian/Ubuntu):
+    `sudo apt install curl coreutils gawk git shellcheck`
+
+**Note:** `gawk` is preferred for the repository's AWK scripts; some older AWK
+implementations may not support features used in `scripts/lib/*.awk`.
 
 - Local quickstart (development):
+
   1. Clone the repo and install prerequisites.
-  2. Copy `.env.example` to `.env` and set any overrides (e.g., `FETCH_TIMEOUT`).
+  2. Copy `.env.example` to `.env` and set any overrides (e.g.,
+     `FETCH_TIMEOUT`).
   3. Run `bin/elvis-run init` to validate the environment and prepare logs.
   4. Run `bin/elvis-run get-transaction-data` (or run scripts individually).
 
@@ -129,10 +171,10 @@ sequenceDiagram
 
 ### Troubleshooting & common issues
 
-- Robots.txt blocks: the fetcher honors `robots.txt` by default (`VERIFY_ROBOTS=true`).
-  If you see `ERROR: blocked by robots.txt` in logs, verify the route and
-  consider whether the route is safe to fetch; only disable verification after
-  appropriate review.
+- Robots.txt blocks: the fetcher honors `robots.txt` by default
+  (`VERIFY_ROBOTS=true`). If you see `ERROR: blocked by robots.txt` in logs,
+  verify the route and consider whether the route is safe to fetch; only disable
+  verification after appropriate review.
 - HTTP 403 or CAPTCHA: check `logs/network.log` for repeated 403 events. The
   fetcher will rotate User-Agent and increase retries when `RETRY_ON_403=true`.
   If you hit CAPTCHA or `recaptcha`, skip the route and log the event; do not
@@ -164,7 +206,6 @@ sequenceDiagram
   variables for secrets in CI.
 
 ### Error Handling
-
 
 - Missing or malformed seeds file: workflow aborts with a clear error.
 - Fetch failures: retried with exponential backoff, up to 3 times.
@@ -489,11 +530,53 @@ Notes & behaviour:
 - Validation checks: required fields, at least one contact (phone or email),
   email regex, and phone normalisation (converts `+61` prefixes to `0` and
   strips non-digits).
+- **Validation workflow:** Run
+  `sh scripts/validate.sh <input.csv> --out <validated.csv>`; invalid rows are
+  printed to stderr in the form `INVALID <line> <reason>` and must be fixed in
+  the enrichment file before re-running validation.
 - Deduplication: case-insensitive match on `company_name` against
-  `companies_history.txt` (append-only). Use `--commit-history` to append newly
-  accepted companies to history.
+  `companies_history.txt` (append-only). Use
+  `sh scripts/deduper.sh --in <validated.csv> --out <deduped.csv> --append-history`
+  to append newly accepted companies to history; omit `--append-history` to run
+  non-destructively and inspect `tmp/new.tmp` for the new names.
+- MIN_LEADS behaviour: `MIN_LEADS` defaults to `25` (configurable via
+  `project.conf` or environment). If fewer than `MIN_LEADS` are produced the
+  pipeline logs a warning but still writes the CSV.
 - The workflow is orchestrated by `scripts/set_status.sh` and is available via
   `bin/elvis-run set-status`.
+
+Validate & fix
+
+- Run: `sh scripts/validate.sh <input.csv> --out <validated.csv>`
+- If validation fails, check stderr for lines like `INVALID 4 missing contact`
+  and edit the enriched file to add phone or email, then re-run validation.
+
+Deduplicate & optionally append to history
+
+- Run:
+  `sh scripts/deduper.sh --in <validated.csv> --out <deduped.csv> --append-history`
+- Inspect `companies_history.txt` after append. To run non-destructively, omit
+  `--append-history` and review `tmp/new.tmp` (the script’s output of newly
+  accepted names).
+
+Troubleshooting tips
+
+- Missing columns → check the CSV header formatting and quoting (use
+  `scripts/lib/normalize.awk` for seeds; ensure enrichment file lines are valid
+  CSV).
+- Phone oddities → ensure `+61` numbers are present (the validator converts
+  `+61` → `0` and strips non-digits).
+- If `set_status.sh` logs low leads: check validation/dedupe results and manual
+  enrichment steps.
+
+Quick commands for operators
+
+- Prepare for enrichment:
+  `sh scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit`
+- Validate edited file:
+  `sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv`
+- Finalise (produce and optionally append to history):
+  `sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
 
 Example (non-interactive):
 

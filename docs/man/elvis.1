@@ -9,7 +9,7 @@ elvis \- initialise and run daily Australian sales lead call list generation
 .B elvis-run
 is the master orchestrator for the Elvis lead-generation utility. It supports modular initialisation and a full transaction data workflow for lead generation, strictly following the logic and pseudocode in README.md.
 .PP
-The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). Special-case HTTP 403 handling is configurable via `RETRY_ON_403` (default `true`) and `EXTRA_403_RETRIES` (default `2`) — when enabled the fetcher will rotate the User-Agent and attempt extra retries with backoff, and it sends browser-like headers (`Accept`, `Accept-Language`, `Referer`) and enables compressed transfer to reduce the chance of 403 responses. The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls.
+The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). Special-case HTTP 403 handling is configurable via `RETRY_ON_403` (default `true`) and `EXTRA_403_RETRIES` (default `2`) — when enabled the fetcher will rotate the User-Agent and attempt extra retries with backoff, and it sends browser-like headers (`Accept`, `Accept-Language`, `Referer`) and enables compressed transfer to reduce the chance of 403 responses. If CAPTCHA or recaptcha markers appear in responses the fetcher will log the event and skip the route; do not attempt automated solving. The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls. Parsing prefers `data-automation` markers and an AWK-based extractor (`scripts/lib/parse_seek_json3.awk`, `scripts/lib/parser.awk`); pagination is route-aware (`scripts/lib/pick_pagination.sh`, `scripts/lib/paginate.sh`) and the fetcher honours `robots.txt`, supports UA rotation, 403 handling and CAPTCHA detection (see `scripts/fetch.sh` and `scripts/lib/http_utils.sh` for details).
 .SH INIT SEQUENCE
 .TP
 .B load_env.sh
@@ -20,6 +20,11 @@ Loads project.conf into the environment.
 .TP
 .B load_seek_pagination.sh
 Loads Seek pagination config as SEEK_* variables.
+.TP
+.SH REQUIREMENTS
+.PP
+The following tools are expected: `sh`, `curl`, `tar`, `gawk` (or `awk`), `sed`, `grep`.
+Optional developer tools: `shellcheck`, and `groff`/`nroff` for building manpages.
 .TP
 .B validate_env.sh
 Validates all required environment variables.
@@ -57,8 +62,9 @@ Run the full transaction data workflow: normalise, split, detect pagination, and
 Show help and usage for all init scripts.
 .TP
 .B set-status
-Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging. The enrichment step creates an editable `tmp/enriched.csv` and prints instructions for manual editing; it does not open an editor automatically.
-.TP
+Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging. The enrichment step creates an editable `tmp/enriched.csv` and prints instructions for manual editing; it does not open an editor automatically..TP
+.B Validation_and_dedupe
+Validation requires a `company_name` and at least one contact (phone or email); phone numbers are normalised (`+61` → `0`, non-digits removed) and emails are validated against the project regex. Deduplication is case-insensitive on `company_name` only; use `--append-history` to append accepted companies to `companies_history.txt`..TP
 .B end-sequence
 Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
 .TP
@@ -90,8 +96,17 @@ Comma-separated retry backoff sequence in seconds (default: `5,20,60`).
 .B UA_ROTATE / UA_LIST_PATH
 Enable UA rotation and path to UA list (defaults: `true`, `data/ua.txt`).
 .TP
+.B RETRY_ON_403
+When `true`, the fetcher will increase retries and rotate User-Agent on HTTP 403 responses (default: `true`).
+.TP
+.B EXTRA_403_RETRIES
+Additional retries to add when a 403 is encountered (default: `2`).
+.TP
 .B VERIFY_ROBOTS
 When `true`, requests are checked against `robots.txt` (default: `true`).
+.TP
+.B MIN_LEADS
+Minimum leads required per run before a warning is logged (default: `25`).
 .TP
 .B LOG_LEVEL
 Logging verbosity (default: `INFO`).
@@ -130,6 +145,9 @@ Validate required environment variables.
 .TP
 .B . scripts/lib/prepare_log.sh
 Ensure log file and directory exist.
+.TP
+.B elvis-run set-status --input results.csv --enriched tmp/enriched.csv --commit-history
+Validate enriched rows, deduplicate, and produce the daily calllist; use `--commit-history` to append accepted companies to `companies_history.txt`.
 .SH FILES
 .TP
 .B project.conf

@@ -9,18 +9,21 @@
 
 ```mermaid
 flowchart TD
-    A[Load Seeds] --> B[Detect Route & Pagination]
-    B --> C[Fetch Pages with Backoff]
-    C --> D[Parse Job Listings]
-    D --> E[Aggregate Raw Records]
-    E --> F[Dedupe by Company Name]
-    F --> G[Enrich with Contacts - Manual]
-    G --> H[Validate Records]
-    H --> I[Produce Daily CSV Output]
-    H --> J[Append Names to History]
-    I --> K[Log Run Details]
-
-    style G fill:#ffe5b4,stroke:#b19400,stroke-width:2px
+  N[Normalise Seeds] --> S[Split into per-record files]
+  S --> A[Load Seeds]
+  A --> B[Detect Route & Pagination]
+  B --> C[Fetch Pages with Backoff - robots.txt, UA rotation, 403/CAPTCHA handling]
+  C --> D[Parse Job Listings - JSON/HTML extractors]
+  D --> E[Aggregate Raw Records]
+  E --> F[Dedupe by Company Name - checks companies_history.txt]
+  F --> O[Manual Enrichment - Operator]
+  O --> G[Validate Records - phone normalise, email regex, require contact]
+  G --> H[Produce Daily CSV Output - min leads check]
+  H --> I[Append Names to History - manual/optional]
+  H --> J[Archive & Snapshot - .snapshots]
+  J --> L[Cleanup temp & Summarise]
+  H --> K[Log Run Details]
+  style O fill:#ffe5b4,stroke:#b19400,stroke-width:2px
 
 ```
 
@@ -81,6 +84,18 @@ flowchart TD
 - **Contact presence (final call list):** Each final CSV row must include at
   least one valid contact (phone or email) after enrichment.
 
+### Manual enrichment (operator)
+
+Operators should prepare an editable enrichment file, complete contact fields,
+then run validation and finalise the daily calllist. Example commands:
+
+- Prepare editable file:
+  `sh scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit`
+- Validate edited file:
+  `sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv`
+- Finalise and optionally append to history:
+  `sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
+
 #### Regex validation
 
 - **Email:** `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`
@@ -93,6 +108,11 @@ flowchart TD
 - Before adding a row to today’s CSV, check case-insensitive membership against
   history; if present → skip.
 - On acceptance, append new company names to history (manual or scripted).
+- **Note:** Appending to history is **optional** — to append automatically use:
+  - `sh scripts/deduper.sh --in <input.csv> --out <out.csv> --append-history`
+  - or
+    `sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
+    Otherwise update `companies_history.txt` manually after operator review.
 
 ```pdl
 MODULE is_dup_company(company)  -- returns TRUE or FALSE
@@ -121,15 +141,27 @@ NOTES:
 
 ## 3. Data Sources
 
-- **Primary:** [Seek Australia](https://www.seek.com.au/) — job ads for
-  company/employer field
-- **Supplementary:** [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) (manual
-  Google-dork queries)
-- **Supplementary:** [Google](https://www.google.com/) (manual Google-dork
-  queries, .com.au only)
+- **Primary (automatic):** [Seek Australia](https://www.seek.com.au/) —
+  server-rendered job listing pages (search/listing pages only). Automatic
+  scraping is limited to Seek listing pages; do not fetch job detail pages or
+  non-listing endpoints automatically.
+- **Supplementary (manual only):**
+  [DuckDuckGo Lite](https://lite.duckduckgo.com/lite) and
+  [Google](https://www.google.com/) — used for manual Google/DuckDuckGo dork
+  queries during operator enrichment; **do not** automatically scrape search
+  engine result pages.
 - Only scrape public web pages; **never** scrape private profiles (LinkedIn,
-  Facebook etc.) or any site that disallows scraping under robots.txt or terms
-  of service.
+  Facebook etc.) or any site that disallows scraping under robots.txt or site
+  terms of service.
+- **Fetcher & politeness:** By default the fetcher honours `robots.txt`
+  (`VERIFY_ROBOTS=true`). See `scripts/fetch.sh` and `scripts/lib/http_utils.sh`
+  for implementation and configuration (overrides via `.env` or `project.conf`).
+- **Fetcher behaviour (implementation notes):** exponential backoff
+  (`BACKOFF_SEQUENCE`, default `5,20,60`), User-Agent rotation (`UA_ROTATE` /
+  `UA_LIST_PATH` or `data/ua.txt`), special-case HTTP 403 handling
+  (`RETRY_ON_403`, `EXTRA_403_RETRIES`), compressed transfer and browser-like
+  headers to reduce 403s, and CAPTCHA detection which is logged and causes the
+  route to be skipped. Do not attempt automated CAPTCHA solving.
 
 ---
 
@@ -201,8 +233,25 @@ graph LR
   `ln`)
 - `diff`, `patch`, `tar`, `cmp`, and `ed` for manual version control
 - `tar` for efficient snapshots and restores
-- Checksum utilities (`md5sum`, `sha1sum`) to detect changes and verify
-  integrity
+- **`gawk` / `awk`** — used by `scripts/lib/*.awk` for parsing and extraction
+  (prefer `gawk` where available)
+- **`sed`, `grep`** — text processing utilities used widely across the pipeline
+
+### Developer tooling (recommended)
+
+- `shellcheck` — recommended for local linting and CI (`shellcheck -x` is used
+  by tests when available)
+
+### Optional / Data files
+
+- `data/ua.txt` or `configs/user_agents.txt` — optional User-Agent lists used
+  when `UA_ROTATE=true`
+
+### Notes
+
+- Prefer `gawk` for the AWK scripts; some AWK dialect differences may affect
+  parsing on very old systems. For Windows, run on Cygwin/WSL or a
+  POSIX-compatible environment to ensure full tool compatibility.
 
 ### Non-Essential
 
@@ -305,6 +354,40 @@ When building your scraping run, start with a diverse collection of filtered
 listing URLs (see Filtered Seeds below) to cover job types, regions, work
 styles, and more—with no headless browser or form simulation required.
 
+Parsing & extraction (implementation)
+
+- The pipeline is **AWK-first**: `scripts/lib/parse_seek_json3.awk` and
+  `scripts/lib/parser.awk` extract job fields from listing HTML and embedded
+  JSON. Prefer stable `data-automation` attributes (for example
+  `data-automation="jobTitle"`, `jobCompany`, `jobLocation`) over brittle CSS
+  class names when authoring selectors.
+- The AWK extractor is intentionally robust and fast; the codebase includes
+  secondary fallbacks which are for contingency only.
+
+Pagination & routing
+
+- The project implements **route-aware pagination** (see
+  `scripts/lib/pick_pagination.sh` and `scripts/lib/paginate.sh`). Use
+  `PAG_START` (offset) or `PAG_PAGE` (page-number) models as detected by
+  `pick_pagination.sh`, and stop iterating when the `PAGE_NEXT_MARKER` is
+  absent. Override `PAGE_NEXT_MARKER` at runtime or in the Seek INI if the
+  site's pagination markup changes.
+
+Fetcher behaviour & politeness (implementation)
+
+- The fetcher honours `robots.txt` by default (`VERIFY_ROBOTS=true`), supports
+  UA rotation (`UA_ROTATE` + `data/ua.txt` / `configs/user_agents.txt`), detects
+  CAPTCHAs and skips the route, and implements special-case HTTP 403 handling
+  (`RETRY_ON_403` + `EXTRA_403_RETRIES`) with an exponential backoff
+  (`BACKOFF_SEQUENCE`). See `scripts/fetch.sh` and `scripts/lib/http_utils.sh`
+  for tuning parameters and behaviour.
+
+Testing & debugging hooks
+
+- Use `FETCH_SCRIPT` (env) to provide a mock fetcher and override
+  `PAGE_NEXT_MARKER` to exercise pagination offline; tests in `tests/` contain
+  examples and mocks for `fetch.sh` and `paginate.sh`.
+
 - **Google-dorking (manual):** CLI scripts generate Google or DuckDuckGo
   queries, which are opened in lynx), never automatically scraped
   - Limit domains to .com.au
@@ -323,6 +406,46 @@ styles, and more—with no headless browser or form simulation required.
 - Require at least one valid contact (phone or email)
 - Email validation: `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`
 - Phone validation: digits only, convert +61 to 0-prefix
+
+Validation enforcement (how)
+
+- Validation is performed by `scripts/validate.sh` which runs
+  `scripts/lib/validator.awk`. It:
+  - Requires header columns:
+    `company_name,prospect_name,title,phone,email,location`.
+  - Requires `company_name` and at least one contact (phone or email).
+  - Normalises phone numbers (convert `+61` → `0`, remove non-digits).
+  - Validates emails against `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`.
+  - Invalid rows are skipped and printed to stderr in the form:
+    `INVALID <line> <reason>`.
+  - Valid rows are written to the validated output (for example
+    `tmp/validated.csv` when run via `set_status.sh`).
+
+Deduplication & history (how)
+
+- Deduplication is done by `scripts/deduper.sh` / `scripts/lib/deduper.awk`. It:
+  - Performs case-insensitive dedupe on `company_name` only (location does NOT
+    break dedupe).
+  - Compares against `companies_history.txt` (a lowercased copy is used for
+    comparisons).
+  - Has an `--append-history` option to add newly accepted companies to history
+    (used by `set_status.sh` via `--commit-history`).
+  - Use `scripts/lib/is_dup_company.sh "Company Name"` for single-name checks.
+
+Operator workflow pointers
+
+- Example commands:
+  - Validate: `sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv`
+  - Dedup:
+    `sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv --append-history`
+- `set_status.sh` orchestrates these steps and writes the final file to
+  `data/calllists/calllist_YYYY-MM-DD.csv`; it will still write the CSV even if
+  fewer than `MIN_LEADS` and will log a "low leads" warning.
+
+Testing note
+
+- Unit tests and examples exist under `tests/` (mock files demonstrate
+  validation/dedupe/append behaviours).
 
 ---
 
