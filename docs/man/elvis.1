@@ -97,10 +97,22 @@ Comma-separated retry backoff sequence in seconds (default: `5,20,60`).
 Enable UA rotation and path to UA list (defaults: `true`, `data/ua.txt`).
 .TP
 .B RETRY_ON_403
-When `true`, the fetcher will increase retries and rotate User-Agent on HTTP 403 responses (default: `true`).
+When `true`, the fetcher will increase retries and rotate User-Agent on HTTP 403 responses (default: `true`). If you see `WARN: received HTTP 403`, inspect `NETWORK_LOG` and confirm UA list and rotation settings.
 .TP
 .B EXTRA_403_RETRIES
 Additional retries to add when a 403 is encountered (default: `2`).
+.TP
+.B VERIFY_ROBOTS
+When `true`, requests are checked against `robots.txt` (default: `true`). If a route is blocked the fetcher exits with status code `2` and logs `ERROR: blocked by robots.txt`.
+.TP
+.B NETWORK_LOG
+Path to the network log that records fetch attempts as tab-separated fields: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES` (default: `logs/network.log`).
+.TP
+.B SLEEP_CMD / FETCH_SCRIPT
+Test hooks: set `SLEEP_CMD` to a short stub in tests to avoid long sleeps; set `FETCH_SCRIPT` to a mock fetcher to reproduce fetch/pagination behaviours.
+.TP
+.B CAPTCHA_PATTERNS
+(Optional) Regex or pattern list used to detect CAPTCHA/recaptcha markers; allows future tuning of detection logic.
 .TP
 .B VERIFY_ROBOTS
 When `true`, requests are checked against `robots.txt` (default: `true`).

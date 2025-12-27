@@ -385,67 +385,10 @@ fi
 restore_vars CURL_CMD BACKOFF_SEQUENCE
 rm -rf "$unit_tmp_backoff"
 
-# Unit test: fetch.sh robots.txt blocking
-echo "[TEST] fetch.sh: robots.txt block behaviour"
-unit_tmp_robots="$tmp/robots_test"
-rm -rf "$unit_tmp_robots"
-mkdir -p "$unit_tmp_robots"
-cat > "$unit_tmp_robots/mock_curl_robots.sh" <<'SH'
-#!/bin/sh
-# mock curl for robots: if URL ends with /robots.txt print Disallow: /jobs, else print page content
-# portable last-arg capture
-last=""
-while [ "$#" -gt 0 ]; do
-  last="$1"
-  shift
-done
-url="$last"
-if echo "$url" | grep -q '/robots.txt$'; then
-  printf 'User-agent: *\nDisallow: /jobs\n'
-else
-  printf 'page content'
+echo "[TEST] fetch behaviour: robots/403/CAPTCHA"
+if ! sh "$REPO_ROOT/tests/test_fetch_behaviour.sh"; then
+  echo "FAIL: fetch behaviour tests failed"; fail=1
 fi
-SH
-chmod +x "$unit_tmp_robots/mock_curl_robots.sh"
-# Save and restore env vars used by this test
-save_vars CURL_CMD VERIFY_ROBOTS
-export CURL_CMD="$unit_tmp_robots/mock_curl_robots.sh"
-export VERIFY_ROBOTS=true
-# fetch a jobs URL - should be blocked (exit code 2)
-if sh scripts/fetch.sh 'http://example/jobs' 1 2 > /dev/null 2>&1; then
-  echo "FAIL: fetch.sh should have been blocked by robots.txt"; fail=1
-else
-  echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
-fi
-# Restore env
-restore_vars CURL_CMD VERIFY_ROBOTS
-# Unit test: fetch.sh CAPTCHA detection (treats as failure and logs warning)
-echo "[TEST] fetch.sh: CAPTCHA detection"
-unit_tmp_captcha="$tmp/captcha_test"
-rm -rf "$unit_tmp_captcha"
-mkdir -p "$unit_tmp_captcha"
-cat > "$unit_tmp_captcha/mock_curl_captcha.sh" <<'SH'
-#!/bin/sh
-# mock curl that returns a page containing g-recaptcha marker
-printf '<html><body><div class="g-recaptcha">please solve</div></body></html>'
-SH
-chmod +x "$unit_tmp_captcha/mock_curl_captcha.sh"
-# Save and restore env vars used by this test
-save_vars CURL_CMD
-export CURL_CMD="$unit_tmp_captcha/mock_curl_captcha.sh"
-# run fetch - expect it to fail and to warn about CAPTCHA
-if sh scripts/fetch.sh 'http://example/' 1 2 > "$unit_tmp_captcha/out" 2>&1; then
-  echo "FAIL: fetch.sh should fail on CAPTCHA"; fail=1
-else
-  if grep -q -i 'captcha' "$unit_tmp_captcha/out"; then
-    echo "PASS: fetch.sh detected CAPTCHA and failed"
-  else
-    echo "FAIL: fetch.sh did not warn about CAPTCHA"; fail=1
-  fi
-fi
-# Restore env
-restore_vars CURL_CMD
-rm -rf "$unit_tmp_fetch" "$unit_tmp_robots" "$unit_tmp_captcha"
 
 echo "[TEST] paginate.sh: paginates and stops (mock)"
 cat > "$tmp/mock.html" <<EOF

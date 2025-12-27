@@ -58,6 +58,20 @@ logic and pseudocode in README.md.
 - **CAPTCHA handling:** if CAPTCHA/recaptcha markers appear in responses the
   fetcher logs the event and skips the route; **do not** attempt automated
   solving.
+
+Troubleshooting 403 / CAPTCHA:
+
+- Inspect `logs/network.log` (ts, url, attempt, http_code, bytes) and
+  `logs/log.txt` for `WARN`/`ERROR` entries.
+- Reproduce with a mock fetcher:
+  `FETCH_SCRIPT=./tests/test_fetch_behaviour.sh sh scripts/lib/paginate.sh '<url>' PAG_START`
+  or run the test helper directly: `sh tests/test_fetch_behaviour.sh`.
+- Increase `LOG_LEVEL=DEBUG` for verbose logs, try alternate UAs
+  (`UA_LIST_PATH`), or tune `EXTRA_403_RETRIES` and `BACKOFF_SEQUENCE`.
+- Do **not** disable `VERIFY_ROBOTS` without review; if you see
+  `ERROR: blocked by robots.txt` in logs, review the seed and site policy before
+  changing settings.
+
 - Pagination is route-aware: supports `PAG_START` (offset) and `PAG_PAGE` (page
   number) models. The `PAGE_NEXT_MARKER` environment variable (or Seek INI) sets
   the HTML marker used to detect the presence of a "Next" control.

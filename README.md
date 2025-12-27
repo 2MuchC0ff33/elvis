@@ -477,6 +477,30 @@ To minimise disruptions and respect rate-limit expectations:
 - **Respect robots.txt and ToS:** Only operate on listing pages and public
   endpoints suitable for automated access.
 
+**Implementation notes & config**
+
+The fetcher uses the following env/config variables you can tune:
+`VERIFY_ROBOTS`, `BACKOFF_SEQUENCE`, `FETCH_TIMEOUT`, `RETRY_ON_403`,
+`EXTRA_403_RETRIES`, `UA_ROTATE`, `UA_LIST_PATH`, `PAGE_NEXT_MARKER`,
+`DELAY_MIN`, `DELAY_MAX`, `MAX_PAGES`, `MAX_OFFSET`, `SLEEP_CMD`, and
+`NETWORK_LOG`. When `VERIFY_ROBOTS=true` the fetcher checks `<host>/robots.txt`
+with a simple Disallow-prefix test; if blocked the fetch exits with code 2 and
+logs `ERROR: blocked by robots.txt`. CAPTCHA/recaptcha markers (e.g.,
+`captcha|recaptcha|g-recaptcha`) are detected, logged as `WARN` and treated as a
+fetch failure (route skipped). HTTP `403` responses trigger UA rotation and
+`EXTRA_403_RETRIES` when `RETRY_ON_403=true` and are logged to `NETWORK_LOG` for
+analysis.
+
+**Test hooks & debugging**
+
+- Use `FETCH_SCRIPT` to provide a mock fetcher (useful for pagination/fetch
+  tests) and override `SLEEP_CMD` to avoid long sleeps in tests.
+- `NETWORK_LOG` entries are tab-delimited records:
+  `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES` (see `logs/network.log`); example:
+  `2025-12-09T09:31:07Z\thttps://example/jobs\t1\t403\t12345`.
+- Optional: consider adding a configurable `CAPTCHA_PATTERNS` variable for
+  fine-tuning detection (future enhancement).
+
 > **Outcome:** A conservative, respectful scraper that avoids throttling and
 > reduces maintenance due to anti-bot defences.
 
