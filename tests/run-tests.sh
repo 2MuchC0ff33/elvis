@@ -850,7 +850,7 @@ if [ "${REAL_TESTS:-false}" = "true" ]; then
     mkdir -p "$REPO_ROOT/data/seeds"
     # use only the header + first 2 seeds to keep run short
     (head -n 1 "$SEED_SRC" && head -n 3 "$SEED_SRC" | tail -n +2 | head -n 2) > "$REPO_ROOT/data/seeds/seeds.csv"
-    if ! sh scripts/get_transaction_data.sh "$REPO_ROOT/data/seeds/seeds.csv"; then
+    if ! timeout 120s sh scripts/get_transaction_data.sh "$REPO_ROOT/data/seeds/seeds.csv"; then
       echo "FAIL: real get_transaction_data failed"; fail=1
     else
       echo "PASS: real get_transaction_data completed"
