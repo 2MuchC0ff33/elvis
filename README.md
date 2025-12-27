@@ -670,9 +670,8 @@ Notes & policy
 
 ## Project Structure
 
-A recommended, scalable scaffold for this repository (POSIX shell + `curl` +
-`coreutils` stack). Copy the tree below into the README for quick reference and
-to guide contributors.
+<!-- AUTO-GENERATED-PROJECT-TREE:START -->
+A generated project scaffold (updated by `scripts/update_readme.sh`) — do not edit manually.
 
 ```mermaid
 flowchart TB
@@ -728,74 +727,80 @@ flowchart TB
     cron["cron/"]
     tests["tests/"]
   end
-
-  %% relationships (visual helpers)
-  readme --> SCRIPTS
-  SCRIPTS --> LIB
-  DATA --> calllists
-  github --> workflows["workflows/ ci.yml"]
 ```
 
 ```text
+<!-- AUTO-GENERATED-PROJECT-TREE:TEXT-START -->
 .
-├── .editorconfig             # Enforce UTF-8 and LF line endings
-├── .gitattributes            # Enforce UTF-8 + LF normalisation
-├── .gitignore                # Ignore logs, tmp, generated CSVs, and secrets
-├── .env                      # Environment variables (should not be committed)
-├── .snapshots/               # Environment variable snapshots (should not be committed)
-├── project.conf              # Primary configuration (non-secret operational defaults)
-├── LICENSE                   # Project license
-├── README.md                 # Project documentation (this file)
-├── seeds.csv                 # Seed URLs & dork templates
-├── companies_history.txt     # Append-only company history (one name per line)
-├── data/                     # Generated or curated data (see below)
-│
-├── bin/                      # Executable wrappers & launchers
-│   └── elvis-run             # Wrapper that invokes `scripts/run.sh`
-│
-├── scripts/                  # POSIX shell scripts and orchestrators
-│   ├── run.sh                # Top-level orchestrator
-│   ├── fetch.sh              # HTTP fetch with retries and UA rotation
-│   ├── parse.sh              # Parse listing pages into records
-│   ├── dedupe.sh             # Deduplication helpers
-│   ├── validate.sh           # Validation and normalisation rules
-│   ├── enrich.sh             # Manual enrichment helpers & markers
-│   └── lib/                  # Reusable shell libraries (timeouts, logging)
-│       └── http_utils.sh
-│
-├── configs/                  # Configuration templates and examples (no secrets)
-│   └── seek-pagination.ini
-│
-├── docs/                     # Documentation, runbook, and manpages
-│   ├── runbook.md            # Run instructions and troubleshooting
-│   └── man/                  # man pages (roff for typesetting)
-│       └── elvis.1
-│
-├── data/                     # Generated or curated data
-│   ├── calllists/            # calllist_YYYY-MM-DD.csv (daily outputs)
-│   └── seeds/                # curated seed templates (e.g., seeds.csv)
-│
-├── logs/                     # Runtime logs and rotated archives (ignored)
-│   └── log.txt
-│
-├── tmp/                      # Runtime temp files (ignored)
-│
-├── examples/                 # Example outputs and sample fixtures
-│   └── sample_calllist.csv
-│
-├── .github/                  # GitHub configuration and workflows
-│   ├── workflows/
-│   │   └── ci.yml            # CI checks (shellcheck, lint, basic smoke tests)
-│   └── copilot-instructions.md
-│
-├── cron/                     # Example crontabs and scheduler snippets
-│   └── elvis.cron
-│
-└── tests/                    # Integration & smoke tests
-    ├── fixtures/
-    └── run-tests.sh
-
+├── audit.txt
+├── bin
+│   ├── elvis-run
+├── CHANGELOG.md
+├── companies_history.txt
+├── configs
+│   ├── seek-pagination.ini
+│   ├── user_agents.txt
+├── cron
+│   ├── elvis.cron
+├── data
+│   ├── calllists
+│   ├── seeds
+│   ├── ua.txt
+├── docs
+│   ├── man
+│   ├── runbook.md
+├── examples
+│   ├── sample_calllist.csv
+│   ├── sample_seeds.csv
+├── failer.count
+├── LICENSE
+├── logs
+│   ├── log.txt
+│   ├── network.log
+├── project.conf
+├── README.md
+├── results.csv
+├── scripts
+│   ├── archive.sh
+│   ├── choose_dork.sh
+│   ├── cleanup.sh
+│   ├── dedupe.sh
+│   ├── dedupe_status.sh
+│   ├── deduper.sh
+├── summary.txt
+├── tests
+│   ├── run-tests.sh
+│   ├── test_update_readme.sh
+├── tmp
+│   ├── cleanup.status
+├── TODO.md
+<!-- AUTO-GENERATED-PROJECT-TREE:TEXT-END -->
 ```
+
+<!-- AUTO-GENERATED-PROJECT-TREE:END -->
+### Commands
+
+- `bin/elvis-run` — master orchestrator (see `bin/elvis-run help`)
+- `scripts/archive.sh` — scripts/archive.sh
+- `scripts/choose_dork.sh` — scripts/choose_dork.sh
+- `scripts/cleanup.sh` — scripts/cleanup.sh
+- `scripts/dedupe.sh` — scripts/dedupe.sh
+- `scripts/dedupe_status.sh` — scripts/dedupe_status.sh
+- `scripts/deduper.sh` — scripts/deduper.sh
+- `scripts/end_sequence.sh` — scripts/end_sequence.sh
+- `scripts/enrich.sh` — scripts/enrich.sh
+- `scripts/enrich_status.sh` — scripts/enrich_status.sh
+- `scripts/fetch.sh` — scripts/fetch.sh
+- `scripts/get_transaction_data.sh` — scripts/get_transaction_data.sh
+- `scripts/init-help.sh` — scripts/init-help.sh
+- `scripts/log_status.sh` — scripts/log_status.sh
+- `scripts/parse.sh` — scripts/parse.sh
+- `scripts/run.sh` — scripts/run.sh
+- `scripts/set_status.sh` — scripts/set_status.sh
+- `scripts/summarise.sh` — scripts/summarise.sh
+- `scripts/update_config_examples.sh` — scripts/update_config_examples.sh
+- `scripts/update_readme.sh` — scripts/update_readme.sh
+- `scripts/validate.sh` — scripts/validate.sh
 
 ## Configuration and Precedence
 
