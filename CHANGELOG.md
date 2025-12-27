@@ -4,7 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-- (no unreleased changes)
+- feat(config): add focused `configs/fetch.ini` and
+  `scripts/lib/load_fetch_config.sh` to centralise fetch, CAPTCHA and 403
+  handling; scripts now load fetch config if present and will use `project.conf`
+  / `.env` values when available
+- chore: update `.env.example`, `scripts/fetch.sh`, `scripts/lib/http_utils.sh`,
+  `scripts/lib/paginate.sh` and docs to reflect configuration centralisation
 
 ## 23 December 2025
 

@@ -86,7 +86,11 @@ cp tmp/deduped.csv "$OUTFILE"
 echo "Produced calllist: $OUTFILE"
 
 # Check against MIN_LEADS and log a warning if below target
-MIN_LEADS="${MIN_LEADS:-25}"
+# MIN_LEADS should be provided via project.conf or .env
+if [ -z "${MIN_LEADS:-}" ]; then
+  echo "ERROR: MIN_LEADS not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 # strip inline comments and whitespace, fallback to 25 if invalid
 MIN_LEADS=$(printf '%s' "$MIN_LEADS" | sed -E 's/[[:space:]]*#.*$//' | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
 if ! printf '%s' "$MIN_LEADS" | grep -qE '^[0-9]+$'; then

@@ -55,6 +55,10 @@ logic and pseudocode in README.md.
     routes. If a route is blocked the fetch will abort and be logged; review the
     route before changing verification settings.
   - `CURL_CMD` — override the curl command (useful for tests)
+  - Optional: a focused fetch configuration file `configs/fetch.ini` is
+    supported; use `scripts/lib/load_fetch_config.sh` to load per-deploy/local
+    overrides that do not override environment variables or `project.conf`
+    values unless those are unset.
 - **CAPTCHA handling:** if CAPTCHA/recaptcha markers appear in responses the
   fetcher logs the event and skips the route; **do not** attempt automated
   solving.
@@ -279,6 +283,26 @@ and logging is set up.
 
 1. **Load .env**: `scripts/lib/load_env.sh` — loads environment overrides and
    secrets (optional).
+
+## Recent changes: centralized configuration (2025-12-27)
+
+- Pagination config loader now exports uppercase `SEEK_<SECTION>_<KEY>`
+  variables (e.g., `SEEK_PAGINATION_PAGE_NEXT_MARKER`), so pagination-related
+  defaults should be specified in `configs/seek-pagination.ini` or via
+  environment.
+- Fetch-related settings were centralised in `project.conf` (e.g.
+  `CAPTCHA_PATTERNS`, `ACCEPT_HEADER`, `ACCEPT_LANGUAGE`, `RETRY_ON_403`,
+  `EXTRA_403_RETRIES`, `BACKOFF_SEQUENCE`); scripts now **require** these
+  variables to be present in config or `.env` and will error if missing.
+- The validator now sources `project.conf` for `EMAIL_REGEX` rather than
+  defining a regex inline.
+- `.env.example` updated to include the new fetch and CAPTCHA variables for
+  development.
+
+These changes reduce hard-coded defaults in scripts and make operational
+behaviour easier to manage via `project.conf`, `.env`, and
+`configs/seek-pagination.ini`.
+
 2. **Load project.conf**: `scripts/lib/load_config.sh` — loads canonical project
    configuration.
 3. **Load Seek pagination config**: `scripts/lib/load_seek_pagination.sh` —

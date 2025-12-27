@@ -5,10 +5,18 @@
 
 set -eu
 
+# Load env/config so EMAIL_REGEX and other settings come from project.conf/.env
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh" "$REPO_ROOT/.env"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh" "$REPO_ROOT/project.conf"; fi
+
 INPUT="${1:-}"
 OUT=""
 
-EMAIL_REGEX='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}'
+if [ -z "${EMAIL_REGEX:-}" ]; then
+  echo "ERROR: EMAIL_REGEX not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 
 if [ -z "$INPUT" ] || [ ! -f "$INPUT" ]; then
   echo "Usage: $0 <input.csv> --out <validated.csv>" >&2

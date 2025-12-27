@@ -8,8 +8,14 @@ set -eu
 
 IN=""
 OUT=""
-HISTORY="companies_history.txt"
+HISTORY=""
 APPEND_HISTORY=false
+# Prefer explicit HISTORY, otherwise use HISTORY_FILE from project.conf/.env
+HISTORY="${HISTORY:-${HISTORY_FILE:-}}"
+if [ -z "${HISTORY:-}" ]; then
+  echo "ERROR: HISTORY or HISTORY_FILE must be set (companies_history.txt)" >&2
+  exit 2
+fi
 
 while [ "$#" -gt 0 ]; do
   case "$1" in

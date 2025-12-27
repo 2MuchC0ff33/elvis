@@ -8,29 +8,62 @@ set -eu
 # Load environment overrides and project config if available
 if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh"; fi
 if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh"; fi
+# Load optional fetch-specific INI (configs/fetch.ini) to set fetch defaults if unset
+if [ -f "$(dirname "$0")/lib/load_fetch_config.sh" ]; then . "$(dirname "$0")/lib/load_fetch_config.sh" "$(cd "$(dirname "$0")/.." && pwd)/configs/fetch.ini" || true; fi
+# Load seek pagination config if present
 if [ -f "$(dirname "$0")/lib/load_seek_pagination.sh" ]; then sh "$(dirname "$0")/lib/load_seek_pagination.sh"; fi
 
 url="$1"
 retries="${2:-3}"
 timeout="${3:-15}"
-# Support BACKOFF_SEQUENCE env var (comma or space separated), default to 5,20,60
-BACKOFF_SEQUENCE="${BACKOFF_SEQUENCE:-5,20,60}"
+# Ensure essential fetch-related configuration is provided by project.conf or .env
+if [ -z "${BACKOFF_SEQUENCE:-}" ]; then
+  echo "ERROR: BACKOFF_SEQUENCE not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 # Convert comma to space list for indexing
 backoff_seq=$(printf '%s' "$BACKOFF_SEQUENCE" | tr ',' ' ')
-# Allow overriding curl command (useful for tests)
-CURL_CMD="${CURL_CMD:-curl}"
-# User-Agent handling: UA_ROTATE, UA_LIST_PATH or USER_AGENT
-UA_ROTATE="${UA_ROTATE:-false}"
+# Allow overriding curl command (should be set in project.conf)
+if [ -z "${CURL_CMD:-}" ]; then
+  echo "ERROR: CURL_CMD not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+# User-Agent handling: UA_ROTATE, UA_LIST_PATH or USER_AGENT should come from config
+if [ -z "${UA_ROTATE:-}" ]; then
+  echo "ERROR: UA_ROTATE not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 USER_AGENT_OVERRIDE="${USER_AGENT:-}"
-UA_LIST_PATH="${UA_LIST_PATH:-configs/user_agents.txt}"
-# 403 handling: allow extra retries and UA rotation (defaults)
-RETRY_ON_403="${RETRY_ON_403:-true}"
-EXTRA_403_RETRIES="${EXTRA_403_RETRIES:-2}"
-# Default browser-like headers
-ACCEPT_HEADER="${ACCEPT_HEADER:-text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8}"
-ACCEPT_LANGUAGE="${ACCEPT_LANGUAGE:-en-AU,en;q=0.9}"
-# Allow curl to use compressed transfer encodings
+if [ -z "${UA_LIST_PATH:-}" ]; then
+  echo "ERROR: UA_LIST_PATH not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+# 403 handling: expected from config
+if [ -z "${RETRY_ON_403:-}" ]; then
+  echo "ERROR: RETRY_ON_403 not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+if [ -z "${EXTRA_403_RETRIES:-}" ]; then
+  echo "ERROR: EXTRA_403_RETRIES not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+# HTTP headers should come from config
+if [ -z "${ACCEPT_HEADER:-}" ]; then
+  echo "ERROR: ACCEPT_HEADER not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+if [ -z "${ACCEPT_LANGUAGE:-}" ]; then
+  echo "ERROR: ACCEPT_LANGUAGE not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+# Allow curl to use compressed transfer encodings (constant)
 CURL_COMPRESSED="--compressed"
+
+# Ensure NETWORK_LOG is defined (use project.conf or .env)
+if [ -z "${NETWORK_LOG:-}" ]; then
+  echo "ERROR: NETWORK_LOG not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 
 # Basic robots.txt verification helper (naive): returns 0 if allowed, 1 if disallowed or undetermined
 allowed_by_robots() {
@@ -100,8 +133,11 @@ else
   }
 fi
 
-# CAPTCHA detection helper (tunable via CAPTCHA_PATTERNS env var)
-CAPTCHA_PATTERNS="${CAPTCHA_PATTERNS:-captcha|recaptcha|g-recaptcha}"
+# CAPTCHA detection helper: pattern must come from config
+if [ -z "${CAPTCHA_PATTERNS:-}" ]; then
+  echo "ERROR: CAPTCHA_PATTERNS not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
 is_captcha() {
   printf '%s' "$1" | grep -qiE "$CAPTCHA_PATTERNS" && return 0 || return 1
 }

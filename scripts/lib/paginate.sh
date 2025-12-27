@@ -7,15 +7,63 @@
 set -eu
 base_url="$1"
 model="$2"
-# Configurable marker (env or seek pagination config)
-PAGE_NEXT_MARKER="${PAGE_NEXT_MARKER:-${SEEK_PAGINATION_PAGE_NEXT_MARKER:-data-automation=\"page-next\"}}"
-OFFSET_STEP="${OFFSET_STEP:-22}"
+# Load Seek pagination settings into environment if available
+if [ -f "$(dirname "$0")/load_seek_pagination.sh" ]; then
+  # allow calling scripts to have already loaded the config; otherwise source it for defaults
+  sh "$(dirname "$0")/load_seek_pagination.sh" "$(cd "$(dirname "$0")/../.." && pwd)/configs/seek-pagination.ini" || true
+fi
+# PAGE_NEXT_MARKER: prefer runtime override, then SEEK_PAGINATION, else error
+if [ -n "${PAGE_NEXT_MARKER:-}" ]; then
+  : # keep runtime override
+elif [ -n "${SEEK_PAGINATION_PAGE_NEXT_MARKER:-}" ]; then
+  PAGE_NEXT_MARKER="$SEEK_PAGINATION_PAGE_NEXT_MARKER"
+else
+  echo "ERROR: PAGE_NEXT_MARKER not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
+# OFFSET_STEP
+if [ -n "${OFFSET_STEP:-}" ]; then
+  :
+elif [ -n "${SEEK_PAGINATION_OFFSET_STEP:-}" ]; then
+  OFFSET_STEP="$SEEK_PAGINATION_OFFSET_STEP"
+else
+  echo "ERROR: OFFSET_STEP not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
 # Safety limits
-MAX_PAGES="${MAX_PAGES:-${SEEK_GLOBAL_MAX_PAGES:-200}}"
-MAX_OFFSET="${MAX_OFFSET:-${SEEK_GLOBAL_MAX_OFFSET:-10000}}"
+if [ -n "${MAX_PAGES:-}" ]; then
+  :
+elif [ -n "${SEEK_GLOBAL_MAX_PAGES:-}" ]; then
+  MAX_PAGES="$SEEK_GLOBAL_MAX_PAGES"
+else
+  echo "ERROR: MAX_PAGES not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
+if [ -n "${MAX_OFFSET:-}" ]; then
+  :
+elif [ -n "${SEEK_GLOBAL_MAX_OFFSET:-}" ]; then
+  MAX_OFFSET="$SEEK_GLOBAL_MAX_OFFSET"
+else
+  echo "ERROR: MAX_OFFSET not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
 # Random delay between pages (seconds, float) - allow SEEK_GLOBAL_DELAY_MIN/MAX
-DELAY_MIN="${DELAY_MIN:-${SEEK_GLOBAL_DELAY_MIN:-1.2}}"
-DELAY_MAX="${DELAY_MAX:-${SEEK_GLOBAL_DELAY_MAX:-4.8}}"
+if [ -n "${DELAY_MIN:-}" ]; then
+  :
+elif [ -n "${SEEK_GLOBAL_DELAY_MIN:-}" ]; then
+  DELAY_MIN="$SEEK_GLOBAL_DELAY_MIN"
+else
+  echo "ERROR: DELAY_MIN not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
+if [ -n "${DELAY_MAX:-}" ]; then
+  :
+elif [ -n "${SEEK_GLOBAL_DELAY_MAX:-}" ]; then
+  DELAY_MAX="$SEEK_GLOBAL_DELAY_MAX"
+else
+  echo "ERROR: DELAY_MAX not set (expected in seek-pagination.ini or env)" >&2
+  exit 2
+fi
 # Allow overriding the sleep implementation for tests
 SLEEP_CMD="${SLEEP_CMD:-sleep}"
 

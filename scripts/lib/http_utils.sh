@@ -8,23 +8,54 @@ fetch_with_backoff() {
   url="$1"
   retries="${2:-3}"
   timeout="${3:-15}"
-  BACKOFF_SEQUENCE="${BACKOFF_SEQUENCE:-5,20,60}"
+  # Load optional fetch-specific config (may set BACKOFF_SEQUENCE, CAPTCHA_PATTERNS, etc.)
+  if [ -f "$(dirname "$0")/load_fetch_config.sh" ]; then
+    . "$(dirname "$0")/load_fetch_config.sh" "$(cd "$(dirname "$0")/../../" && pwd)/configs/fetch.ini" || true
+  fi
+  # Ensure essential configuration is present (expected in project.conf or .env)
+  if [ -z "${BACKOFF_SEQUENCE:-}" ]; then
+    echo "ERROR: BACKOFF_SEQUENCE not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
   backoff_seq=$(printf '%s' "$BACKOFF_SEQUENCE" | tr ',' ' ')
-  CURL_CMD="${CURL_CMD:-curl}"
-  UA_ROTATE="${UA_ROTATE:-false}"
+  if [ -z "${CURL_CMD:-}" ]; then
+    echo "ERROR: CURL_CMD not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
   USER_AGENT_OVERRIDE="${USER_AGENT:-}"
-  UA_LIST_PATH="${UA_LIST_PATH:-configs/user_agents.txt}"
-  # 403 handling: allow extra retries and UA rotation (defaults)
-  RETRY_ON_403="${RETRY_ON_403:-true}"
-  EXTRA_403_RETRIES="${EXTRA_403_RETRIES:-2}"
-  # Default browser-like headers to reduce likelihood of 403
-  ACCEPT_HEADER="${ACCEPT_HEADER:-text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8}"
-  ACCEPT_LANGUAGE="${ACCEPT_LANGUAGE:-en-AU,en;q=0.9}"
-  # Allow curl to use compressed transfer encodings
+  if [ -z "${UA_ROTATE:-}" ]; then
+    echo "ERROR: UA_ROTATE not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
+  if [ -z "${UA_LIST_PATH:-}" ]; then
+    echo "ERROR: UA_LIST_PATH not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
+  if [ -z "${RETRY_ON_403:-}" ]; then
+    echo "ERROR: RETRY_ON_403 not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
+  if [ -z "${EXTRA_403_RETRIES:-}" ]; then
+    echo "ERROR: EXTRA_403_RETRIES not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
+  if [ -z "${ACCEPT_HEADER:-}" ]; then
+    echo "ERROR: ACCEPT_HEADER not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
+  if [ -z "${ACCEPT_LANGUAGE:-}" ]; then
+    echo "ERROR: ACCEPT_LANGUAGE not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
   CURL_COMPRESSED="--compressed"
 
   if [ -z "$url" ]; then
     echo "ERROR: fetch_with_backoff requires a URL" >&2
+    return 2
+  fi
+  # Ensure NETWORK_LOG is defined (use project.conf or .env)
+  if [ -z "${NETWORK_LOG:-}" ]; then
+    echo "ERROR: NETWORK_LOG not set (expected in project.conf or .env)" >&2
     return 2
   fi
 
@@ -44,7 +75,10 @@ fetch_with_backoff() {
     }
   fi
 
-  CAPTCHA_PATTERNS="${CAPTCHA_PATTERNS:-captcha|recaptcha|g-recaptcha}"
+  if [ -z "${CAPTCHA_PATTERNS:-}" ]; then
+    echo "ERROR: CAPTCHA_PATTERNS not set (expected in project.conf or .env)" >&2
+    return 2
+  fi
   is_captcha() {
     printf '%s' "$1" | grep -qiE "$CAPTCHA_PATTERNS" && return 0 || return 1
   }

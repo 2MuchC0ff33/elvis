@@ -15,7 +15,7 @@ fi
 section=""
 while IFS= read -r line; do
   case "$line" in
-    \[*\]) section="$(echo "$line" | sed 's/\[//;s/\]//;s/[^A-Za-z0-9]/_/g')" ;;
+    \[*\]) section="$(echo "$line" | sed 's/\[//;s/\]//;s/[^A-Za-z0-9]/_/g' | tr '[:lower:]' '[:upper:]')" ;;
     ''|\#*) continue ;;
     *=*)
       key="$(echo "$line" | cut -d= -f1 | tr -d ' ' | awk '{print toupper($0)}')"

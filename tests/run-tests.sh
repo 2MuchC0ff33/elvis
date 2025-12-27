@@ -356,6 +356,11 @@ else
 fi
 rm -rf "$unit_tmp_rand"
 
+# Unit test: load_fetch_config.sh loader
+if ! sh "$REPO_ROOT/tests/test_load_fetch_config.sh"; then
+  echo "FAIL: fetch config loader test failed"; fail=1
+fi
+
 # Unit test: fetch.sh backoff messages reflect BACKOFF_SEQUENCE
 echo "[TEST] fetch.sh: backoff sequence messages"
 unit_tmp_backoff="$tmp/backoff_test"
