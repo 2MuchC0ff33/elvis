@@ -37,6 +37,9 @@ Runs all init steps in order.
 .B update_config_examples.sh
 Synchronises keys between `project.conf` and `.env.example` by adding missing keys with placeholder values. Useful to keep examples and defaults aligned across environments.
 .TP
+.B update_readme.sh
+Regenerates the auto-generated sections of `README.md` (the *Project tree* and *Commands* sections). Run locally as `./scripts/update_readme.sh --dry-run` to preview changes; a CI workflow at `.github/workflows/update-readme.yml` will run this weekly and open an automated PR when changes are detected.
+.TP
 .B SLEEP_CMD (testing)
 `SLEEP_CMD` is respected by fetch and pagination scripts; set it to a short stub or a recorder during tests to avoid long sleeps (e.g., `SLEEP_CMD=./tests/mock_sleep.sh`).
 .TP
@@ -67,6 +70,41 @@ Check if a company name exists in history (case-insensitive). Usage: scripts/lib
 .TP
 .B \\--auto-heal
 Enable opt-in automatic recovery attempts for failed steps (preserves failed artifacts under `.snapshots/failed/`).
+.SH ENVIRONMENT VARIABLES
+.TP
+.B SEEDS_FILE
+Path to the seeds manifest (default: `data/seeds/seeds.csv`).
+.TP
+.B OUTPUT_DIR
+Directory where daily outputs are written (default: `data/calllists`).
+.TP
+.B HISTORY_FILE
+Company history file (default: `companies_history.txt`).
+.TP
+.B FETCH_TIMEOUT
+Curl timeout in seconds (default: `15`).
+.TP
+.B BACKOFF_SEQUENCE
+Comma-separated retry backoff sequence in seconds (default: `5,20,60`).
+.TP
+.B UA_ROTATE / UA_LIST_PATH
+Enable UA rotation and path to UA list (defaults: `true`, `data/ua.txt`).
+.TP
+.B VERIFY_ROBOTS
+When `true`, requests are checked against `robots.txt` (default: `true`).
+.TP
+.B LOG_LEVEL
+Logging verbosity (default: `INFO`).
+.SH EXIT CODES
+.TP
+.B 0
+Success.
+.TP
+.B 1
+General failure (non-specific error, retry or manual review recommended).
+.TP
+.B 2
+Usage or policy error (e.g., blocked by `robots.txt`).
 .SH EXAMPLES
 .TP
 .B elvis-run init
@@ -120,6 +158,19 @@ Per-record split files (intermediate).
 .TP
 .B tmp/<seed_id>.htmls
 Fetched HTML for each seed.
+.SH SEE ALSO
+.TP
+.B README.md
+Project README with design, PDL and examples.
+.TP
+.B docs/runbook.md
+Operational runbook and troubleshooting.
+.TP
+.B scripts/update_readme.sh
+Maintenance helper for regenerating README sections.
+.TP
+.B .github/workflows/update-readme.yml
+GitHub Actions workflow that runs the README update and opens a PR.
 .SH AUTHOR
 Elvis project contributors.
 .SH BUGS
