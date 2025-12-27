@@ -140,6 +140,69 @@ specification), [`docs/runbook.md`](../docs/runbook.md), and
 
 ---
 
+## Practical workflows & examples (for AI agents) 🔧
+
+- Quick commands (for docs, test scripts and PRs):
+
+  - Run full workflow: `bin/elvis-run get-transaction-data`
+  - Prepare enrichment:
+    `sh scripts/enrich_status.sh results.csv --out tmp/enriched.csv --edit`
+  - Validate enriched:
+    `sh scripts/validate.sh tmp/enriched.csv --out tmp/validated.csv`
+  - Dedupe & append-history:
+    `sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv --append-history`
+  - Produce final CSV:
+    `bin/elvis-run set-status --input results.csv --enriched tmp/enriched.csv --commit-history`
+  - Run tests: `tests/run-tests.sh` (enable network tests with
+    `REAL_TESTS=true`)
+
+- Test hooks & mocks:
+
+  - Use `FETCH_SCRIPT` to inject fetch mocks (e.g.
+    `FETCH_SCRIPT=./tests/test/fetch_test/mock_curl.sh`) and use `SLEEP_CMD` to
+    avoid long sleeps in tests.
+  - Mocks live under `tests/test/fetch_test/` and `tests/` contains unit tests
+    and examples; prefer adding tests that exercise `scripts/lib/paginate.sh`
+    and `scripts/fetch.sh` in isolation.
+
+- Shell script & style rules:
+
+  - Scripts are POSIX `sh`-first; prefer `gawk` for AWK code
+    (`scripts/lib/*.awk`). Follow `.github/instructions/shell.instructions.md`
+    and `scripts/lib/*.sh` patterns.
+  - Run `shellcheck -x` locally/CI; use
+    `scripts/lib/shellcheck-cygwin-wrapper.sh` on Windows/Cygwin when needed.
+
+- Config & change guidance:
+
+  - Edit `project.conf` for defaults and `.env.example` for env overrides when
+    adding keys. Scripts load settings with precedence: `.env` → `project.conf`
+    → built-in defaults.
+  - Add tests for config changes (see `tests/test_load_fetch_config.sh`).
+
+- Data & policy rules (do not break):
+
+  - `companies_history.txt` is append-only and _must not_ be modified
+    programmatically without operator consent; prefer using `--append-history`
+    flows.
+  - Honour `robots.txt`, never attempt automated CAPTCHA solving, and do not
+    scrape search engine results automatically.
+
+- Mini VCS & snapshots:
+
+  - Snapshot data before large changes:
+    `ts=$(date -u +%Y%m%dT%H%M%SZ); tar -czf .snapshots/snap-$ts.tar.gz companies_history.txt data/seeds configs && sha1sum .snapshots/snap-$ts.tar.gz > .snapshots/checksums/snap-$ts.sha1`
+  - Keep `.snapshots/` in `.gitignore` and add a short index entry to
+    `.snapshots/index` for auditability.
+
+- Tests & PR expectations:
+  - Add deterministic tests using mocks; avoid long sleeps by overriding
+    `SLEEP_CMD`.
+  - Keep changes small, add tests, update `README.md`/`docs/runbook.md` and
+    include brief commands or examples in PR descriptions.
+
+---
+
 ## Tone & merging instructions
 
 - If a `.github/copilot-instructions.md` already exists, merge carefully:
