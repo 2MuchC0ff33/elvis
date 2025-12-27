@@ -35,16 +35,19 @@ if sh "$REPO_ROOT/scripts/fetch.sh" 'http://example/jobs' 1 2 > /dev/null 2>&1; 
 else
   echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
 fi
-# check network log for ROBOTSBLOCK entry and the matching rule
-if grep -q 'ROBOTSBLOCK' "$REPO_ROOT/logs/network.log" 2>/dev/null && grep -q '/jobs' "$REPO_ROOT/logs/network.log" 2>/dev/null; then
-  echo "PASS: fetch.sh recorded ROBOTSBLOCK in NETWORK_LOG"
+# check network log for ROBOTSBLOCK entry and the matching rule (same line)
+if grep 'ROBOTSBLOCK' "$REPO_ROOT/logs/network.log" 2>/dev/null | grep -q '/jobs' 2>/dev/null; then
+  echo "PASS: fetch.sh recorded ROBOTSBLOCK in NETWORK_LOG with matching Disallow"
 else
-  echo "FAIL: ROBOTSBLOCK not recorded in NETWORK_LOG"; fail=1
+  echo "FAIL: ROBOTSBLOCK not recorded (or missing disallow) in NETWORK_LOG"; fail=1
 fi
 # restore env
 export CURL_CMD="${_old_CURL_CMD:-}"
 export VERIFY_ROBOTS="${_old_VERIFY_ROBOTS:-}"
 rm -rf "$unit_tmp_robots"
+
+# clear network log before CAPTCHA tests to ensure isolation
+rm -f "$REPO_ROOT/logs/network.log" || true
 
 # 403 retry behaviour
 echo "[TEST] fetch behaviour: 403 then recover with EXTRA_403_RETRIES and log 403-retry"
@@ -137,12 +140,12 @@ else
   else
     echo "FAIL: fetch.sh did not detect custom CAPTCHA pattern"; fail=1
   fi
-fi
-# restore env
-export CAPTCHA_PATTERNS=''
-export CURL_CMD="${_old_CURL_CMD2:-}"
-rm -rf "$unit_tmp_captcha" "$unit_tmp_captcha2"
-
+  # check NETWORK_LOG for CAPTCHA entry and pattern snippet
+  if grep -q 'CAPTCHA' "$REPO_ROOT/logs/network.log" 2>/dev/null | grep -q 'humancheck' 2>/dev/null; then
+    echo "PASS: custom CAPTCHA pattern recorded in NETWORK_LOG"
+  else
+    echo "FAIL: custom CAPTCHA pattern not recorded in NETWORK_LOG"; fail=1
+  fi
 if [ "$fail" -ne 0 ]; then
   echo "Some fetch behaviour tests failed"; exit 1
 fi

@@ -103,23 +103,36 @@ When `true`, the fetcher will increase retries and rotate User-Agent on HTTP 403
 Additional retries to add when a 403 is encountered (default: `2`).
 .TP
 .B VERIFY_ROBOTS
-When `true`, requests are checked against `robots.txt` (default: `true`). If a route is blocked the fetcher exits with status code `2` and logs `ERROR: blocked by robots.txt`.
+When `true`, requests are checked against `robots.txt` (default: `true`). If a route is blocked the fetcher exits with status code `2` and writes a `ROBOTSBLOCK` entry to `NETWORK_LOG` (the logged entry includes the matching Disallow prefix for auditability).
 .TP
 .B NETWORK_LOG
 Path to the network log that records fetch attempts as tab-separated fields: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES` (default: `logs/network.log`).
 
-Special diagnostic entries include `403-retry` (retry attempts caused by HTTP 403 events) and `ROBOTSBLOCK` (when `robots.txt` blocks a route; the logged entry includes the matching Disallow prefix for auditability). Use the log to inspect per-request bytes and status codes for fast triage.
+Special diagnostic entries include `403-retry` (retry attempts caused by HTTP 403 events), `ROBOTSBLOCK` (when `robots.txt` blocks a route) and `CAPTCHA` (when CAPTCHA detection matched a pattern; includes a short matched snippet). Use the log to inspect per-request bytes, status codes and special diagnostic markers for fast triage.
 .TP
 .B SLEEP_CMD / FETCH_SCRIPT
 Test hooks: set `SLEEP_CMD` to a short stub in tests to avoid long sleeps; set `FETCH_SCRIPT` to a mock fetcher to reproduce fetch/pagination behaviours.
 .TP
 .B CAPTCHA_PATTERNS
-(Optional) Regex or pattern list used to detect CAPTCHA/recaptcha markers; allows future tuning of detection logic.
+(Optional) Regex or pattern list used to detect CAPTCHA/recaptcha markers; when a match is found the fetcher logs `WARN: CAPTCHA or human check detected` and writes a `CAPTCHA` entry to `NETWORK_LOG`; the page is treated as a fetch failure (no automated solving).
 .TP
-.B VERIFY_ROBOTS
-When `true`, requests are checked against `robots.txt` (default: `true`).
+.B LAST_FAILED_STATUS
+If a step fails the `on_err` handler writes `tmp/last_failed.status` and `heal.sh` preserves debugging artifacts to `.snapshots/failed/` (tarballs containing logs and status files) for post-mortem analysis.
+.TP
+.B SNAPSHOT_DIR
+Directory where run snapshots are stored (default: `.snapshots`). Snapshots include `snap-<ts>.tar.gz` and checksums in `checksums/`.
+.TP
+.B LAST_FAILED_STATUS
+`tmp/last_failed.status` is written by the `on_err` handler; preserved artifacts are saved to `.snapshots/failed/` by `heal.sh` for post-mortem analysis.
+.TP
+.B LOG_ROTATE
+Log rotation helper: `scripts/log_rotate.sh --dry-run` to preview archive and prune actions; use `--keep-weeks N` to prune older archives.
 .TP
 .B MIN_LEADS
+Minimum leads required per run before a warning is logged (default: `25`).
+.TP
+.B LOG_LEVEL
+Logging verbosity (default: `INFO`).
 Minimum leads required per run before a warning is logged (default: `25`).
 .TP
 .B LOG_LEVEL

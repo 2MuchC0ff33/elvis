@@ -397,6 +397,12 @@ fi
 if ! sh "$REPO_ROOT/tests/test_end_sequence_dry_run.sh"; then
   echo "FAIL: end-sequence dry-run smoke test failed"; fail=1
 fi
+if ! sh "$REPO_ROOT/tests/test_log_rotate.sh"; then
+  echo "FAIL: log_rotate smoke test failed"; fail=1
+fi
+if ! sh "$REPO_ROOT/tests/test_archive_smoke.sh"; then
+  echo "FAIL: archive smoke test failed"; fail=1
+fi
 
 echo "[TEST] paginate.sh: paginates and stops (mock)"
 cat > "$tmp/mock.html" <<EOF

@@ -570,20 +570,31 @@ Record enough context to investigate issues and site changes:
 
 **Network & Failure Artefacts**
 
-- **NETWORK_LOG** (default: `logs/network.log`) records fetch attempts as tab-delimited rows: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES`. Example: `2025-12-09T09:31:07Z\thttps://example/jobs\t1\t403\t12345`.
+- **NETWORK_LOG** (default: `logs/network.log`) records fetch attempts as
+  tab-delimited rows: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES`. Example:
+  `2025-12-09T09:31:07Z\thttps://example/jobs\t1\t403\t12345`.
 - Special entries for quick triage:
-  - `403-retry` — when HTTP 403 triggers additional retries (useful to track UA rotation effects).
-  - `ROBOTSBLOCK` — recorded when `robots.txt` disallows the route; includes the first matching Disallow rule for auditability.
+  - `403-retry` — when HTTP 403 triggers additional retries (useful to track UA
+    rotation effects).
+  - `ROBOTSBLOCK` — recorded when `robots.txt` disallows the route; includes the
+    first matching Disallow rule for auditability.
 - Failure marker and preserved artifacts:
-  - `tmp/last_failed.status` is written when the `on_err` handler runs; use this as a first check for recent failures.
-  - `.snapshots/failed/` contains preserved artifacts when auto-heal/preserve is used (see `scripts/lib/heal.sh`).
+  - `tmp/last_failed.status` is written when the `on_err` handler runs; use this
+    as a first check for recent failures.
+  - `.snapshots/failed/` contains preserved artifacts when auto-heal/preserve is
+    used (see `scripts/lib/heal.sh`).
 
 **Troubleshooting a failed fetch**
 
-- Inspect `logs/network.log` for `403` or `ROBOTSBLOCK` entries and check the bytes/status recorded.
-- Check `logs/log.txt` for `WARN`/`ERROR` lines and `tmp/last_failed.status` for a failure marker.
-- To reproduce safely and quickly, use the test fetch stub: `sh tests/test_fetch_behaviour.sh` or set `FETCH_SCRIPT` to a mock and override `SLEEP_CMD` to avoid long sleeps.
-- Use `LOG_LEVEL=DEBUG` for verbose logs and try rotating UA (`UA_LIST_PATH`) or tuning `BACKOFF_SEQUENCE`/`EXTRA_403_RETRIES`.
+- Inspect `logs/network.log` for `403` or `ROBOTSBLOCK` entries and check the
+  bytes/status recorded.
+- Check `logs/log.txt` for `WARN`/`ERROR` lines and `tmp/last_failed.status` for
+  a failure marker.
+- To reproduce safely and quickly, use the test fetch stub:
+  `sh tests/test_fetch_behaviour.sh` or set `FETCH_SCRIPT` to a mock and
+  override `SLEEP_CMD` to avoid long sleeps.
+- Use `LOG_LEVEL=DEBUG` for verbose logs and try rotating UA (`UA_LIST_PATH`) or
+  tuning `BACKOFF_SEQUENCE`/`EXTRA_403_RETRIES`.
 
 #### Weekly rotation
 
@@ -645,6 +656,47 @@ mindmap
   parallelised requests with conservative pacing.
 - **Auditability:** Keep logs structured and retained for accountability.
 
+### Implementation notes (fetcher & audit) 🔧
+
+- **Robots checks & audit (implementation note)**
+
+  - The fetcher runs a conservative `robots.txt` check when
+    `VERIFY_ROBOTS=true`.
+  - If the route is disallowed the fetcher exits with status code `2` and writes
+    a `ROBOTSBLOCK` entry to `NETWORK_LOG` in the form:
+    `TIMESTAMP\tURL\tATTEMPT\tROBOTSBLOCK\t<disallow-prefix>`.
+  - Operators: inspect `logs/network.log` for `ROBOTSBLOCK`, review the site's
+    `robots.txt`, and **do not** set `VERIFY_ROBOTS=false` without
+    legal/operator approval.
+
+- **CAPTCHA detection** 🛑
+
+  - `CAPTCHA_PATTERNS` controls detection (default:
+    `captcha|recaptcha|g-recaptcha`). On detection the fetcher logs a
+    `WARN: CAPTCHA or human check detected` message and treats the page as a
+    failure (no automated solving).
+  - The fetcher now writes a `CAPTCHA` diagnostic entry to `NETWORK_LOG` to aid
+    auditing (recommended enhancement implemented).
+
+- **403 handling & UA rotation** 🔁
+
+  - On HTTP `403` and when `RETRY_ON_403=true`, the fetcher adds
+    `EXTRA_403_RETRIES`, rotates `User-Agent` (from `UA_LIST_PATH`) and logs a
+    `403-retry` line in `NETWORK_LOG`. Tune `RETRY_ON_403` and
+    `EXTRA_403_RETRIES` in `project.conf` as needed.
+
+- **Network log format** 📑
+
+  - `NETWORK_LOG` (default: `logs/network.log`) is tab-delimited:
+    `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES`.
+  - Special values for the HTTP_CODE field include `403-retry`, `ROBOTSBLOCK`,
+    and `CAPTCHA` (implemented).
+
+- **Operator checklist** ✅
+  - If robots or CAPTCHA events occur frequently: 1) inspect `logs/network.log`
+    and `logs/log.txt` (grep for `WARN`, `ERROR`); 2) check UA list and site
+    rules; 3) pause route and escalate to legal/ops when necessary.
+
 ---
 
 ## 14. Retention & Admin Control
@@ -652,6 +704,38 @@ mindmap
 - Daily call list is always overwritten
 - Company history file (`companies_history.txt`) always retained and added via
   admin/manual only
+
+- **Snapshot & verification** 🔐
+
+  - Create a snapshot before making administrative changes (for example, before
+    appending to `companies_history.txt`):
+    `ts=$(date -u +%Y%m%dT%H%M%SZ); tar -czf .snapshots/snap-$ts.tar.gz companies_history.txt data/seeds configs && sha1sum .snapshots/snap-$ts.tar.gz > .snapshots/checksums/snap-$ts.sha1`
+  - Verify a snapshot: `sha1sum -c .snapshots/checksums/snap-<ts>.sha1` (exit
+    code 0 = OK).
+
+- **History append policy** 📝
+
+  - `companies_history.txt` is administrative and append‑only by policy. Prefer
+    manual review and snapshot before appending; to append via tools use:
+    `sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv --append-history`
+    or run:
+    `sh scripts/set_status.sh --input results.csv --enriched tmp/enriched.csv --commit-history`
+
+- **Preserved failure artefacts** 🧭
+
+  - On failure `on_err` writes `tmp/last_failed.status` and `heal.sh` preserves
+    debugging tarballs under `.snapshots/failed/`. Inspect the latest tarball
+    for preserved logs and status files.
+
+- **Log rotation & retention** 🔁
+
+  - Use `scripts/log_rotate.sh --dry-run` to preview, or schedule weekly with
+    `--keep-weeks N`. Keep checksums and the `.snapshots/index` for
+    auditability.
+
+- **Risk / policy note** ⚠️
+  - Keep `.snapshots/` in `.gitignore`, and never automate appending to
+    `companies_history.txt` without review — always snapshot and review diffs.
 
 ### Mini VCS Integration 🔧
 

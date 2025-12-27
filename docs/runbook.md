@@ -63,13 +63,30 @@ Troubleshooting 403 / CAPTCHA:
 
 - Inspect `logs/network.log` (ts, url, attempt, http_code, bytes) and
   `logs/log.txt` for `WARN`/`ERROR` entries.
+- Check for robots blocks and their rules:
+  - `grep 'ROBOTSBLOCK' logs/network.log` → confirm the Disallow prefix recorded
+    matches `robots.txt` (the disallow string is written in the same
+    `ROBOTSBLOCK` line).
+- Check 403 events and mitigation:
+  - `grep '403' logs/network.log` and `grep '403-retry' logs/network.log` → if
+    many `403` events, try alternate UAs (`UA_LIST_PATH`) and slow the cadence
+    (increase delays or reduce parallelism).
+- Check CAPTCHA events:
+  - `grep -i 'CAPTCHA' logs/network.log` or `grep -i 'CAPTCHA' logs/log.txt` →
+    treat as a route-level failure; do not attempt automated solving.
 - Reproduce with a mock fetcher:
   `FETCH_SCRIPT=./tests/test_fetch_behaviour.sh sh scripts/lib/paginate.sh '<url>' PAG_START`
   or run the test helper directly: `sh tests/test_fetch_behaviour.sh`.
+- If a fetch fails and `tmp/last_failed.status` exists, inspect
+  `.snapshots/failed/` for preserved artifacts (created by `heal.sh`). Use
+  `tar -tzf .snapshots/failed/failed-<step>-<ts>.tar.gz` to list the preserved
+  archive contents before extraction.
+- Use `scripts/log_rotate.sh --dry-run` then run weekly (or cron) to archive
+  logs and preserve the last failure marker for auditing.
 - Increase `LOG_LEVEL=DEBUG` for verbose logs, try alternate UAs
   (`UA_LIST_PATH`), or tune `EXTRA_403_RETRIES` and `BACKOFF_SEQUENCE`.
-- Do **not** disable `VERIFY_ROBOTS` without review; if you see
-  `ERROR: blocked by robots.txt` in logs, review the seed and site policy before
+- **Do not** disable `VERIFY_ROBOTS` without documented permission; if
+  `ERROR: blocked by robots.txt` appears, review the seed and site policy before
   changing settings.
 
 - Pagination is route-aware: supports `PAG_START` (offset) and `PAG_PAGE` (page
@@ -113,7 +130,8 @@ How to triage fetch & logging
 - Log rotation & retention:
   - Rotate logs weekly (policy TBD); use `scripts/summarise.sh` or
     `bin/elvis-run end-sequence --dry-run` as part of your archival/cron
-    workflow. For automated rotation and retention, use `scripts/log_rotate.sh --keep-weeks 4` (schedule in cron).
+    workflow. For automated rotation and retention, use
+    `scripts/log_rotate.sh --keep-weeks 4` (schedule in cron).
 
 Note: real-network integration tests are optional and disabled by default. To
 run them set `REAL_TESTS=true` in your environment before running the test
@@ -498,6 +516,19 @@ Notes & safety:
   always log recovery actions for auditability.
 - Auto-heal behaviour respects `--continue-on-error` and will not attempt infinite retries by default.
 ```
+
+Snapshot & append workflow (operational steps):
+
+1. Create a snapshot before changes:
+   `tar -czf .snapshots/snap-$(date -u +%Y%m%dT%H%M%SZ).tar.gz companies_history.txt data/calllists logs && sha1sum .snapshots/snap-<ts>.tar.gz > .snapshots/checksums/snap-<ts>.sha1`
+2. Verify snapshot: `sha1sum -c .snapshots/checksums/snap-<ts>.sha1`
+3. If appending company names, run
+   `sh scripts/deduper.sh --in tmp/validated.csv --out tmp/deduped.csv --append-history`
+   and review `companies_history.txt` afterwards.
+
+Cron example (weekly rotation):
+
+- `0 3 * * 0 cd /path/to/repo && ./scripts/log_rotate.sh --keep-weeks 8`
 
 Implementation notes:
 

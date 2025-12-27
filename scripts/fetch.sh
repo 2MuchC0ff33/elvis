@@ -137,6 +137,11 @@ for attempt in $(seq 1 "$retries"); do
     # detect CAPTCHA signals and fail early
     if is_captcha "$response"; then
       echo "WARN: CAPTCHA or human check detected for $url" >&2
+      # write a CAPTCHA entry to NETWORK_LOG to aid auditing
+      ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      snippet=$(printf '%s' "$response" | grep -o -i -E "$CAPTCHA_PATTERNS" | head -n1 | tr -d '\n' || true)
+      mkdir -p "$(dirname "${NETWORK_LOG:-logs/network.log}")"
+      printf '%s\t%s\t%d\t%s\t%s\n' "$ts" "$url" "$attempt" "CAPTCHA" "$snippet" >> "${NETWORK_LOG:-logs/network.log}"
       # treat as fetch failure so caller can decide to skip the route
       SLEEP_CMD="${SLEEP_CMD:-sleep}"
       sleep_time=$(echo "$backoff_seq" | cut -d' ' -f"$attempt" 2>/dev/null || echo 60)
