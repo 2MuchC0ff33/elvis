@@ -38,9 +38,10 @@ logic and pseudocode in README.md.
   - `BACKOFF_SEQUENCE` — comma-separated retry delays (default: `5,20,60`)
   - `FETCH_TIMEOUT` — curl timeout in seconds (default: `15`)
   - `UA_ROTATE` / `UA_LIST_PATH` — enable User-Agent rotation and provide the
-    list file (default: `data/ua.txt` if present, otherwise `configs/user_agents.txt`).
-    Lines in the UA list are cleaned (surrounding quotes removed, whitespace
-    trimmed). Set `ALLOW_BOTS=true` to allow known crawler UAs (not recommended).
+    list file (default: `data/ua.txt` if present, otherwise
+    `configs/user_agents.txt`). Lines in the UA list are cleaned (surrounding
+    quotes removed, whitespace trimmed). Set `ALLOW_BOTS=true` to allow known
+    crawler UAs (not recommended).
   - **HTTP 403 handling:** `RETRY_ON_403` (default `true`) and
     `EXTRA_403_RETRIES` (default `2`) control special-case behavior for `403`
     responses. When enabled, the fetcher will rotate UA and attempt extra
