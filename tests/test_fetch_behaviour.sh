@@ -35,6 +35,12 @@ if sh "$REPO_ROOT/scripts/fetch.sh" 'http://example/jobs' 1 2 > /dev/null 2>&1; 
 else
   echo "PASS: fetch.sh honoured robots.txt and blocked the URL"
 fi
+# check network log for ROBOTSBLOCK entry and the matching rule
+if grep -q 'ROBOTSBLOCK' "$REPO_ROOT/logs/network.log" 2>/dev/null && grep -q '/jobs' "$REPO_ROOT/logs/network.log" 2>/dev/null; then
+  echo "PASS: fetch.sh recorded ROBOTSBLOCK in NETWORK_LOG"
+else
+  echo "FAIL: ROBOTSBLOCK not recorded in NETWORK_LOG"; fail=1
+fi
 # restore env
 export CURL_CMD="${_old_CURL_CMD:-}"
 export VERIFY_ROBOTS="${_old_VERIFY_ROBOTS:-}"
@@ -111,9 +117,31 @@ else
     echo "FAIL: fetch.sh did not warn about CAPTCHA"; fail=1
   fi
 fi
+# custom CAPTCHA_PATTERNS test
+echo "[TEST] fetch behaviour: custom CAPTCHA_PATTERNS"
+unit_tmp_captcha2="$(mktemp -d)"
+cat > "$unit_tmp_captcha2/mock_curl_captcha2.sh" <<'SH'
+#!/bin/sh
+printf 'humancheck marker present'
+SH
+chmod +x "$unit_tmp_captcha2/mock_curl_captcha2.sh"
+_old_CURL_CMD2="$CURL_CMD" || true
+export CURL_CMD="$unit_tmp_captcha2/mock_curl_captcha2.sh"
+export CAPTCHA_PATTERNS='humancheck'
+out2="$unit_tmp_captcha2/out"
+if sh "$REPO_ROOT/scripts/fetch.sh" 'http://example/' 1 2 > "$out2" 2>&1; then
+  echo "FAIL: fetch.sh should fail on custom CAPTCHA"; fail=1
+else
+  if grep -q -i 'humancheck' "$out2" 2>/dev/null; then
+    echo "PASS: fetch.sh respected CAPTCHA_PATTERNS and detected custom pattern"
+  else
+    echo "FAIL: fetch.sh did not detect custom CAPTCHA pattern"; fail=1
+  fi
+fi
 # restore env
-export CURL_CMD="${_old_CURL_CMD:-}"
-rm -rf "$unit_tmp_captcha"
+export CAPTCHA_PATTERNS=''
+export CURL_CMD="${_old_CURL_CMD2:-}"
+rm -rf "$unit_tmp_captcha" "$unit_tmp_captcha2"
 
 if [ "$fail" -ne 0 ]; then
   echo "Some fetch behaviour tests failed"; exit 1

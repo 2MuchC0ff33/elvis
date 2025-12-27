@@ -44,8 +44,9 @@ fetch_with_backoff() {
     }
   fi
 
+  CAPTCHA_PATTERNS="${CAPTCHA_PATTERNS:-captcha|recaptcha|g-recaptcha}"
   is_captcha() {
-    printf '%s' "$1" | grep -qiE 'captcha|recaptcha|g-recaptcha' && return 0 || return 1
+    printf '%s' "$1" | grep -qiE "$CAPTCHA_PATTERNS" && return 0 || return 1
   }
 
   allowed_by_robots() {
@@ -70,10 +71,17 @@ fetch_with_backoff() {
           continue
         fi
         if [ "$dis" = "/" ]; then
+          ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          mkdir -p "$(dirname "${NETWORK_LOG:-logs/network.log}")"
+          printf '%s\t%s\t%d\t%s\t%s\n' "$ts" "$url" 0 "ROBOTSBLOCK" "$dis" >> "${NETWORK_LOG:-logs/network.log}"
           return 1
         fi
         case "$path" in
-          "$dis"* ) return 1 ;;
+          "$dis"* )
+            ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            mkdir -p "$(dirname "${NETWORK_LOG:-logs/network.log}")"
+            printf '%s\t%s\t%d\t%s\t%s\n' "$ts" "$url" 0 "ROBOTSBLOCK" "$dis" >> "${NETWORK_LOG:-logs/network.log}"
+            return 1 ;;
           *) ;;
         esac
       done <<-EOF
