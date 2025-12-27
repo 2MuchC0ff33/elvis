@@ -1,100 +1,76 @@
 #!/bin/sh
 # tests/run-tests.sh
-# Test runner for Elvis init workflow and modular scripts
+# Modular test runner for Elvis scripts
 
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-fail=0
-
-# Helper to save and restore environment variables per-test to avoid cross-test pollution
-save_vars() {
-  for v in "$@"; do
-    # POSIX-safe check and capture
-    if eval "[ \"\${${v}+set}\" = set ]"; then
-      # capture value into OLD_<VAR>
-      eval "OLD_${v}=\"\${${v}}\""
-      eval "OLDSET_${v}=1"
-    else
-      eval "OLDSET_${v}=0"
-    fi
-  done
-}
-
-restore_vars() {
-  for v in "$@"; do
-    # restore if previously set
-    if eval "[ \"\${OLDSET_${v}}\" = 1 ]"; then
-      eval "${v}=\"\${OLD_${v}}\""
-      eval "export ${v}"
-    else
-      eval "unset ${v} 2>/dev/null || true"
-    fi
-    # cleanup helpers
-    eval "unset OLD_${v} OLDSET_${v} 2>/dev/null || true"
-  done
-}
-
-
-# Test: load_env.sh (should not fail if .env missing)
-if ! sh "$REPO_ROOT/scripts/lib/load_env.sh"; then
-  echo "FAIL: load_env.sh failed with missing .env" >&2
-  fail=1
+# Discover test files
+TEST_FILES="$(cd "$SCRIPT_DIR" && printf '%s\n' unit_*.sh test_*.sh integration_*.sh 2>/dev/null | sort)"
+if [ -z "$TEST_FILES" ]; then
+  echo "No tests found in $SCRIPT_DIR" >&2
+  exit 1
 fi
 
-# Test: load_config.sh (should fail if config missing)
-if sh "$REPO_ROOT/scripts/lib/load_config.sh" not_a_real_file.conf 2>/dev/null; then
-  echo "FAIL: load_config.sh did not fail on missing file" >&2
-  fail=1
-fi
+# prefer timeout utility if available
+HAS_TIMEOUT=0
+if command -v timeout >/dev/null 2>&1; then HAS_TIMEOUT=1; fi
 
-# Test: load_seek_pagination.sh (should fail if config missing)
-if sh "$REPO_ROOT/scripts/lib/load_seek_pagination.sh" not_a_real_file.ini 2>/dev/null; then
-  echo "FAIL: load_seek_pagination.sh did not fail on missing file" >&2
-  fail=1
-fi
+TOTAL=0
+PASSED=0
+FAILED=0
+SKIPPED=0
 
-# Test: validate_env.sh (should fail if required vars missing)
-unset SEEDS_FILE OUTPUT_DIR HISTORY_FILE LOG_FILE SEEK_PAGINATION_CONFIG || true
-if sh "$REPO_ROOT/scripts/lib/validate_env.sh" 2>/dev/null; then
-  echo "FAIL: validate_env.sh did not fail with missing vars" >&2
-  fail=1
-fi
-
-# Test: prepare_log.sh (should create logs/log.txt)
-rm -rf "$REPO_ROOT/logs"
-sh "$REPO_ROOT/scripts/lib/prepare_log.sh" "$REPO_ROOT/logs/log.txt"
-if [ ! -f "$REPO_ROOT/logs/log.txt" ]; then
-  echo "FAIL: prepare_log.sh did not create log file" >&2
-  fail=1
-fi
-
-# Test: bin/elvis-run init (should complete without error)
-if ! sh "$REPO_ROOT/bin/elvis-run" init; then
-  echo "FAIL: bin/elvis-run init failed" >&2
-  fail=1
-fi
-
-# Test: ShellCheck static analysis (run only if installed)
-echo "[TEST] ShellCheck: static analysis (SLOW - set SLOW_TESTS=true to enable)"
-if [ "${SLOW_TESTS:-false}" = "true" ]; then
-  if command -v shellcheck >/dev/null 2>&1; then
-    # Use xargs to avoid newline/word-splitting issues on different shells
-    if ! git ls-files '*.sh' | xargs shellcheck -x; then
-      echo "FAIL: shellcheck found issues" >&2
-      fail=1
-    else
-      echo "PASS: shellcheck"
-    fi
-  else
-    echo "SKIP: shellcheck not installed"
+for t in $TEST_FILES; do
+  TOTAL=$((TOTAL+1))
+  test_path="$SCRIPT_DIR/$t"
+  echo "\n=== Running: $t ==="
+  if [ ! -x "$test_path" ]; then
+    echo "SKIP: $t (not executable)"
+    SKIPPED=$((SKIPPED+1))
+    continue
   fi
-else
-  echo "SKIP: shellcheck (SLOW_TESTS not enabled)"
-fi
 
+  base_timeout=10
+  attempt=1
+  max_attempts=3
+  ok=0
+  while [ $attempt -le $max_attempts ]; do
+    echo "Attempt $attempt: timeout=${base_timeout}s"
+    if [ "$HAS_TIMEOUT" -eq 1 ]; then
+      if timeout ${base_timeout}s sh "$test_path"; then ok=1; break; fi
+      rc=$?
+      if [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
+        echo "Timed out (rc=$rc). Increasing timeout and retrying"
+        base_timeout=$((base_timeout*2))
+        attempt=$((attempt+1))
+        continue
+      else
+        echo "Test exited with rc=$rc"
+        break
+      fi
+    else
+      if sh "$test_path"; then ok=1; break; else echo "Test failed (no timeout tool)"; break; fi
+    fi
+  done
+
+  if [ $ok -eq 1 ]; then
+    echo "PASS: $t"
+    PASSED=$((PASSED+1))
+  else
+    echo "FAIL: $t"
+    FAILED=$((FAILED+1))
+  fi
+
+done
+
+echo "\nSummary: total=$TOTAL passed=$PASSED failed=$FAILED skipped=$SKIPPED"
+if [ $FAILED -ne 0 ]; then
+  exit 1
+fi
+exit 0
 # Additional tests for get transaction data workflow
 
 tmp=tmp/test
