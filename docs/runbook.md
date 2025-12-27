@@ -83,7 +83,88 @@ suite; the test runner will skip network tests unless explicitly enabled.
   Google dork template and open it in the browser for manual enrichment.
 - Supports manual research for contact enrichment as described in the README.
 
+#### Documentation maintenance (update_readme)
+
+- A small maintenance helper `scripts/update_readme.sh` regenerates the
+  auto-generated sections in `README.md` (the *Project tree* and *Commands*
+  sections) and is safe to run locally with `./scripts/update_readme.sh --dry-run`.
+- A scheduled workflow `.github/workflows/update-readme.yml` runs weekly and on
+  pushes to `scripts/**`. The workflow runs the update script and opens an
+  automated pull request with any changes (uses
+  `peter-evans/create-pull-request@v5`).
+- Test: `tests/test_update_readme.sh` exercises `--dry-run` and asserts the
+  auto-generated markers exist. Add this to CI if you want to block PRs that
+  change scripts without updating docs.
+
+### Environment setup (local, staging, production)
+
+- Prerequisites (POSIX-like environment required; Cygwin or WSL on Windows):
+  - `sh`, `awk`, `sed`, `grep`, `curl`, `tar`, `sha1sum` (or `sha1`), `git`.
+  - Optional: `shellcheck` for linting, `nroff`/`groff` for manpage rendering.
+  - Recommended (Debian/Ubuntu): `sudo apt install curl coreutils git shellcheck`
+
+- Local quickstart (development):
+  1. Clone the repo and install prerequisites.
+  2. Copy `.env.example` to `.env` and set any overrides (e.g., `FETCH_TIMEOUT`).
+  3. Run `bin/elvis-run init` to validate the environment and prepare logs.
+  4. Run `bin/elvis-run get-transaction-data` (or run scripts individually).
+
+- Staging / production:
+  - Run the same commands on a lightweight POSIX host (a small Linux VM or
+    container). Use cron for scheduling or rely on GitHub Actions for
+    orchestration. Keep `.env` values as environment variables (do not commit).
+
+### CI / CD (operational workflows)
+
+```mermaid
+sequenceDiagram
+  participant Repo
+  participant Actions as GitHub Actions
+  participant Maintainer
+  Repo->>Actions: push to `scripts/**` or scheduled trigger
+  Actions->>Actions: run `./scripts/update_readme.sh`
+  Actions->>Repo: create PR with changes (create-pull-request)
+  Maintainer->>Repo: review & merge
+```
+
+### Troubleshooting & common issues
+
+- Robots.txt blocks: the fetcher honors `robots.txt` by default (`VERIFY_ROBOTS=true`).
+  If you see `ERROR: blocked by robots.txt` in logs, verify the route and
+  consider whether the route is safe to fetch; only disable verification after
+  appropriate review.
+- HTTP 403 or CAPTCHA: check `logs/network.log` for repeated 403 events. The
+  fetcher will rotate User-Agent and increase retries when `RETRY_ON_403=true`.
+  If you hit CAPTCHA or `recaptcha`, skip the route and log the event; do not
+  attempt automated solving.
+- Timeouts & retries: tune `FETCH_TIMEOUT` and `BACKOFF_SEQUENCE` in
+  `project.conf` or environment for flaky networks.
+- Debugging: set `LOG_LEVEL=DEBUG` and inspect `logs/log.txt` and
+  `logs/network.log` for request/response traces.
+- Re-run tests with network integration: set `REAL_TESTS=true` before running
+  `tests/run-tests.sh` to enable optional network tests.
+
+### Operations-relevant project layout
+
+- `project.conf` — canonical defaults (timeouts, backoff, UA rotation)
+- `scripts/` — orchestration and helpers (e.g., `fetch.sh`, `set_status.sh`)
+- `scripts/lib/` — reusable helpers (e.g., `http_utils.sh`)
+- `data/` — seeds and generated outputs (`data/calllists`)
+- `logs/` — runtime logs and `network.log` (network fetch traces)
+
+### Example operational commands
+
+- `bin/elvis-run get-transaction-data` — run fetch + parse workflow
+- `bin/elvis-run set-status` — validate and produce today's calllist
+- `bin/elvis-run end-sequence` — archive, cleanup and summarise
+
+### Notes
+
+- Keep `.env` out of version control (it is in `.gitignore`). Use environment
+  variables for secrets in CI.
+
 ### Error Handling
+
 
 - Missing or malformed seeds file: workflow aborts with a clear error.
 - Fetch failures: retried with exponential backoff, up to 3 times.
