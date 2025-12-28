@@ -1,0 +1,16 @@
+{
+  "editor.rulers": [
+    80
+  ],
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 80,
+  "editor.formatOnSave": true,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "prettier.requireConfig": true,
+  "shellcheck.customArgs": [
+    "-x"
+  ],
+  "markdownlint.configFile": ""
+}

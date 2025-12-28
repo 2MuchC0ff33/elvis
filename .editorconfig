@@ -1,15 +1,30 @@
-# .editorconfig
-
-# Top-most EditorConfig file
 root = true
 
 [*]
+charset = utf-8
+end_of_line = lf
 indent_style = space
 indent_size = 2
-end_of_line = lf
-charset = utf-8
-trim_trailing_whitespace = true
 insert_final_newline = true
+trim_trailing_whitespace = true
 
 [*.md]
-trim_trailing_whitespace = false
+max_line_length = 80
+
+[*.json]
+max_line_length = 80
+
+[*.txt]
+max_line_length = 80
+
+[*.rc]
+max_line_length = 80
+
+[*.awk]
+max_line_length = 80
+
+[*.sed]
+max_line_length = 80
+
+[*.sh]
+max_line_length = 80
