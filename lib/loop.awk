@@ -31,17 +31,17 @@ function trim(s) { gsub(/^\s+|\s+$/, "", s); return s }
 NR > 1 {
   block = $0
   # Only consider blocks that are normalJob
-  if (block !~ /data-automation\s*=\s*\"normalJob\"/) next
+  if (block !~ /data-automation\s*=\s*"normalJob"/) next
 
   comp = ""
   loc = ""
 
   # Extract company anchor content
-  if (match(block, /<a[^>]*data-automation\s*=\s*\"jobCompany\"[^>]*>[^<]*</)) {
+  if (match(block, /<a[^>]*data-automation\s*=\s*"jobCompany"[^>]*>[^<]*</)) {
     s = substr(block, RSTART, RLENGTH)
     gsub(/<[^>]*>/, "", s)
     comp = trim(decode(s))
-  } else if (match(block, /data-automation\s*=\s*\"jobCompany\"[^>]*>[^<]*</)) {
+  } else if (match(block, /data-automation\s*=\s*"jobCompany"[^>]*>[^<]*</)) {
     s = substr(block, RSTART, RLENGTH)
     gsub(/.*>/, "", s)
     gsub(/<.*/, "", s)
@@ -49,11 +49,11 @@ NR > 1 {
   }
 
   # Extract location anchor content
-  if (match(block, /<a[^>]*data-automation\s*=\s*\"jobLocation\"[^>]*>[^<]*</)) {
+  if (match(block, /<a[^>]*data-automation\s*=\s*"jobLocation"[^>]*>[^<]*</)) {
     s = substr(block, RSTART, RLENGTH)
     gsub(/<[^>]*>/, "", s)
     loc = trim(decode(s))
-  } else if (match(block, /data-automation\s*=\s*\"jobLocation\"[^>]*>[^<]*</)) {
+  } else if (match(block, /data-automation\s*=\s*"jobLocation"[^>]*>[^<]*</)) {
     s = substr(block, RSTART, RLENGTH)
     gsub(/.*>/, "", s)
     gsub(/<.*/, "", s)

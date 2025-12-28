@@ -1,0 +1,2 @@
+DEBUG: ROOT=/home/galloa/GitHub/work/elvis SRC_DIR=var/src
+DEBUG: curl -o var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html https://www.seek.com.au/fifo-jobs/in-All-Perth-WA

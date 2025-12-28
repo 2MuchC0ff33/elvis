@@ -18,13 +18,13 @@ TMP_DIR="var/tmp"
 VERIFY_ROBOTS="true"          # honour robots.txt
 UA_ROTATE="true"              # rotate user agents per request
 RETRY_ON_403="true"           # treat 403 specially with extra retries
-APPEND_HISTORY_DEFAULT="false"# default behaviour for appending to history
+APPEND_HISTORY_DEFAULT="false" # default behaviour for appending to history
 
 # Network / Rate limiting
-TIMEOUT="15"                  # curl --max-time (seconds)
+TIMEOUT="5"                   # curl --max-time (seconds) - reduced for faster CI/testing runs
 DELAY_MIN="1.2"               # min random delay between requests (seconds)
 DELAY_MAX="4.8"               # max random delay between requests (seconds)
-BACKOFF_SEQUENCE="5 20 60"    # exponential backoff sequence (seconds)
+BACKOFF_SEQUENCE="1 2 4"      # exponential backoff sequence (seconds) - shortened for testing
 MAX_RETRIES="3"               # total retries per URL (base)
 EXTRA_403_RETRIES="2"         # extra retries to add on 403 http code
 

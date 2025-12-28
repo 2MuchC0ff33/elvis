@@ -37,10 +37,7 @@ TMP_OUT="$(mktemp)"
 trap 'rm -f "$TMP_OUT"' EXIT
 
 # Normalize, validate and produce canonical rows: company|location
-awk -F '|' '
-function trim(s){gsub(/^\s+|\s+$/,"",s); return s}
-{company=trim($1); location=trim($2); if(company=="" || location=="") {printf("INVALID %s %s\n", $0, (company==""?"missing_company":"missing_location")) > "/dev/stderr"; next} print tolower(company) "|" company "|" location }
-' "$INPUT" > "$TMP_OUT"
+awk -F '|' -f "$ROOT/lib/normalize.awk" "$INPUT" > "$TMP_OUT"
 
 # TMP_OUT format: lc_company|Company|Location
 
@@ -51,14 +48,13 @@ if [ ! -f "$ROOT/$HISTORY_FILE" ]; then
 fi
 
 # Prepare set of existing history (lowercased)
-awk '{print tolower($0)}' "$ROOT/$HISTORY_FILE" | sort -u > "$TMP_OUT.history"
+awk -f "$ROOT/lib/history_lower.awk" "$ROOT/$HISTORY_FILE" | sort -u > "$TMP_OUT.history"
 
-# Filter out those present in history
-awk -F '|' 'BEGIN{OFS=FS} {if (!h[$1]++) {print}}' "$TMP_OUT" | awk -F '|' 'NR==FNR{h[$1]=1;next} !h[$1]{print $0}' "$TMP_OUT.history" - > "$TMP_OUT.new"
+# Filter out those present in history and de-duplicate while preserving first occurrences
+awk -F '|' -f "$ROOT/lib/filter_new.awk" "$TMP_OUT.history" "$TMP_OUT" > "$TMP_OUT.new"
 
-# Now de-dup in remaining rows by company name and pick first occurrences
-awk -F '|' '!seen[$1]++ {print $2 " | " $3}' "$TMP_OUT.new" > "$TMP_OUT.final"
-
+# Format final rows as 'Company | Location' and de-duplicate by lc-company
+awk -F '|' -f "$ROOT/lib/format_final.awk" "$TMP_OUT.new" > "$TMP_OUT.final"
 # Take up to OUTPUT_LIMIT rows
 head -n "$OUTPUT_LIMIT" "$TMP_OUT.final" > "$ROOT/$CALLLIST_FILE"
 

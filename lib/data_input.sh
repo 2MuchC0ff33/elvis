@@ -14,6 +14,9 @@ if [ -f "$ROOT/etc/elvisrc" ]; then
   . "$ROOT/etc/elvisrc"
 fi
 
+# Debug: print ROOT and SRC_DIR
+echo "DEBUG: ROOT=$ROOT SRC_DIR=$SRC_DIR" >&2
+
 URL="$1"
 if [ -z "$URL" ]; then
   echo "Usage: $0 <url>" >&2
@@ -32,12 +35,13 @@ log_network() {
 }
 
 safe_filename() {
-  # Convert URL to safe filename
-  echo "$1" | sed 's/[^A-Za-z0-9._-]/_/g' | cut -c1-200
+  # delegate safe filename creation to a small AWK script
+  echo "$1" | awk -f "$ROOT/lib/safe_filename.awk"
 }
 
 get_origin() {
-  echo "$1" | sed -n 's#\(https\?://[^/]*\).*#\1#p'
+  # delegate origin extraction to a small AWK script
+  echo "$1" | awk -f "$ROOT/lib/get_origin.awk"
 }
 
 choose_ua() {
@@ -79,15 +83,9 @@ random_delay() {
 }
 
 get_next_link() {
-  # Tries to find the Next page URL from HTML file passed as arg
+  # Delegates next-link extraction to a separate AWK script to satisfy the "AWK-first" and refactor rules.
   htmlfile="$1"
-  # Try aria-label="Next"
-  next=$(awk 'BEGIN{IGNORECASE=1} /aria-label=\"Next\"/ {gsub(/.*href=\"|\".*/,"",$0); if (match($0, /href=\"[^\"]+\"/)) {s=substr($0,RSTART,RLENGTH); gsub(/href=\"|\"/,"",s); print s; exit}}' "$htmlfile")
-  if [ -n "$next" ]; then printf "%s" "$next"; return 0; fi
-  # Try rel="next"
-  next=$(grep -i 'rel="next"' -m1 "$htmlfile" 2>/dev/null | sed -n 's/.*href="\([^"]*\)".*/\1/p')
-  if [ -n "$next" ]; then printf "%s" "$next"; return 0; fi
-  return 1
+  awk -f "$ROOT/lib/get_next.awk" "$htmlfile" | sed -n '1p'
 }
 
 # Start process
@@ -107,34 +105,45 @@ while :; do
   fi
   count_pages=$((count_pages + 1))
 
-  safe="$(safe_filename "$current")"
-  out="$ROOT/$SRC_DIR/${safe}.html"
+  # Determine safe output path (use AWK helper to sanitize URL)
+  safe=$(printf '%s' "$current" | awk -f "$ROOT/lib/safe_filename.awk")
+  out="$SRC_DIR/${safe}.html"
 
-  # Determine UA
+  # Determine UA (rotated per attempt)
   UA="$(choose_ua)"
 
-  # Retries with exponential backoff
-  attempt=0
-  extra403=0
+  # Debug: print output file and URL
+  echo "DEBUG: curl -o $out $current" >&2
+
+  # Prepare visited tracking to avoid infinite loops for this seed
+  visited_file="$ROOT/$TMP_DIR/visited_$$.txt"
+  touch "$visited_file"
+
+  # Retries with exponential backoff and proper HTTP status capture (single curl call per attempt)
+  attempt=1
   fetched=0
-  http_code=0
-  for backoff in $BACKOFF_SEQUENCE; do
-    attempt=$((attempt + 1))
-    # Adjust 403-specific retries
-    if [ "$RETRY_ON_403" = "true" ] && [ "$extra403" -gt 0 ]; then
-      : # use extra403 to influence loop termination
-    fi
-    # Fetch page
-    curl -sS -L --max-time "$TIMEOUT" -A "$UA" -o "$out" "$current"
-    http_code=$(curl -s -I -L --max-time "$TIMEOUT" -A "$UA" -o /dev/null -w '%{http_code}' "$current") || http_code=0
+  extra403_count=0
+  max_attempts="$MAX_RETRIES"
+
+  while [ "$attempt" -le "$max_attempts" ]; do
+    # choose UA per attempt (helps rotate on 403)
+    UA="$(choose_ua)"
+
+    # pick a backoff value for this attempt from BACKOFF_SEQUENCE (use last value if attempts exceed sequence length)
+    backoff=$(echo $BACKOFF_SEQUENCE | awk -v i="$attempt" '{n=split($0,a," "); if(i<=n) print a[i]; else print a[n]}')
+
+      # Single curl invocation that writes body to $out and prints HTTP code and effective_url to stdout which we capture
+    resp=$(curl -sS -L --max-time "$TIMEOUT" --connect-timeout "$TIMEOUT" -A "$UA" -w '%{http_code}|%{url_effective}' -o "$out" "$current" 2>>"$ROOT/var/log/curl_stderr.log" || echo "000|")
+    http_code=${resp%%|*}
+    eff_url=${resp#*|}
     size=$(wc -c < "$out" 2>/dev/null || echo 0)
     log_network "$current" "$attempt" "$http_code" "$size"
 
-    # CAPTCHA detection
+    # CAPTCHA detection - stop immediately if found
     if grep -iE "$CAPTCHA_PATTERNS" "$out" >/dev/null 2>&1; then
       log "WARN" "CAPTCHA detected on $current; skipping further attempts"
       fetched=0
-      break  # stop retries for this page
+      break
     fi
 
     case "$http_code" in
@@ -143,46 +152,87 @@ while :; do
         break
         ;;
       403)
-        # special handling for 403
-        if [ "$RETRY_ON_403" = "true" ]; then
-          if [ "$extra403" -lt "$EXTRA_403_RETRIES" ]; then
-            extra403=$((extra403 + 1))
-            sleep "$backoff"
-            continue
-          fi
+        if [ "$RETRY_ON_403" = "true" ] && [ "$extra403_count" -lt "$EXTRA_403_RETRIES" ]; then
+          extra403_count=$((extra403_count + 1))
+          log "INFO" "Received 403 on $current; rotating UA and retrying (extra403 #$extra403_count)"
+          attempt=$((attempt + 1))
+          sleep "$backoff"
+          continue
         fi
         ;;
+      000)
+        log "WARN" "Curl invocation failed (timeout or network) for $current on attempt $attempt"
+        ;;
       *)
-        # For other codes, continue retrying up to MAX_RETRIES
+        log "WARN" "Unexpected http_code=$http_code for $current on attempt $attempt"
         ;;
     esac
 
-    # sleep backoff before next attempt
-    sleep "$backoff"
+    attempt=$((attempt + 1))
+    # sleep backoff before next attempt unless this was the last attempt
+    if [ "$attempt" -le "$max_attempts" ]; then
+      sleep "$backoff"
+    fi
   done
 
   if [ "$fetched" -ne 1 ]; then
-    log "WARN" "Failed to fetch $current after $attempt attempts; skipping page"
-    # try to continue to next page if link exists
+    log "WARN" "Failed to fetch $current after $((attempt-1)) attempts; skipping page"
   else
-    # parse content with AWK-first parser; loop.aw produces 'Company Name | Location' lines to stdout
-    # We also use sed fallback if AWK emits nothing for the page
-    "$ROOT/lib/loop.aw" "$out" || :
-    # If AWK emitted nothing, try sed fallback
-    if ! "$ROOT/lib/loop.aw" "$out" | grep -q .; then
-      sed -n -f "$ROOT/lib/pattern_matching.sed" "$out" || :
+    # SED-first extraction: produce COMPANY:/LOCATION: lines then pair with AWK
+    tmp_sed="$ROOT/$TMP_DIR/sed_$$.txt"
+    sed -n -f "$ROOT/lib/extract_jobs.sed" "$out" > "$tmp_sed" || :
+
+    # Pair COMPANY and LOCATION into rows
+    tmp_parsed="$ROOT/$TMP_DIR/parsed_$$.txt"
+    awk -f "$ROOT/lib/pair_sed.awk" "$tmp_sed" > "$tmp_parsed" || :
+
+    # If we found rows, emit them; else fallback to AWK parser
+    if [ -s "$tmp_parsed" ]; then
+      cat "$tmp_parsed"
+    else
+      # Fallback to AWK-first parser
+      awk -f "$ROOT/lib/loop.awk" "$out" || :
+      # second fallback: sed pattern_matching
+      if ! awk -f "$ROOT/lib/loop.awk" "$out" | grep -q .; then
+        sed -n -f "$ROOT/lib/pattern_matching.sed" "$out" || :
+      fi
     fi
+
+    rm -f "$tmp_sed" "$tmp_parsed"
   fi
 
   # find next page link
   if next_href="$(get_next_link "$out")"; then
     # resolve relative URLs
     if echo "$next_href" | grep -qE '^https?://'; then
-      current="$next_href"
+      new_url="$next_href"
     else
       origin="$(get_origin "$seed")"
-      current="$origin$(printf '%s' "$next_href" | sed 's/^\/*/\//')"
+      relpath=$(printf '%s' "$next_href" | awk -f "$ROOT/lib/normalize_relpath.awk")
+      new_url="$origin$relpath"
     fi
+
+    # Avoid loops: if new_url equals current or we've already visited it, stop
+    if [ "$new_url" = "$current" ]; then
+      log "WARN" "Next page equals current ($current); stopping to avoid loop"
+      break
+    fi
+    if grep -Fxq "$new_url" "$visited_file" 2>/dev/null; then
+      log "WARN" "Next page $new_url already visited for $seed; stopping to avoid loop"
+      break
+    fi
+
+    # If next points to origin root (no useful pagination), stop
+    origin_root="$(get_origin "$seed")/"
+    case "$new_url" in
+      "$origin_root"|"$origin_root"*)
+        log "WARN" "Next page resolves to origin root ($new_url); stopping to avoid irrelevant pages"
+        break
+        ;;
+    esac
+
+    current="$new_url"
+    echo "$current" >> "$visited_file"
     log "INFO" "Next page discovered for $seed -> $current"
     # respect randomized delay between pages
     random_delay

@@ -18,6 +18,13 @@ Running
 
   bin/elvis.sh --append-history
 
+- Validation: the main run validates `home/calllist.txt` after generation. A
+  failing validation will invoke `lib/default_handler.sh` and exit non-zero.
+
+- To run the validator standalone:
+
+  lib/validate_calllist.sh
+
 Notes
 
 - Uses POSIX utilities only: curl, awk, sed, grep, sort, uniq, tr, date, printf.

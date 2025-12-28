@@ -1,11 +1,6 @@
 #!/bin/sh
 # shellcheck disable=SC2046
-  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
 
-# Correct quoting to prevent word splitting
-  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
-
-  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
 
 # Main orchestrator for elvis scraper
 # - Sources etc/elvisrc for configuration
@@ -93,7 +88,8 @@ while IFS= read -r url; do
     log "WARN" "data_input.sh exited non-zero for $url"
   fi
   # Serialisation: respect daylight, small randomized pause between seeds
-  sleep_time=$(awk -v min="$DELAY_MIN" -v max="$DELAY_MAX" 'BEGIN {srand(); printf "%.3f", min + rand()*(max-min)}')
+  # Use standalone AWK script for random delay (migrated inline AWK -> lib/random_delay.awk)
+  sleep_time=$(awk -v min="$DELAY_MIN" -v max="$DELAY_MAX" -f "$ROOT/lib/random_delay.awk")
   log "INFO" "Sleeping ${sleep_time}s between seeds"
   sleep "$sleep_time"
 
@@ -107,6 +103,16 @@ if [ -s "$AGG" ]; then
   if [ $rc -ne 0 ]; then
     log "ERROR" "processor.sh failed with code $rc"
     "$ROOT/lib/default_handler.sh" --note "processor_failed"
+  else
+    # Validate the produced calllist to ensure it meets format and uniqueness rules
+    # On validation failure, invoke default handler and exit with non-zero to signal failure
+    if sh "$ROOT/lib/validate_calllist.sh" >/dev/null 2>&1; then
+      log "INFO" "calllist validation passed for $CALLLIST_FILE"
+    else
+      log "ERROR" "calllist validation failed for $CALLLIST_FILE; invoking default handler"
+      "$ROOT/lib/default_handler.sh" --note "validation_failed"
+      exit 2
+    fi
   fi
 else
   log "WARN" "No candidate rows were produced; invoking default handler"
