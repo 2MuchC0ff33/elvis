@@ -1,4 +1,12 @@
 #!/bin/sh
+# shellcheck disable=SC2046
+  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
+
+# Correct quoting to prevent word splitting
+  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
+
+  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
+
 # Main orchestrator for elvis scraper
 # - Sources etc/elvisrc for configuration
 # - Iterates seed URLs and feeds them through the fetch -> parse -> process pipeline
@@ -8,7 +16,14 @@ set -eu
 
 # Resolve project root reliably (dir containing bin/)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-. "$ROOT/etc/elvisrc"
+ELVISRC="$ROOT/etc/elvisrc"
+if [ -f "$ELVISRC" ]; then
+  # shellcheck source=/dev/null
+  . "$ELVISRC"
+else
+  echo "Configuration file $ELVISRC not found" >&2
+  exit 1
+fi
 
 # Ensure directories exist
 mkdir -p "$ROOT/$LOG_DIR" "$ROOT/$SRC_DIR" "$ROOT/$SPOOL_DIR" "$ROOT/$TMP_DIR" "$ROOT/home"
@@ -19,18 +34,13 @@ log() {
   printf "%s %s\n" "$ts" "$*" >> "$ROOT/$LOG_FILE"
 }
 
-log_network() {
-  # TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES
-  ts="$(date +"$LOG_TIME_FORMAT")"
-  printf "%s\t%s\t%s\t%s\t%s\n" "$ts" "$1" "$2" "$3" "$4" >> "$ROOT/$LOG_FILE"
-}
 
 rotate_logs_if_needed() {
   # Simple weekly rotation based on file age
   if [ -f "$ROOT/$LOG_FILE" ]; then
     # age in days
-    age=$(expr "$(date +%s)" - "$(stat -c %Y "$ROOT/$LOG_FILE")") || age=0
-    age_days=$(expr $age / 86400)
+    age=$(( $(date +%s) - $(stat -c %Y "$ROOT/$LOG_FILE") ))
+    age_days=$(( age / 86400 ))
     if [ "$age_days" -ge "$LOG_ROTATE_DAYS" ]; then
       mv "$ROOT/$LOG_FILE" "$ROOT/$LOG_FILE.$(date +%Y%m%d)"
       touch "$ROOT/$LOG_FILE"

@@ -4,7 +4,10 @@
 
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-. "$ROOT/etc/elvisrc"
+# shellcheck source=../etc/elvisrc
+if [ -f "$ROOT/etc/elvisrc" ]; then
+  . "$ROOT/etc/elvisrc"
+fi
 
 NOTE="no_matches"
 if [ "$#" -gt 0 ]; then

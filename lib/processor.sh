@@ -9,7 +9,13 @@
 
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-. "$ROOT/etc/elvisrc"
+ELVISRC="$ROOT/etc/elvisrc"
+if [ -f "$ELVISRC" ]; then
+  # shellcheck source=/dev/null
+  . "$ELVISRC"
+else
+  echo "Warning: $ELVISRC not found, continuing without sourcing." >&2
+fi
 
 INPUT=""
 APPEND_HISTORY="false"

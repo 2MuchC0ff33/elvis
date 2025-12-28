@@ -1,3 +1,5 @@
+#!/bin/sh
+# shellcheck disable=SC2034
 # elvisrc - configuration for the elvis scraper
 # All configuration values live here (no other files should contain configuration data).
 

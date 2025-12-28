@@ -9,7 +9,10 @@
 
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-. "$ROOT/etc/elvisrc"
+# shellcheck source=/dev/null
+if [ -f "$ROOT/etc/elvisrc" ]; then
+  . "$ROOT/etc/elvisrc"
+fi
 
 URL="$1"
 if [ -z "$URL" ]; then
@@ -49,7 +52,7 @@ choose_ua() {
     return
   fi
   epoch=$(date +%s)
-  idx=$(expr $epoch % $lines + 1)
+  idx=$((epoch % lines + 1))
   sed -n "${idx}p" "$ROOT/$UA_FILE" | head -n 1
 }
 
@@ -102,7 +105,7 @@ while :; do
     log "WARN" "Reached PAGINATION_MAX_PAGES for $seed; stopping to avoid loops"
     break
   fi
-  count_pages=$(expr $count_pages + 1)
+  count_pages=$((count_pages + 1))
 
   safe="$(safe_filename "$current")"
   out="$ROOT/$SRC_DIR/${safe}.html"
@@ -116,14 +119,14 @@ while :; do
   fetched=0
   http_code=0
   for backoff in $BACKOFF_SEQUENCE; do
-    attempt=$(expr $attempt + 1)
+    attempt=$((attempt + 1))
     # Adjust 403-specific retries
     if [ "$RETRY_ON_403" = "true" ] && [ "$extra403" -gt 0 ]; then
       : # use extra403 to influence loop termination
     fi
     # Fetch page
     curl -sS -L --max-time "$TIMEOUT" -A "$UA" -o "$out" "$current"
-    http_code=$(printf "$(curl -s -I -L --max-time "$TIMEOUT" -A "$UA" -o /dev/null -w '%{http_code}' "$current")") || http_code=0
+    http_code=$(curl -s -I -L --max-time "$TIMEOUT" -A "$UA" -o /dev/null -w '%{http_code}' "$current") || http_code=0
     size=$(wc -c < "$out" 2>/dev/null || echo 0)
     log_network "$current" "$attempt" "$http_code" "$size"
 
@@ -143,7 +146,7 @@ while :; do
         # special handling for 403
         if [ "$RETRY_ON_403" = "true" ]; then
           if [ "$extra403" -lt "$EXTRA_403_RETRIES" ]; then
-            extra403=$(expr $extra403 + 1)
+            extra403=$((extra403 + 1))
             sleep "$backoff"
             continue
           fi
@@ -164,9 +167,9 @@ while :; do
   else
     # parse content with AWK-first parser; loop.aw produces 'Company Name | Location' lines to stdout
     # We also use sed fallback if AWK emits nothing for the page
-    $ROOT/lib/loop.aw "$out" || :
+    "$ROOT/lib/loop.aw" "$out" || :
     # If AWK emitted nothing, try sed fallback
-    if ! $ROOT/lib/loop.aw "$out" | grep -q .; then
+    if ! "$ROOT/lib/loop.aw" "$out" | grep -q .; then
       sed -n -f "$ROOT/lib/pattern_matching.sed" "$out" || :
     fi
   fi

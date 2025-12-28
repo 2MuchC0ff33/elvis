@@ -1,3 +1,4 @@
+#!/usr/bin/sed -f
 # pattern_matching.sed - sed-based fallback extractor
 # Reads HTML from stdin or file and emits lines: Company Name | Location
 # Uses stable automation attributes: data-automation="jobCompany" and data-automation="jobLocation"
