@@ -1,0 +1,2 @@
+# company history - used for case-insensitive deduplication
+# One company name per line (preserve preferred casing). This file may be appended to by the processor.

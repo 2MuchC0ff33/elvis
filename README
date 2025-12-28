@@ -23,11 +23,11 @@ Data-Driven Programming Workflow (ASCII Art Representation)
 
 Stages Overview:
 
-1. Data Input: Receive structured data streams.
-2. Pattern Matching: Match conditions (e.g., via regex in AWK/sed).
-3. Action Execution: Perform processing (e.g., filter, sum, email alert).
-4. Default Action: Handle unmatched cases (e.g., print or error).
-5. Loop: Repeat for each input element (main loop in languages like AWK).
+1. **Data Input**: Receive structured data streams using `sh`. Using commands like `curl` (fetch data from URLs), `cat` (read/concatenate files), `dd` (convert/copy streams), or `tee` (duplicate input).
+2. **Pattern Matching**: Match conditions with tools like `awk` (pattern scanning/processing), `sed` (stream editing/matching), or `grep` (search patterns).
+3. **Action Execution**: Perform processing via `sh` (execute shell scripts), `xargs` (invoke utilities with arguments), or file operations like `cp`, `mv`, `rm`.
+4. **Default Action**: Handle unmatched cases using `sh` (fallback scripts), `sed` (default print), or `echo` (output messages).
+5. **Loop**: Repeat for each input element with `awk`'s built-in line-by-line loop, `sh` (while/for loops), or `xargs` (iterative processing).
 
 ### Sources
 
