@@ -120,7 +120,7 @@ else
 fi
 
 # Final summary
-count=$(awk -F '|' 'NF>=2 {print}' "$AGG" | wc -l)
+count=$(awk -f "$ROOT/lib/count_rows.awk" "$AGG")
 log "INFO" "Run completed; rows_aggregated=$count"
 
 exit 0

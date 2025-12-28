@@ -181,3 +181,90 @@
 2025-12-28T15:30:16+0800 INFO Sleeping 3.114s between seeds
 2025-12-28T15:30:20+0800 INFO calllist validation passed for home/calllist.txt
 2025-12-28T15:30:20+0800 INFO Run completed; rows_aggregated=20
+2025-12-28T15:32:23+0800 INFO Run started
+2025-12-28T15:32:23+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:32:27+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567200
+2025-12-28T15:32:29+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:32:33+0800	https://www.seek.com.au	1	200	286932
+2025-12-28T15:32:34+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:32:34+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:32:34+0800 INFO Sleeping 2.851s between seeds
+2025-12-28T15:32:38+0800 INFO calllist validation passed for home/calllist.txt
+2025-12-28T15:32:39+0800 INFO Run completed; rows_aggregated=20
+2025-12-28T15:39:47+0800 INFO Run started
+2025-12-28T15:39:47+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:39:50+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567040
+2025-12-28T15:39:52+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:39:57+0800	https://www.seek.com.au	1	200	286939
+2025-12-28T15:39:58+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:39:58+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:39:58+0800 INFO Sleeping 1.433s between seeds
+2025-12-28T15:40:00+0800 Default handler: --note
+2025-12-28T15:40:01+0800 ERROR calllist validation failed for home/calllist.txt; invoking default handler
+2025-12-28T15:40:01+0800 Default handler: --note
+2025-12-28T15:40:30+0800 Default handler: --note
+2025-12-28T15:41:24+0800 Default handler: --note
+2025-12-28T15:41:31+0800 INFO Run started
+2025-12-28T15:41:31+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:41:33+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567159
+2025-12-28T15:41:34+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:41:38+0800	https://www.seek.com.au	1	200	286598
+2025-12-28T15:41:38+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:41:39+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:41:39+0800 INFO Sleeping 2.528s between seeds
+2025-12-28T15:41:42+0800 Default handler: --note
+2025-12-28T15:41:42+0800 ERROR calllist validation failed for home/calllist.txt; invoking default handler
+2025-12-28T15:41:43+0800 Default handler: --note
+2025-12-28T15:43:47+0800 INFO Run started
+2025-12-28T15:43:47+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:43:50+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	566931
+2025-12-28T15:43:51+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:43:54+0800	https://www.seek.com.au	1	200	286945
+2025-12-28T15:43:54+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:43:54+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:43:55+0800 INFO Sleeping 4.308s between seeds
+2025-12-28T15:44:00+0800 INFO calllist validation passed for home/calllist.txt
+2025-12-28T15:44:00+0800 INFO Run completed; rows_aggregated=20
+2025-12-28T15:45:13+0800 INFO Run started
+2025-12-28T15:45:13+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:45:16+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567177
+2025-12-28T15:45:17+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:45:23+0800	https://www.seek.com.au	1	200	286713
+2025-12-28T15:45:25+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:45:25+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:45:25+0800 INFO Sleeping 3.862s between seeds
+2025-12-28T15:45:30+0800 Default handler: --note
+2025-12-28T15:45:31+0800 ERROR calllist validation failed for home/calllist.txt; invoking default handler
+2025-12-28T15:45:31+0800 Default handler: --note
+2025-12-28T15:45:56+0800 INFO Run started
+2025-12-28T15:45:56+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:45:59+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567310
+2025-12-28T15:46:00+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:46:07+0800	https://www.seek.com.au	1	200	286885
+2025-12-28T15:46:07+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:46:08+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:46:08+0800 INFO Sleeping 3.857s between seeds
+2025-12-28T15:46:13+0800 INFO calllist validation passed for home/calllist.txt
+2025-12-28T15:46:13+0800 INFO Run completed; rows_aggregated=20
+2025-12-28T15:47:24+0800 INFO Updated srv/company_history.txt; patch written to /home/galloa/GitHub/work/elvis/var/spool/company_history-20251228T154724.patch
+2025-12-28T15:47:37+0800 INFO Updated srv/company_history.txt; patch written to /home/galloa/GitHub/work/elvis/var/spool/company_history-20251228T154737.patch
+2025-12-28T15:48:14+0800 INFO Run started
+2025-12-28T15:48:14+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:48:16+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567159
+2025-12-28T15:48:17+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:48:23+0800	https://www.seek.com.au	1	200	286751
+2025-12-28T15:48:24+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:48:24+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:48:24+0800 INFO Sleeping 3.542s between seeds
+2025-12-28T15:48:28+0800 INFO calllist validation passed for home/calllist.txt
+2025-12-28T15:48:28+0800 INFO Run completed; rows_aggregated=20
+2025-12-28T15:49:00+0800 INFO Run started
+2025-12-28T15:49:00+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:49:02+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	567132
+2025-12-28T15:49:03+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+2025-12-28T15:49:07+0800	https://www.seek.com.au	1	200	286850
+2025-12-28T15:49:08+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-28T15:49:08+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-28T15:49:08+0800 INFO Sleeping 2.654s between seeds
+2025-12-28T15:49:12+0800 INFO calllist validation passed for home/calllist.txt
+2025-12-28T15:49:12+0800 INFO Run completed; rows_aggregated=20
