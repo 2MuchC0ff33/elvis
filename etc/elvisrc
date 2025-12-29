@@ -12,7 +12,7 @@ LOG_FILE="var/log/elvis.log"
 LOG_DIR="var/log"
 SRC_DIR="var/src"
 SPOOL_DIR="var/spool"
-TMP_DIR="var/tmp"
+TMP_DIR="tmp"
 
 # Behaviour toggles
 VERIFY_ROBOTS="true"          # honour robots.txt

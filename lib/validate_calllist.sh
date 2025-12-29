@@ -22,14 +22,14 @@ if [ "$bad_lines" != "0" ]; then
 fi
 
 # ensure companies and locations are non-empty and clean using standalone AWK module
-awk -f "$ROOT/lib/check_empty_clean.awk" "$CALLLIST" | if read -r x; then
+awk -f "$ROOT/lib/check_empty_clean.awk" "$CALLLIST" | if read -r _; then
   echo "FAIL: empty company or location on lines:" >&2
   awk -f "$ROOT/lib/check_empty_clean.awk" "$CALLLIST" >&2
   exit 4
 fi
 
 # check for trailing angle brackets or control chars using standalone AWK module
-awk -f "$ROOT/lib/check_trailing_chars.awk" "$CALLLIST" | if read -r x; then
+awk -f "$ROOT/lib/check_trailing_chars.awk" "$CALLLIST" | if read -r _; then
   echo "FAIL: trailing control chars or angle brackets present" >&2
   awk -f "$ROOT/lib/check_trailing_chars.awk" "$CALLLIST" >&2
   exit 5
