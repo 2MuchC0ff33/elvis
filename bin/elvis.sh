@@ -70,7 +70,11 @@ done < "$ROOT/$URLS_FILE"
 
 if [ -s "$AGG" ]; then
   # Suppress processor.sh output except errors
-  proc_output="$("$ROOT/lib/processor.sh" --input "$AGG" --append-history "$APPEND_HISTORY" 2>&1 > /dev/null)"
+  if [ "$APPEND_HISTORY" = "true" ]; then
+    proc_output="$("$ROOT/lib/processor.sh" --input "$AGG" --append-history 2>&1 > /dev/null)"
+  else
+    proc_output="$("$ROOT/lib/processor.sh" --input "$AGG" 2>&1 > /dev/null)"
+  fi
   rc=$?
   if [ $rc -ne 0 ]; then
     "$ROOT/lib/log.sh" "$ROOT" "$LOG_FILE" "$LOG_TIME_FORMAT" "ERROR processor.sh failed with code $rc: $proc_output"
@@ -78,7 +82,9 @@ if [ -s "$AGG" ]; then
   else
     # Validate the produced calllist to ensure it meets format and uniqueness rules
     if [ -s "$ROOT/$CALLLIST_FILE" ]; then
-      val_output="$(sh "$ROOT/lib/validate_calllist.sh" 2>&1)"
+      script_path="$ROOT/lib/validate_calllist.sh"
+      calllist_path="$ROOT/$CALLLIST_FILE"
+      val_output="$(env ROOT="$ROOT" CALLLIST="$calllist_path" sh "$script_path" 2>&1)"
       val_rc=$?
       if [ $val_rc -eq 0 ]; then
         "$ROOT/lib/log.sh" "$ROOT" "$LOG_FILE" "$LOG_TIME_FORMAT" "INFO calllist validation passed for $CALLLIST_FILE"

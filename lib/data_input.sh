@@ -117,21 +117,29 @@ while :; do
   fi
   count_pages=$((count_pages + 1))
 
+  # Ensure output directory exists
+  mkdir -p "$ROOT/$SRC_DIR"
+  echo "DEBUG: After mkdir -p, SRC_DIR=$SRC_DIR, ROOT=$ROOT, full path=$ROOT/$SRC_DIR" >&2
+  ls -ld "$ROOT/$SRC_DIR" >&2
   # Determine safe output path (use AWK helper to sanitize URL)
-  safe=$(printf '%s' "$current" | awk -f "$ROOT/lib/safe_filename.awk")
-  # If the output file already exists, append a timestamp to avoid overwriting
-  out="$ROOT/$SRC_DIR/${safe}.html"
+  safe=$(printf '%s' "$current" | md5sum | awk '{print $1}')
+  echo "DEBUG: Final safe filename (md5): $safe" >&2
+  # If the output file already exists, append a timestamp to avoid overwriting (use relative paths)
+  out="$SRC_DIR/${safe}.html"
+  printf 'DEBUG: Output path: %s\n' "$out" >&2
   if [ -f "$out" ]; then
     ts=$(date +%Y%m%d%H%M%S)
-    out="$ROOT/$SRC_DIR/${safe}_$ts.html"
+    out="$SRC_DIR/${safe}_$ts.html"
   fi
-  echo "INFO: Saving HTML to $out" >&2
+  # Use a temporary file for curl output to avoid partial writes being read
+  tmp_out="${out}.part"
+  echo "INFO: Saving HTML to $out (temporary $tmp_out)" >&2
 
   # Determine UA (rotated per attempt)
   UA="$(choose_ua)"
 
   # Debug: print output file and URL
-  echo "DEBUG: curl -o $out $current" >&2
+  echo "DEBUG: curl -o $tmp_out $current" >&2
 
   # Prepare visited tracking to avoid infinite loops for this seed
   visited_file="$ROOT/$TMP_DIR/visited_$$.txt"
@@ -150,11 +158,18 @@ while :; do
     # pick a backoff value for this attempt from BACKOFF_SEQUENCE (use last value if attempts exceed sequence length)
     backoff=$(echo "$BACKOFF_SEQUENCE" | awk -v i="$attempt" -f "$ROOT/lib/backoff.awk")
 
-      # Single curl invocation that writes body to $out and prints HTTP code and effective_url to stdout which we capture
-    resp=$(curl -sS -L --max-time "$TIMEOUT" --connect-timeout "$TIMEOUT" -A "$UA" -w '%{http_code}|%{url_effective}' -o "$out" "$current" 2>>"$ROOT/var/log/curl_stderr.log" || echo "000|")
+    # Single curl invocation that writes body to $out and prints HTTP code and effective_url to stdout which we capture
+    # Write to a temp file and move into place to avoid partial reads
+    resp=$(curl -sS -L --max-time "$TIMEOUT" --connect-timeout "$TIMEOUT" -A "$UA" -w '%{http_code}|%{url_effective}' -o "$tmp_out" "$current" 2>>"$ROOT/var/log/curl_stderr.log" || echo "000|")
     http_code=${resp%%|*}
     # eff_url is not used, so we omit assignment to avoid SC2034
-    size=$(wc -c < "$out" 2>/dev/null || echo 0)
+    if [ -f "$tmp_out" ]; then
+      size=$(wc -c < "$tmp_out" 2>/dev/null || echo 0)
+      # Move into place (atomic on same filesystem)
+      mv "$tmp_out" "$out" || :
+    else
+      size=0
+    fi
     log_network "$current" "$attempt" "$http_code" "$size"
 
     # CAPTCHA detection - stop immediately if found
