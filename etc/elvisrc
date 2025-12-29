@@ -6,7 +6,7 @@
 # Files / Paths (relative to project root)
 URLS_FILE="srv/urls.txt"
 UA_FILE="srv/ua.txt"
-HISTORY="srv/company_history.txt"
+HISTORY_FILE="srv/company_history.txt"
 CALLLIST_FILE="home/calllist.txt"
 LOG_FILE="var/log/elvis.log"
 LOG_DIR="var/log"
