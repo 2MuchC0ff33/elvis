@@ -26,7 +26,7 @@ mkdir -p "$ROOT/$LOG_DIR" "$ROOT/$SRC_DIR" "$ROOT/$SPOOL_DIR" "$ROOT/$TMP_DIR" "
 
 
 
-APPEND_HISTORY="$APPEND_HISTORY_DEFAULT"
+APPEND_HISTORY="true"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --append-history) APPEND_HISTORY="true" ; shift ;;
@@ -39,9 +39,6 @@ done
 "$ROOT/lib/rotate_logs.sh" "$ROOT" "$LOG_FILE" "$LOG_ROTATE_DAYS"
 # Log run start
 "$ROOT/lib/log.sh" "$ROOT" "$LOG_FILE" "$LOG_TIME_FORMAT" "INFO Run started"
-
-rotate_logs_if_needed
-log "INFO" "Run started"
 
 if [ ! -s "$ROOT/$URLS_FILE" ]; then
   "$ROOT/lib/log.sh" "$ROOT" "$LOG_FILE" "$LOG_TIME_FORMAT" "WARN No seed URLs found in $URLS_FILE"
