@@ -4,3 +4,6 @@ curl: (23) client returned ERROR on write of 1054 bytes
 curl: (23) client returned ERROR on write of 1050 bytes
 curl: (23) client returned ERROR on write of 34 bytes
 curl: (23) client returned ERROR on write of 34 bytes
+curl: (23) client returned ERROR on write of 34 bytes
+curl: (23) client returned ERROR on write of 1054 bytes
+curl: (23) client returned ERROR on write of 1050 bytes

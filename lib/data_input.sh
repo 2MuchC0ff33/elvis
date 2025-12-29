@@ -119,7 +119,13 @@ while :; do
 
   # Determine safe output path (use AWK helper to sanitize URL)
   safe=$(printf '%s' "$current" | awk -f "$ROOT/lib/safe_filename.awk")
+  # If the output file already exists, append a timestamp to avoid overwriting
   out="$ROOT/$SRC_DIR/${safe}.html"
+  if [ -f "$out" ]; then
+    ts=$(date +%Y%m%d%H%M%S)
+    out="$ROOT/$SRC_DIR/${safe}_$ts.html"
+  fi
+  echo "INFO: Saving HTML to $out" >&2
 
   # Determine UA (rotated per attempt)
   UA="$(choose_ua)"
