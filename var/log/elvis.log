@@ -23,3 +23,33 @@ awk: /home/galloa/GitHub/work/elvis/lib/get_next.awk:5: fatal: cannot open file 
 2025-12-29T17:05:53+0800 WARN No candidate rows were produced; invoking default handler
 2025-12-29T17:05:54+0800 Default handler: --note
 2025-12-29T17:05:54+0800 INFO Run completed; rows_aggregated=0
+2025-12-29T17:06:45+0800 INFO Run started
+2025-12-29T17:06:45+0800 INFO Processing seed https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+DEBUG: curl -o /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+/home/galloa/GitHub/work/elvis/lib/data_input.sh: line 151: /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html: No such file or directory
+2025-12-29T17:06:50+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	0
+sed: can't read /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/loop.awk:14: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html' for reading: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/loop.awk:14: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html' for reading: No such file or directory
+sed: can't read /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/get_next.awk:5: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au_fifo-jobs_in-All-Perth-WA.html' for reading: No such file or directory
+2025-12-29T17:06:52+0800 INFO Next page discovered for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA -> https://www.seek.com.au
+DEBUG: curl -o /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html https://www.seek.com.au
+/home/galloa/GitHub/work/elvis/lib/data_input.sh: line 151: /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html: No such file or directory
+2025-12-29T17:06:56+0800	https://www.seek.com.au	1	200	0
+sed: can't read /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/loop.awk:14: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html' for reading: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/loop.awk:14: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html' for reading: No such file or directory
+sed: can't read /home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html: No such file or directory
+awk: /home/galloa/GitHub/work/elvis/lib/get_next.awk:5: fatal: cannot open file `/home/galloa/GitHub/work/elvis/var/src/https___www.seek.com.au.html' for reading: No such file or directory
+2025-12-29T17:06:58+0800 WARN Next page equals current (https://www.seek.com.au); stopping to avoid loop
+2025-12-29T17:06:58+0800 INFO data_input.sh succeeded for https://www.seek.com.au/fifo-jobs/in-All-Perth-WA
+2025-12-29T17:06:58+0800 INFO Sleeping 2.596s between seeds
+2025-12-29T17:07:01+0800 WARN No candidate rows were produced; invoking default handler
+2025-12-29T17:07:01+0800 Default handler: --note
+2025-12-29T17:07:01+0800 INFO Run completed; rows_aggregated=0
+2025-12-29T17:09:34+0800 INFO Updated srv/company_history.txt; patch written to /home/galloa/GitHub/work/elvis/var/spool/company_history-20251229T170934.patch
+2025-12-29T17:09:55+0800 Default handler: --note
+2025-12-29T17:10:07+0800 INFO Updated srv/company_history.txt; patch written to /home/galloa/GitHub/work/elvis/var/spool/company_history-20251229T171007.patch
+2025-12-29T17:11:10+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	0
+2025-12-29T17:11:19+0800	https://www.seek.com.au/fifo-jobs/in-All-Perth-WA	1	200	0
