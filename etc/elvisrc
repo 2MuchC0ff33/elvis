@@ -31,7 +31,7 @@ EXTRA_403_RETRIES="2"         # extra retries to add on 403 http code
 # Parsing / Pagination
 PAGE_NEXT_MARKER='aria-label="Next"'   # what to look for to detect "Next" control
 PAGINATION_MAX_PAGES="100"             # safety cap to avoid infinite loops
-OUTPUT_LIMIT="5"                       # final number of companies to output
+OUTPUT_LIMIT=""                       # final number of companies to output
 
 # CAPTCHA detection (case-insensitive regex)
 CAPTCHA_PATTERNS='captcha|recaptcha|g-recaptcha'

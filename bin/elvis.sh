@@ -81,8 +81,8 @@ AGG="$ROOT/$SPOOL_DIR/aggregated_rows.txt"
 while IFS= read -r url; do
   [ -z "$url" ] && continue
   log "INFO" "Processing seed $url"
-  # data_input.sh writes stable company|location lines to stdout
-  if "$ROOT/lib/data_input.sh" "$url" >> "$AGG"; then
+  # Suppress direct output from data_input.sh
+  if "$ROOT/lib/data_input.sh" "$url" >> "$AGG" 2>>"$ROOT/$LOG_FILE"; then
     log "INFO" "data_input.sh succeeded for $url"
   else
     log "WARN" "data_input.sh exited non-zero for $url"
@@ -97,21 +97,28 @@ done < "$ROOT/$URLS_FILE"
 
 # Pass aggregated rows to processor
 if [ -s "$AGG" ]; then
-  # run processor to validate, dedupe, and write $CALLLIST_FILE
-  "$ROOT/lib/processor.sh" --input "$AGG" $( [ "$APPEND_HISTORY" = "true" ] && printf -- "--append-history" )
+  # Suppress processor.sh output except errors
+  proc_output="$("$ROOT/lib/processor.sh" --input "$AGG" --append-history "$APPEND_HISTORY" 2>&1 > /dev/null)"
   rc=$?
   if [ $rc -ne 0 ]; then
-    log "ERROR" "processor.sh failed with code $rc"
+    log "ERROR" "processor.sh failed with code $rc: $proc_output"
     "$ROOT/lib/default_handler.sh" --note "processor_failed"
   else
     # Validate the produced calllist to ensure it meets format and uniqueness rules
-    # On validation failure, invoke default handler and exit with non-zero to signal failure
-    if sh "$ROOT/lib/validate_calllist.sh" >/dev/null 2>&1; then
-      log "INFO" "calllist validation passed for $CALLLIST_FILE"
+    if [ -s "$ROOT/$CALLLIST_FILE" ]; then
+      val_output="$(sh "$ROOT/lib/validate_calllist.sh" 2>&1)"
+      val_rc=$?
+      if [ $val_rc -eq 0 ]; then
+        log "INFO" "calllist validation passed for $CALLLIST_FILE"
+      else
+        log "ERROR" "calllist validation failed: $val_output"
+        "$ROOT/lib/default_handler.sh" --note "validation_failed"
+        exit $val_rc
+      fi
     else
-      log "ERROR" "calllist validation failed for $CALLLIST_FILE; invoking default handler"
-      "$ROOT/lib/default_handler.sh" --note "validation_failed"
-      exit 2
+      log "ERROR" "calllist file $CALLLIST_FILE missing after processor"
+      "$ROOT/lib/default_handler.sh" --note "calllist_missing"
+      exit 3
     fi
   fi
 else
@@ -119,8 +126,9 @@ else
   "$ROOT/lib/default_handler.sh" --note "no_matches"
 fi
 
-# Final summary
+# Final summary (only output from orchestrator)
 count=$(awk -f "$ROOT/lib/count_rows.awk" "$AGG")
+echo "Run completed; rows_aggregated=$count"
 log "INFO" "Run completed; rows_aggregated=$count"
 
 exit 0

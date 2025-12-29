@@ -56,7 +56,11 @@ awk -F '|' -f "$ROOT/lib/filter_new.awk" "$TMP_OUT.history" "$TMP_OUT" > "$TMP_O
 # Format final rows as 'Company | Location' and de-duplicate by lc-company
 awk -F '|' -f "$ROOT/lib/format_final.awk" "$TMP_OUT.new" > "$TMP_OUT.final"
 # Take up to OUTPUT_LIMIT rows
-head -n "$OUTPUT_LIMIT" "$TMP_OUT.final" > "$ROOT/$CALLLIST_FILE"
+if [ -n "${OUTPUT_LIMIT:-}" ]; then
+  head -n "$OUTPUT_LIMIT" "$TMP_OUT.final" > "$ROOT/$CALLLIST_FILE"
+else
+  cp "$TMP_OUT.final" "$ROOT/$CALLLIST_FILE"
+fi
 
 # If no valid rows, invoke default handler
 if [ ! -s "$ROOT/$CALLLIST_FILE" ]; then
