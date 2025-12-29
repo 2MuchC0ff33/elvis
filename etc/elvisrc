@@ -1,0 +1,44 @@
+#!/bin/sh
+# shellcheck disable=SC2034
+# elvisrc - configuration for the elvis scraper
+# All configuration values live here (no other files should contain configuration data).
+
+# Files / Paths (relative to project root)
+URLS_FILE="srv/urls.txt"
+UA_FILE="srv/ua.txt"
+HISTORY_FILE="srv/company_history.txt"
+CALLLIST_FILE="home/calllist.txt"
+LOG_FILE="var/log/elvis.log"
+LOG_DIR="var/log"
+SRC_DIR="var/src"
+SPOOL_DIR="var/spool"
+TMP_DIR="var/tmp"
+
+# Behaviour toggles
+VERIFY_ROBOTS="true"          # honour robots.txt
+UA_ROTATE="true"              # rotate user agents per request
+RETRY_ON_403="true"           # treat 403 specially with extra retries
+APPEND_HISTORY_DEFAULT="false" # default behaviour for appending to history
+
+# Network / Rate limiting
+TIMEOUT="5"                   # curl --max-time (seconds) - reduced for faster CI/testing runs
+DELAY_MIN="1.2"               # min random delay between requests (seconds)
+DELAY_MAX="4.8"               # max random delay between requests (seconds)
+BACKOFF_SEQUENCE="1 2 4"      # exponential backoff sequence (seconds) - shortened for testing
+MAX_RETRIES="3"               # total retries per URL (base)
+EXTRA_403_RETRIES="2"         # extra retries to add on 403 http code
+
+# Parsing / Pagination
+PAGE_NEXT_MARKER='aria-label="Next"'   # what to look for to detect "Next" control
+PAGINATION_MAX_PAGES="100"             # safety cap to avoid infinite loops
+OUTPUT_LIMIT="5"                       # final number of companies to output
+
+# CAPTCHA detection (case-insensitive regex)
+CAPTCHA_PATTERNS='captcha|recaptcha|g-recaptcha'
+
+# Logging
+LOG_ROTATE_DAYS="7"            # rotate weekly
+LOG_TIME_FORMAT="%Y-%m-%dT%H:%M:%S%z"
+
+# Compliance notes (human-readable, not parsed by scripts)
+# COMPLIANCE: Respect robots.txt and terms of service. Do not bypass CAPTCHA. Do not use proxies or impersonation.

@@ -8,27 +8,18 @@
 
 # --- Shell scripts and config files ---
 *.sh     text eol=lf diff=sh
-*.bash   text eol=lf diff=sh
-*.zsh    text eol=lf diff=sh
-*.conf   text eol=lf
-*.ini    text eol=lf
-*.env    text eol=lf
-*.cron   text eol=lf
+*.sed     text eol=lf
+*.awk     text eol=lf
 *.rc     text eol=lf
 
 # --- Documentation and markdown ---
 *.md     text eol=lf diff=markdown
 *.txt    text eol=lf
-*.man    text eol=lf
-*.1      text eol=lf
 
 # --- CSV and data files ---
 *.csv    text eol=lf
-*.tsv    text eol=lf
 
-# --- YAML and JSON (for configs, workflows) ---
-*.yml    text eol=lf
-*.yaml   text eol=lf
+# --- JSON (for configs, workflows) ---
 *.json   text eol=lf
 
 # --- GitHub workflows and dotfiles ---
@@ -38,28 +29,12 @@
 .editorconfig text eol=lf
 
 # --- Source code (if any future additions) ---
-*.c      text eol=lf diff=cpp
-*.h      text eol=lf diff=cpp
-*.py     text eol=lf diff=python
-*.pl     text eol=lf diff=perl
 
 # --- Binary files: mark as binary to disable diff/merge and line ending conversion ---
-*.png    binary
-*.jpg    binary
-*.jpeg   binary
-*.gif    binary
-*.ico    binary
-*.pdf    binary
-*.zip    binary
 *.tar    binary
 *.gz     binary
 *.bz2    binary
 *.xz     binary
-*.7z     binary
-*.exe    binary
-*.dll    binary
-*.so     binary
-*.dylib  binary
 
 # --- RCS and backup files ---
 *,v      binary

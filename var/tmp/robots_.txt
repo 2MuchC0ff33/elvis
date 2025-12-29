@@ -1,0 +1,40 @@
+# robots.txt file for www.seek.com.au
+
+# Unrestricted access
+User-agent: Mediapartners-Google
+User-agent: AdIdxBot
+Disallow:
+
+# Default directives
+User-agent: *
+Disallow: */job/
+Disallow: *?returnUrl=
+Disallow: *?page=
+Disallow: /graphql
+Disallow: /api/jobsearch/
+Disallow: /profiles/
+
+# Disallowed bots
+User-agent: LinkedInBot
+User-agent: Baiduspider
+User-agent: PetalBot
+Disallow: /
+
+# Exceptions
+User-agent: anthropic-ai
+User-agent: Bytespider
+User-agent: CCBot
+User-agent: Diffbot
+User-agent: Google-Extended
+User-agent: omgili
+User-agent: GPTBot
+Disallow: /companies
+Disallow: */job/
+
+User-agent: LinkedInBot
+Allow: */job/
+
+User-agent: facebookexternalhit
+Allow: */job/*
+Allow: */jobs*
+Allow: */*-jobs*
