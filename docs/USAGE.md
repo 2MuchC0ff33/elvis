@@ -4,7 +4,7 @@ Setup
 
 1. Ensure files are executable (one-time):
 
-   chmod +x bin/elvis.sh lib/\*.sh lib/loop.aw
+   chmod +x bin/elvis.sh lib/\*.sh lib/loop.awk
 
 2. Configure behaviour only in `etc/elvisrc`. Do NOT hard-code values elsewhere.
 
