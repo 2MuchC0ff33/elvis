@@ -119,7 +119,7 @@ while :; do
 
   # Determine safe output path (use AWK helper to sanitize URL)
   safe=$(printf '%s' "$current" | awk -f "$ROOT/lib/safe_filename.awk")
-  out="$SRC_DIR/${safe}.html"
+  out="$ROOT/$SRC_DIR/${safe}.html"
 
   # Determine UA (rotated per attempt)
   UA="$(choose_ua)"
