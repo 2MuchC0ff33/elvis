@@ -14,8 +14,10 @@ if [ -f "$ROOT/etc/elvisrc" ]; then
   . "$ROOT/etc/elvisrc"
 fi
 
-# Debug: print ROOT and SRC_DIR
-echo "DEBUG: ROOT=$ROOT SRC_DIR=$SRC_DIR" >&2
+# Debug: print ROOT and SRC_DIR (only when DEBUG=true)
+if [ "${DEBUG:-}" = "true" ]; then
+  echo "DEBUG: ROOT=$ROOT SRC_DIR=$SRC_DIR" >&2
+fi
 
 URL="$1"
 if [ -z "$URL" ]; then

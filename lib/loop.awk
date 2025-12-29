@@ -1,6 +1,6 @@
 #!/usr/bin/awk -f
-# loop.aw - AWK-first HTML parser that extracts Company and Location from Seek-like pages
-# Usage: loop.aw <html-file>
+# loop.awk - AWK-first HTML parser that extracts Company and Location from Seek-like pages
+# Usage: loop.awk <html-file>
 # Emits lines: Company Name | Location
 # Approach:
 # - Split input on <article ... data-automation="normalJob" ...> ... </article>
