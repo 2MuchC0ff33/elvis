@@ -1,0 +1,222 @@
+.TH ELVIS 1 "2025-12-24" "elvis 0.1" "User Commands"
+.SH NAME
+elvis \- initialise and run daily Australian sales lead call list generation
+.SH SYNOPSIS
+.B elvis-run
+.RI [ init | get-transaction-data | set-status | end-sequence | choose-dork | help ]
+.SH DESCRIPTION
+.PP
+.B elvis-run
+is the master orchestrator for the Elvis lead-generation utility. It supports modular initialisation and a full transaction data workflow for lead generation, strictly following the logic and pseudocode in README.md.
+.PP
+The get-transaction-data workflow loads, normalises, splits, and fetches paginated data from seeds, handling errors and retries automatically. Fetch behaviour includes configurable exponential backoff (`BACKOFF_SEQUENCE`), optional User-Agent rotation (`UA_ROTATE` and `UA_LIST_PATH`), and optional `robots.txt` checks (`VERIFY_ROBOTS`). Special-case HTTP 403 handling is configurable via `RETRY_ON_403` (default `true`) and `EXTRA_403_RETRIES` (default `2`) — when enabled the fetcher will rotate the User-Agent and attempt extra retries with backoff, and it sends browser-like headers (`Accept`, `Accept-Language`, `Referer`) and enables compressed transfer to reduce the chance of 403 responses. If CAPTCHA or recaptcha markers appear in responses the fetcher will log the event and skip the route; do not attempt automated solving. The pagination scanner honours a configurable `PAGE_NEXT_MARKER` to detect "Next" controls. Parsing prefers `data-automation` markers and an AWK-based extractor (`scripts/lib/parse_seek_json3.awk`, `scripts/lib/parser.awk`); pagination is route-aware (`scripts/lib/pick_pagination.sh`, `scripts/lib/paginate.sh`) and the fetcher honours `robots.txt`, supports UA rotation, 403 handling and CAPTCHA detection (see `scripts/fetch.sh` and `scripts/lib/http_utils.sh` for details).
+.SH INIT SEQUENCE
+.TP
+.B load_env.sh
+Loads .env file (if present) into the environment.
+.TP
+.B load_config.sh
+Loads project.conf into the environment.
+.TP
+.B load_seek_pagination.sh
+Loads Seek pagination config as SEEK_* variables.
+.TP
+.SH REQUIREMENTS
+.PP
+The following tools are expected: `sh`, `curl`, `tar`, `gawk` (or `awk`), `sed`, `grep`.
+Optional developer tools: `shellcheck`, and `groff`/`nroff` for building manpages.
+.TP
+.B validate_env.sh
+Validates all required environment variables.
+.TP
+.B prepare_log.sh
+Ensures log file and directory exist.
+.TP
+.B init-help.sh
+Displays help and usage for all init scripts.
+.TP
+.B elvis-run init
+Runs all init steps in order.
+.SH MAINTENANCE
+.TP
+.B update_config_examples.sh
+Synchronises keys between `project.conf` and `.env.example` by adding missing keys with placeholder values. Useful to keep examples and defaults aligned across environments.
+.TP
+.B update_readme.sh
+Regenerates the auto-generated sections of `README.md` (the *Project tree* and *Commands* sections). Run locally as `./scripts/update_readme.sh --dry-run` to preview changes; a CI workflow at `.github/workflows/update-readme.yml` will run this weekly and open an automated PR when changes are detected.
+.TP
+.B SLEEP_CMD (testing)
+`SLEEP_CMD` is respected by fetch and pagination scripts; set it to a short stub or a recorder during tests to avoid long sleeps (e.g., `SLEEP_CMD=./tests/mock_sleep.sh`).
+.TP
+.B REAL_TESTS (integration)
+Enable optional real-network integration tests by setting `REAL_TESTS=true` when running the test suite; tests are skipped by default and only run when explicitly enabled.
+.SH OPTIONS
+.TP
+.B init
+Run the full initialisation sequence.
+.TP
+.B get-transaction-data
+Run the full transaction data workflow: normalise, split, detect pagination, and fetch all seeds.
+.TP
+.B help
+Show help and usage for all init scripts.
+.TP
+.B set-status
+Run the set-status workflow: manual enrichment of `results.csv`, validation, deduplication, daily CSV output, and audit logging. The enrichment step creates an editable `tmp/enriched.csv` and prints instructions for manual editing; it does not open an editor automatically..TP
+.B Validation_and_dedupe
+Validation requires a `company_name` and at least one contact (phone or email); phone numbers are normalised (`+61` → `0`, non-digits removed) and emails are validated against the project regex. Deduplication is case-insensitive on `company_name` only; use `--append-history` to append accepted companies to `companies_history.txt`..TP
+.B end-sequence
+Run the end-sequence workflow: archive artifacts to `.snapshots/`, cleanup temporary files, and write `summary.txt`.
+.TP
+.B choose-dork
+Interactive: select a Google dork template and open in browser for manual enrichment.
+.TP
+.B is_dup_company.sh
+Check if a company name exists in history (case-insensitive). Usage: scripts/lib/is_dup_company.sh "Company Name" [history_file]
+.TP
+.B \\--auto-heal
+Enable opt-in automatic recovery attempts for failed steps (preserves failed artifacts under `.snapshots/failed/`).
+.SH ENVIRONMENT VARIABLES
+.TP
+.B SEEDS_FILE
+Path to the seeds manifest (default: `data/seeds/seeds.csv`).
+.TP
+.B OUTPUT_DIR
+Directory where daily outputs are written (default: `data/calllists`).
+.TP
+.B HISTORY_FILE
+Company history file (default: `companies_history.txt`).
+.TP
+.B FETCH_TIMEOUT
+Curl timeout in seconds (default: `15`).
+.TP
+.B BACKOFF_SEQUENCE
+Comma-separated retry backoff sequence in seconds (default: `5,20,60`).
+.TP
+.B UA_ROTATE / UA_LIST_PATH
+Enable UA rotation and path to UA list (defaults: `true`, `data/ua.txt`).
+.TP
+.B RETRY_ON_403
+When `true`, the fetcher will increase retries and rotate User-Agent on HTTP 403 responses (default: `true`). If you see `WARN: received HTTP 403`, inspect `NETWORK_LOG` and confirm UA list and rotation settings.
+.TP
+.B EXTRA_403_RETRIES
+Additional retries to add when a 403 is encountered (default: `2`).
+.TP
+.B VERIFY_ROBOTS
+When `true`, requests are checked against `robots.txt` (default: `true`). If a route is blocked the fetcher exits with status code `2` and writes a `ROBOTSBLOCK` entry to `NETWORK_LOG` (the logged entry includes the matching Disallow prefix for auditability).
+.TP
+.B NETWORK_LOG
+Path to the network log that records fetch attempts as tab-separated fields: `TIMESTAMP\tURL\tATTEMPT\tHTTP_CODE\tBYTES` (default: `logs/network.log`).
+
+Special diagnostic entries include `403-retry` (retry attempts caused by HTTP 403 events), `ROBOTSBLOCK` (when `robots.txt` blocks a route) and `CAPTCHA` (when CAPTCHA detection matched a pattern; includes a short matched snippet). Use the log to inspect per-request bytes, status codes and special diagnostic markers for fast triage.
+.TP
+.B SLEEP_CMD / FETCH_SCRIPT
+Test hooks: set `SLEEP_CMD` to a short stub in tests to avoid long sleeps; set `FETCH_SCRIPT` to a mock fetcher to reproduce fetch/pagination behaviours.
+.TP
+.B CAPTCHA_PATTERNS
+(Optional) Regex or pattern list used to detect CAPTCHA/recaptcha markers; when a match is found the fetcher logs `WARN: CAPTCHA or human check detected` and writes a `CAPTCHA` entry to `NETWORK_LOG`; the page is treated as a fetch failure (no automated solving).
+.TP
+.B LAST_FAILED_STATUS
+If a step fails the `on_err` handler writes `tmp/last_failed.status` and `heal.sh` preserves debugging artifacts to `.snapshots/failed/` (tarballs containing logs and status files) for post-mortem analysis.
+.TP
+.B SNAPSHOT_DIR
+Directory where run snapshots are stored (default: `.snapshots`). Snapshots include `snap-<ts>.tar.gz` and checksums in `checksums/`.
+.TP
+.B LAST_FAILED_STATUS
+`tmp/last_failed.status` is written by the `on_err` handler; preserved artifacts are saved to `.snapshots/failed/` by `heal.sh` for post-mortem analysis.
+.TP
+.B LOG_ROTATE
+Log rotation helper: `scripts/log_rotate.sh --dry-run` to preview archive and prune actions; use `--keep-weeks N` to prune older archives.
+.TP
+.B MIN_LEADS
+Minimum leads required per run before a warning is logged (default: `25`).
+.TP
+.B LOG_LEVEL
+Logging verbosity (default: `INFO`).
+Minimum leads required per run before a warning is logged (default: `25`).
+.TP
+.B LOG_LEVEL
+Logging verbosity (default: `INFO`).
+.SH EXIT CODES
+.TP
+.B 0
+Success.
+.TP
+.B 1
+General failure (non-specific error, retry or manual review recommended).
+.TP
+.B 2
+Usage or policy error (e.g., blocked by `robots.txt`).
+.SH EXAMPLES
+.TP
+.B elvis-run init
+Run all initialisation steps.
+.TP
+.B elvis-run get-transaction-data
+Run the full transaction data workflow (normalise, split, detect, fetch).
+.TP
+.B elvis-run help
+Show help for all init scripts.
+.TP
+.B elvis-run end-sequence
+Run the end-sequence workflow (archive, cleanup, summarise).
+.TP
+.B . scripts/lib/load_env.sh
+Manually load .env file.
+.TP
+.B . scripts/lib/load_config.sh
+Manually load project.conf.
+.TP
+.B . scripts/lib/validate_env.sh
+Validate required environment variables.
+.TP
+.B . scripts/lib/prepare_log.sh
+Ensure log file and directory exist.
+.TP
+.B elvis-run set-status --input results.csv --enriched tmp/enriched.csv --commit-history
+Validate enriched rows, deduplicate, and produce the daily calllist; use `--commit-history` to append accepted companies to `companies_history.txt`.
+.SH FILES
+.TP
+.B project.conf
+Canonical project configuration.
+.TP
+.B .env
+Environment overrides and secrets.
+.TP
+.B configs/seek-pagination.ini
+Seek-specific selectors and pagination config.
+.TP
+.B logs/log.txt
+Log file for run details.
+.TP
+.B summary.txt
+Run summary produced by end-sequence (latest run metadata).
+.TP
+.B .snapshots/
+Snapshot directory containing `snap-<ts>.tar.gz`, checksums and `index`. (See README: Mini VCS Integration)
+.TP
+.B tmp/seeds.normalized.csv
+Normalised seeds file (intermediate).
+.TP
+.B tmp/records/seed_N.txt
+Per-record split files (intermediate).
+.TP
+.B tmp/<seed_id>.htmls
+Fetched HTML for each seed.
+.SH SEE ALSO
+.TP
+.B README.md
+Project README with design, PDL and examples.
+.TP
+.B docs/runbook.md
+Operational runbook and troubleshooting.
+.TP
+.B scripts/update_readme.sh
+Maintenance helper for regenerating README sections.
+.TP
+.B .github/workflows/update-readme.yml
+GitHub Actions workflow that runs the README update and opens a PR.
+.SH AUTHOR
+Elvis project contributors.
+.SH BUGS
+Report issues via project repository.

@@ -1,0 +1,59 @@
+#!/bin/sh
+# scripts/validate.sh
+# Validate and normalise a CSV of records.
+# Usage: validate.sh input.csv --out validated.csv
+
+set -eu
+
+# Load env/config so EMAIL_REGEX and other settings come from project.conf/.env
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -f "$(dirname "$0")/lib/load_env.sh" ]; then . "$(dirname "$0")/lib/load_env.sh" "$REPO_ROOT/.env"; fi
+if [ -f "$(dirname "$0")/lib/load_config.sh" ]; then sh "$(dirname "$0")/lib/load_config.sh" "$REPO_ROOT/project.conf"; fi
+
+INPUT="${1:-}"
+OUT=""
+
+if [ -z "${EMAIL_REGEX:-}" ]; then
+  echo "ERROR: EMAIL_REGEX not set (expected in project.conf or .env)" >&2
+  exit 2
+fi
+
+if [ -z "$INPUT" ] || [ ! -f "$INPUT" ]; then
+  echo "Usage: $0 <input.csv> --out <validated.csv>" >&2
+  exit 2
+fi
+
+# parse --out
+shift || true
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --out)
+      shift
+      OUT="$1"
+      ;;
+    *)
+      ;;
+  esac
+  shift || true
+done
+
+if [ -z "$OUT" ]; then
+  echo "ERROR: --out <file> required" >&2
+  exit 2
+fi
+
+# Ensure header contains required fields
+header=$(head -n1 "$INPUT" | tr -d '\r')
+# Check required columns exist (POSIX sh compatible)
+for col in company_name prospect_name title phone email location; do
+  echo "$header" | grep -q "$col" || { echo "ERROR: missing column: $col" >&2; exit 2; }
+done
+
+# Process rows: normalise phone, validate fields, emit to OUT only valid rows
+awk -v email_re="$EMAIL_REGEX" -f scripts/lib/validator.awk "$INPUT" > "$OUT" || {
+  echo "ERROR: validation failed; see stderr for details" >&2
+  exit 3
+}
+
+echo "Validation succeeded: output -> $OUT"
+exit 0

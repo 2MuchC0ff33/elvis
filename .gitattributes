@@ -1,0 +1,50 @@
+# -----------------------------------------------------------------------------
+# .gitattributes — Project Elvis (POSIX Shell, CSV, Docs)
+# Enforces cross-platform consistency, encoding, and diff/merge behaviour.
+# -----------------------------------------------------------------------------
+
+# --- Core: Enforce LF line endings and UTF-8 encoding for all text files ---
+* text=auto eol=lf
+
+# --- Shell scripts and config files ---
+*.sh     text eol=lf diff=sh
+*.sed     text eol=lf
+*.awk     text eol=lf
+*.rc     text eol=lf
+
+# --- Documentation and markdown ---
+*.md     text eol=lf diff=markdown
+*.txt    text eol=lf
+
+# --- CSV and data files ---
+*.csv    text eol=lf
+
+# --- JSON (for configs, workflows) ---
+*.json   text eol=lf
+
+# --- GitHub workflows and dotfiles ---
+.github/** text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# --- Source code (if any future additions) ---
+
+# --- Binary files: mark as binary to disable diff/merge and line ending conversion ---
+*.tar    binary
+*.gz     binary
+*.bz2    binary
+*.xz     binary
+
+# --- RCS and backup files ---
+*,v      binary
+*.bak    binary
+
+# --- Special: Prevent CRLF on Windows for all text files ---
+# (Redundant with text=auto eol=lf, but explicit for clarity)
+
+# --- Merge and diff drivers (extend as needed) ---
+# Use default merge for text, disable for binary
+
+# --- End of file ---
+*.sh text eol=lf
